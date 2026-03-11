@@ -88,7 +88,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral das tarefas {role === "admin" ? "da empresa" : role === "manager" ? "do setor" : ""}</p>
+        <p className="text-muted-foreground">Visão geral {role === "employee" ? "das suas tarefas" : role === "admin" ? "das tarefas da empresa" : role === "manager" ? "das tarefas do setor" : ""}</p>
       </div>
 
       {/* Stats Cards */}
