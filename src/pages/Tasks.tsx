@@ -40,7 +40,9 @@ export default function Tasks() {
   const isAdmin = role === "admin";
 
   const fetchTasks = async () => {
-    const { data } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
+    let query = supabase.from("tasks").select("*").order("created_at", { ascending: false });
+    if (role === "employee" && user) query = query.eq("assigned_to", user.id);
+    const { data } = await query;
     if (data) setTasks(data);
   };
 
