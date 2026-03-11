@@ -145,8 +145,8 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {kanbanColumns.map((status) => {
             const columnTasks = filteredTasks.filter((t) => {
-              if (status === "overdue") return t.status === "overdue" || (t.due_date && t.due_date < now.toISOString() && t.status !== "completed" && t.status !== "overdue");
-              if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < now.toISOString());
+              if (status === "overdue") return t.due_date && t.due_date < now.toISOString() && t.status !== "completed";
+              return t.status === status;
               return t.status === status;
             });
             return (

@@ -143,7 +143,7 @@ export default function Tasks() {
                 </div>
                 {task.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{task.description}</p>}
                 <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                  {task.profiles?.full_name && <span>→ {task.profiles.full_name}</span>}
+                  {task.assigned_to && <span>→ Atribuída</span>}
                   {task.due_date && <span>Prazo: {format(new Date(task.due_date), "dd/MM/yyyy HH:mm")}</span>}
                   {task.recurrence_type !== "none" && <Badge variant="outline" className="text-xs">{recurrenceLabels[task.recurrence_type]}</Badge>}
                 </div>
