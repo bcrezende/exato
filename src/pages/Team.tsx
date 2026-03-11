@@ -85,10 +85,11 @@ export default function Team() {
 
   const sendInvite = async () => {
     if (!inviteForm.email.trim() || !currentProfile?.company_id || !user) return;
+    const departmentId = role === "manager" ? currentProfile.department_id : (inviteForm.department_id || null);
     const { error } = await supabase.from("invitations").insert({
       email: inviteForm.email.trim(),
       role: inviteForm.role as any,
-      department_id: inviteForm.department_id || null,
+      department_id: departmentId,
       company_id: currentProfile.company_id,
       invited_by: user.id,
     });
