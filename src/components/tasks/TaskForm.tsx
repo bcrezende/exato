@@ -110,7 +110,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Responsável</Label>
-              <Select value={form.assigned_to} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
+              <Select value={form.assigned_to || undefined} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
                   {filteredMembers.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
@@ -140,7 +140,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             {isAdmin && (
               <div className="space-y-2">
                 <Label>Setor</Label>
-                <Select value={form.department_id} onValueChange={(v) => setForm({ ...form, department_id: v })}>
+                <Select value={form.department_id || undefined} onValueChange={(v) => setForm({ ...form, department_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
                   <SelectContent>
                     {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
@@ -191,6 +191,18 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   );
 }
 
+function toLocalDatetimeString(isoString: string | null): string {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  // Format as YYYY-MM-DDTHH:mm in local timezone
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tables<"profiles"> | null) {
   if (task) {
     return {
@@ -199,8 +211,8 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
       assigned_to: task.assigned_to || "",
       status: task.status,
       priority: task.priority,
-      start_date: task.start_date ? task.start_date.slice(0, 16) : "",
-      due_date: task.due_date ? task.due_date.slice(0, 16) : "",
+      start_date: toLocalDatetimeString(task.start_date),
+      due_date: toLocalDatetimeString(task.due_date),
       recurrence_type: task.recurrence_type,
       department_id: task.department_id || "",
     };
