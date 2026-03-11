@@ -9,7 +9,7 @@ import { ListTodo, Clock, CheckCircle, AlertTriangle, Calendar as CalendarIcon, 
 import type { Tables } from "@/integrations/supabase/types";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Task = Tables<"tasks"> & { profiles?: { full_name: string | null } | null };
+type Task = Tables<"tasks"> & { assigned_profile?: { full_name: string | null } | null };
 
 const statusLabels: Record<string, string> = {
   pending: "Pendente",
