@@ -16,6 +16,7 @@ import { format } from "date-fns";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
+type Department = Tables<"departments">;
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
 const priorityLabels: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta" };
@@ -29,12 +30,14 @@ export default function Tasks() {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Profile[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", status: "pending" as string, priority: "medium" as string, due_date: "", recurrence_type: "none" as string });
+  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", status: "pending" as string, priority: "medium" as string, due_date: "", recurrence_type: "none" as string, department_id: "" });
 
   const canManage = role === "admin" || role === "manager";
+  const isAdmin = role === "admin";
 
   const fetchTasks = async () => {
     const { data } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
@@ -47,11 +50,22 @@ export default function Tasks() {
     if (data) setMembers(data);
   };
 
-  useEffect(() => { if (user) { fetchTasks(); fetchMembers(); } }, [user]);
+  const fetchDepartments = async () => {
+    if (!currentProfile?.company_id) return;
+    const { data } = await supabase.from("departments").select("*").eq("company_id", currentProfile.company_id).order("name");
+    if (data) setDepartments(data);
+  };
+
+  useEffect(() => { if (user) { fetchTasks(); fetchMembers(); fetchDepartments(); } }, [user]);
+
+  const getDepartmentName = (departmentId: string | null) => {
+    if (!departmentId) return null;
+    return departments.find((d) => d.id === departmentId)?.name || null;
+  };
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ title: "", description: "", assigned_to: "", status: "pending", priority: "medium", due_date: "", recurrence_type: "none" });
+    setForm({ title: "", description: "", assigned_to: "", status: "pending", priority: "medium", due_date: "", recurrence_type: "none", department_id: isAdmin ? "" : (currentProfile?.department_id || "") });
     setModalOpen(true);
   };
 
@@ -65,6 +79,7 @@ export default function Tasks() {
       priority: task.priority,
       due_date: task.due_date ? task.due_date.slice(0, 16) : "",
       recurrence_type: task.recurrence_type,
+      department_id: task.department_id || "",
     });
     setModalOpen(true);
   };
@@ -72,6 +87,10 @@ export default function Tasks() {
   const handleSave = async () => {
     if (!form.title.trim()) { toast({ variant: "destructive", title: "Título obrigatório" }); return; }
     if (!currentProfile?.company_id || !user) return;
+
+    const departmentId = isAdmin
+      ? (form.department_id || null)
+      : (currentProfile.department_id || null);
 
     const payload = {
       title: form.title.trim(),
@@ -82,7 +101,7 @@ export default function Tasks() {
       due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
       recurrence_type: form.recurrence_type as any,
       company_id: currentProfile.company_id,
-      department_id: currentProfile.department_id,
+      department_id: departmentId,
     };
 
     if (editing) {
@@ -132,41 +151,45 @@ export default function Tasks() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map((task) => (
-          <Card key={task.id} className="transition-shadow hover:shadow-md">
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold truncate">{task.title}</h3>
-                  <Badge className={statusColors[task.status]} variant="secondary">{statusLabels[task.status]}</Badge>
-                  <Badge className={priorityColors[task.priority]} variant="secondary">{priorityLabels[task.priority]}</Badge>
+        {filtered.map((task) => {
+          const deptName = getDepartmentName(task.department_id);
+          return (
+            <Card key={task.id} className="transition-shadow hover:shadow-md">
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold truncate">{task.title}</h3>
+                    <Badge className={statusColors[task.status]} variant="secondary">{statusLabels[task.status]}</Badge>
+                    <Badge className={priorityColors[task.priority]} variant="secondary">{priorityLabels[task.priority]}</Badge>
+                    {deptName && <Badge variant="outline" className="text-xs">{deptName}</Badge>}
+                  </div>
+                  {task.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{task.description}</p>}
+                  <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                    {task.assigned_to && <span>→ Atribuída</span>}
+                    {task.due_date && <span>Prazo: {format(new Date(task.due_date), "dd/MM/yyyy HH:mm")}</span>}
+                    {task.recurrence_type !== "none" && <Badge variant="outline" className="text-xs">{recurrenceLabels[task.recurrence_type]}</Badge>}
+                  </div>
                 </div>
-                {task.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{task.description}</p>}
-                <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                  {task.assigned_to && <span>→ Atribuída</span>}
-                  {task.due_date && <span>Prazo: {format(new Date(task.due_date), "dd/MM/yyyy HH:mm")}</span>}
-                  {task.recurrence_type !== "none" && <Badge variant="outline" className="text-xs">{recurrenceLabels[task.recurrence_type]}</Badge>}
+                <div className="flex items-center gap-1">
+                  {(role === "employee" && task.assigned_to === user?.id) && (
+                    <Select value={task.status} onValueChange={(v) => handleStatusChange(task.id, v)}>
+                      <SelectTrigger className="h-8 w-[140px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {canManage && (
+                    <>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(task)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </>
+                  )}
                 </div>
-              </div>
-              <div className="flex items-center gap-1">
-                {(role === "employee" && task.assigned_to === user?.id) && (
-                  <Select value={task.status} onValueChange={(v) => handleStatusChange(task.id, v)}>
-                    <SelectTrigger className="h-8 w-[140px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )}
-                {canManage && (
-                  <>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(task)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
         {filtered.length === 0 && (
           <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
             Nenhuma tarefa encontrada
@@ -219,20 +242,51 @@ export default function Tasks() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Recorrência</Label>
-                <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              {isAdmin ? (
+                <div className="space-y-2">
+                  <Label>Setor</Label>
+                  <Select value={form.department_id} onValueChange={(v) => setForm({ ...form, department_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
+                    <SelectContent>
+                      {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Recorrência</Label>
+                  <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            {isAdmin && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Recorrência</Label>
+                  <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Prazo</Label>
+                  <Input type="datetime-local" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Prazo</Label>
-              <Input type="datetime-local" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-            </div>
+            )}
+            {!isAdmin && (
+              <div className="space-y-2">
+                <Label>Prazo</Label>
+                <Input type="datetime-local" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
