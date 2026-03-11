@@ -37,8 +37,8 @@ export default function Tasks() {
   const canManage = role === "admin" || role === "manager";
 
   const fetchTasks = async () => {
-    const { data } = await supabase.from("tasks").select("*, profiles:assigned_to(full_name)").order("created_at", { ascending: false });
-    if (data) setTasks(data as Task[]);
+    const { data } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
+    if (data) setTasks(data);
   };
 
   const fetchMembers = async () => {

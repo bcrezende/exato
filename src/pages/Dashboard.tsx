@@ -42,7 +42,7 @@ export default function Dashboard() {
     const fetchTasks = async () => {
       const { data } = await supabase
         .from("tasks")
-        .select("*, profiles:assigned_to(full_name)")
+        .select("*")
         .order("due_date", { ascending: true });
       if (data) setTasks(data as Task[]);
     };
