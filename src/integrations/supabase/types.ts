@@ -243,6 +243,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id: string | null
           recurrence_type: Database["public"]["Enums"]["recurrence_type"]
+          start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
@@ -259,6 +260,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id?: string | null
           recurrence_type?: Database["public"]["Enums"]["recurrence_type"]
+          start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at?: string
@@ -275,6 +277,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id?: string | null
           recurrence_type?: Database["public"]["Enums"]["recurrence_type"]
+          start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
           updated_at?: string
