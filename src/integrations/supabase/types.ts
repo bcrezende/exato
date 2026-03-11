@@ -14,16 +14,333 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      departments: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          company_id: string
+          created_at: string
+          department_id: string | null
+          email: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          company_id: string
+          created_at?: string
+          department_id?: string | null
+          email: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["app_role"]
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          company_id?: string
+          created_at?: string
+          department_id?: string | null
+          email?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company_id: string | null
+          created_at: string
+          department_id: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          position: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          position?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          position?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_url: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          department_id: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: Database["public"]["Enums"]["task_priority"]
+          recurrence_parent_id: string | null
+          recurrence_type: Database["public"]["Enums"]["recurrence_type"]
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"]
+          recurrence_parent_id?: string | null
+          recurrence_type?: Database["public"]["Enums"]["recurrence_type"]
+          status?: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"]
+          recurrence_parent_id?: string | null
+          recurrence_type?: Database["public"]["Enums"]["recurrence_type"]
+          status?: Database["public"]["Enums"]["task_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_recurrence_parent_id_fkey"
+            columns: ["recurrence_parent_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_company_id: { Args: { _user_id: string }; Returns: string }
+      get_user_department_id: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "employee"
+      recurrence_type: "none" | "daily" | "weekly" | "monthly" | "yearly"
+      task_priority: "low" | "medium" | "high"
+      task_status: "pending" | "in_progress" | "completed" | "overdue"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +467,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "employee"],
+      recurrence_type: ["none", "daily", "weekly", "monthly", "yearly"],
+      task_priority: ["low", "medium", "high"],
+      task_status: ["pending", "in_progress", "completed", "overdue"],
+    },
   },
 } as const
