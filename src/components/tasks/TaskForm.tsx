@@ -110,7 +110,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Responsável</Label>
-              <Select value={form.assigned_to} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
+              <Select value={form.assigned_to || undefined} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
                   {filteredMembers.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
