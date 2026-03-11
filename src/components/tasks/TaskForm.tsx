@@ -140,7 +140,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             {isAdmin && (
               <div className="space-y-2">
                 <Label>Setor</Label>
-                <Select value={form.department_id} onValueChange={(v) => setForm({ ...form, department_id: v })}>
+                <Select value={form.department_id || undefined} onValueChange={(v) => setForm({ ...form, department_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
                   <SelectContent>
                     {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
