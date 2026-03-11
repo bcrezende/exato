@@ -85,10 +85,11 @@ export default function Team() {
 
   const sendInvite = async () => {
     if (!inviteForm.email.trim() || !currentProfile?.company_id || !user) return;
+    const departmentId = role === "manager" ? currentProfile.department_id : (inviteForm.department_id || null);
     const { error } = await supabase.from("invitations").insert({
       email: inviteForm.email.trim(),
       role: inviteForm.role as any,
-      department_id: inviteForm.department_id || null,
+      department_id: departmentId,
       company_id: currentProfile.company_id,
       invited_by: user.id,
     });
@@ -316,15 +317,17 @@ export default function Team() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Setor</Label>
-              <Select value={inviteForm.department_id} onValueChange={(v) => setInviteForm({ ...inviteForm, department_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
-                <SelectContent>
-                  {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            {role !== "manager" && (
+              <div className="space-y-2">
+                <Label>Setor</Label>
+                <Select value={inviteForm.department_id} onValueChange={(v) => setInviteForm({ ...inviteForm, department_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setInviteModal(false)}>Cancelar</Button>
