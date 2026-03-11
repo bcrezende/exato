@@ -172,8 +172,8 @@ export default function Dashboard() {
                             </span>
                           )}
                         </div>
-                        {task.profiles && (
-                          <p className="mt-2 text-xs text-muted-foreground">{task.profiles.full_name}</p>
+                        {task.assigned_to && (
+                          <p className="mt-2 text-xs text-muted-foreground">Atribuída</p>
                         )}
                       </CardContent>
                     </Card>
