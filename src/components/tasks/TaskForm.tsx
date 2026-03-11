@@ -35,7 +35,13 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
 
   const [form, setForm] = useState(() => getInitialForm(editing, isAdmin, currentProfile));
 
-  // Reset form when editing changes
+  // Sync form when editing prop changes
+  useEffect(() => {
+    if (open) {
+      setForm(getInitialForm(editing, isAdmin, currentProfile));
+    }
+  }, [editing, open]);
+
   const resetForm = (task: Task | null) => {
     setForm(getInitialForm(task, isAdmin, currentProfile));
   };
