@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListTodo, Clock, CheckCircle, AlertTriangle, Calendar as CalendarIcon, LayoutGrid } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks"> & { profiles?: { full_name: string | null } | null };
 
