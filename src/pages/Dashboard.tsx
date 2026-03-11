@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ListTodo, Clock, CheckCircle, AlertTriangle, Calendar as CalendarIcon, LayoutGrid } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
+import MyDayView from "@/components/dashboard/MyDayView";
 
 type Task = Tables<"tasks">;
 
@@ -14,7 +15,7 @@ const statusLabels: Record<string, string> = { pending: "Pendente", in_progress:
 const priorityColors: Record<string, string> = { low: "bg-muted text-muted-foreground", medium: "bg-warning/10 text-warning", high: "bg-destructive/10 text-destructive" };
 const statusColors: Record<string, string> = { pending: "bg-muted text-muted-foreground", in_progress: "bg-primary/10 text-primary", completed: "bg-success/10 text-success", overdue: "bg-destructive/10 text-destructive" };
 
-export default function Dashboard() {
+function AdminManagerDashboard() {
   const { user, role } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | "today" | "week" | "overdue">("all");
@@ -23,8 +24,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchTasks = async () => {
-      let query = supabase.from("tasks").select("*").order("due_date", { ascending: true });
-      if (role === "employee") query = query.eq("assigned_to", user.id);
+      const query = supabase.from("tasks").select("*").order("due_date", { ascending: true });
       const { data } = await query;
       if (data) setTasks(data);
     };
@@ -68,7 +68,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral {role === "employee" ? "das suas tarefas" : role === "admin" ? "das tarefas da empresa" : role === "manager" ? "das tarefas do setor" : ""}</p>
+        <p className="text-muted-foreground">Visão geral {role === "admin" ? "das tarefas da empresa" : role === "manager" ? "das tarefas do setor" : ""}</p>
       </div>
 
       {/* Stats Cards */}
@@ -170,4 +170,14 @@ export default function Dashboard() {
       )}
     </div>
   );
+}
+
+export default function Dashboard() {
+  const { role } = useAuth();
+
+  if (role === "employee") {
+    return <MyDayView />;
+  }
+
+  return <AdminManagerDashboard />;
 }
