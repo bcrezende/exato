@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ListTodo, Clock, CheckCircle, AlertTriangle, Calendar as CalendarIcon, LayoutGrid } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
+import MyDayView from "@/components/dashboard/MyDayView";
 
 type Task = Tables<"tasks">;
 
@@ -16,6 +17,11 @@ const statusColors: Record<string, string> = { pending: "bg-muted text-muted-for
 
 export default function Dashboard() {
   const { user, role } = useAuth();
+
+  // Employee sees focused "My Day" view
+  if (role === "employee") {
+    return <MyDayView />;
+  }
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | "today" | "week" | "overdue">("all");
   const [view, setView] = useState<"kanban" | "calendar">("kanban");
