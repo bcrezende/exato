@@ -328,6 +328,10 @@ export type Database = {
     Functions: {
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
+      handle_accept_invite: {
+        Args: { _full_name: string; _invitation_id: string; _user_id: string }
+        Returns: undefined
+      }
       handle_registration: {
         Args: { _company_name: string; _full_name: string; _user_id: string }
         Returns: undefined
