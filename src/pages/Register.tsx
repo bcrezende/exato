@@ -38,27 +38,21 @@ export default function Register() {
       return;
     }
 
-    // 2. Create company
-    const { data: company, error: companyError } = await supabase
-      .from("companies")
-      .insert({ name: companyName })
-      .select()
-      .single();
+    // 2. Server-side onboarding (security definer bypasses RLS)
+    const { error: rpcError } = await supabase.rpc("handle_registration", {
+      _user_id: authData.user.id,
+      _company_name: companyName,
+      _full_name: fullName,
+    });
 
-    if (companyError || !company) {
-      toast({ variant: "destructive", title: "Erro ao criar empresa", description: companyError?.message });
+    if (rpcError) {
+      toast({ variant: "destructive", title: "Erro ao configurar conta", description: rpcError.message });
       setLoading(false);
       return;
     }
 
-    // 3. Update profile with company
-    await supabase.from("profiles").update({ company_id: company.id, full_name: fullName }).eq("id", authData.user.id);
-
-    // 4. Assign admin role
-    await supabase.from("user_roles").insert({ user_id: authData.user.id, role: "admin" });
-
-    toast({ title: "Conta criada!", description: "Bem-vindo ao TaskCorp." });
-    navigate("/dashboard");
+    toast({ title: "Conta criada!", description: "Verifique seu email para ativar sua conta." });
+    navigate("/login");
     setLoading(false);
   };
 
