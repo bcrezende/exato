@@ -317,15 +317,17 @@ export default function Team() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Setor</Label>
-              <Select value={inviteForm.department_id} onValueChange={(v) => setInviteForm({ ...inviteForm, department_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
-                <SelectContent>
-                  {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            {role !== "manager" && (
+              <div className="space-y-2">
+                <Label>Setor</Label>
+                <Select value={inviteForm.department_id} onValueChange={(v) => setInviteForm({ ...inviteForm, department_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setInviteModal(false)}>Cancelar</Button>
