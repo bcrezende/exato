@@ -325,6 +325,21 @@ export default function Team() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditMemberDialog
+        open={!!editMember}
+        onOpenChange={(open) => !open && setEditMember(null)}
+        member={editMember}
+        departments={departments}
+        onSaved={fetchData}
+      />
+
+      <EditDepartmentDialog
+        open={!!editDept}
+        onOpenChange={(open) => !open && setEditDept(null)}
+        department={editDept}
+        onSaved={fetchData}
+      />
     </div>
   );
 }
