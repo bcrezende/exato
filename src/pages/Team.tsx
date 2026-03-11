@@ -156,7 +156,13 @@ export default function Team() {
                           {userRole && <Badge variant="secondary">{roleLabels[userRole]}</Badge>}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{dept?.name || "—"}</TableCell>
-                      </TableRow>
+                        {isAdmin && (
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => setEditMember(m)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                     );
                   })}
                 </TableBody>
