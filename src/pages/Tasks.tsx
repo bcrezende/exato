@@ -143,12 +143,17 @@ export default function Tasks() {
                   </div>
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {(role === "employee" && task.assigned_to === user?.id) && (
-                      <Select value={task.status} onValueChange={(v) => handleStatusChange(task.id, v)}>
-                        <SelectTrigger className="h-8 w-[140px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <>
+                        {task.status === "pending" && (
+                          <Button size="sm" variant="outline" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
+                        )}
+                        {task.status === "in_progress" && (
+                          <Button size="sm" variant="outline" className="text-success border-success hover:bg-success/10" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
+                        )}
+                        {task.status === "completed" && (
+                          <Badge className="bg-success/10 text-success">Concluída</Badge>
+                        )}
+                      </>
                     )}
                     {canManage && (
                       <>

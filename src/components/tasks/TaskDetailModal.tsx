@@ -108,16 +108,26 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
             )}
           </div>
 
-          {/* Employee: status update */}
+          {/* Employee: restricted status actions */}
           {isAssigned && !canManage && (
             <div className="space-y-2">
               <span className="text-sm font-medium">Atualizar Status</span>
-              <Select value={task.status} onValueChange={handleStatusChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {task.status === "pending" && (
+                <Button size="sm" className="w-full" onClick={() => handleStatusChange("in_progress")}>
+                  <Clock className="mr-2 h-4 w-4" /> Iniciar
+                </Button>
+              )}
+              {task.status === "in_progress" && (
+                <Button size="sm" className="w-full bg-success text-success-foreground hover:bg-success/90" onClick={() => handleStatusChange("completed")}>
+                  <Flag className="mr-2 h-4 w-4" /> Concluir
+                </Button>
+              )}
+              {task.status === "completed" && (
+                <div className="text-center space-y-1">
+                  <Badge className="bg-success/10 text-success">Concluída</Badge>
+                  <p className="text-xs text-muted-foreground">Para alterar, solicite ao gerente</p>
+                </div>
+              )}
             </div>
           )}
         </div>
