@@ -126,10 +126,11 @@ export default function Team() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Cargo</TableHead>
-                    <TableHead>Papel</TableHead>
-                    <TableHead>Setor</TableHead>
+                     <TableHead>Nome</TableHead>
+                     <TableHead>Cargo</TableHead>
+                     <TableHead>Papel</TableHead>
+                     <TableHead>Setor</TableHead>
+                     {isAdmin && <TableHead />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
