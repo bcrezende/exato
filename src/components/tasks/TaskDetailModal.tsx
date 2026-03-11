@@ -1,0 +1,138 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2 } from "lucide-react";
+import { format } from "date-fns";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Task = Tables<"tasks">;
+type Profile = Tables<"profiles">;
+type Department = Tables<"departments">;
+
+const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
+const priorityLabels: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta" };
+const recurrenceLabels: Record<string, string> = { none: "Nenhuma", daily: "Diária", weekly: "Semanal", monthly: "Mensal", yearly: "Anual" };
+
+const statusColors: Record<string, string> = {
+  pending: "bg-muted text-muted-foreground",
+  in_progress: "bg-primary/10 text-primary",
+  completed: "bg-success/10 text-success",
+  overdue: "bg-destructive/10 text-destructive",
+};
+const priorityColors: Record<string, string> = {
+  low: "bg-muted text-muted-foreground",
+  medium: "bg-warning/10 text-warning",
+  high: "bg-destructive/10 text-destructive",
+};
+
+interface TaskDetailModalProps {
+  task: Task | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  members: Profile[];
+  departments: Department[];
+  onEdit: (task: Task) => void;
+  onRefresh: () => void;
+}
+
+export default function TaskDetailModal({ task, open, onOpenChange, members, departments, onEdit, onRefresh }: TaskDetailModalProps) {
+  const { user, role } = useAuth();
+  const { toast } = useToast();
+  const canManage = role === "admin" || role === "manager";
+  const isAssigned = task?.assigned_to === user?.id;
+
+  if (!task) return null;
+
+  const assignedName = members.find(m => m.id === task.assigned_to)?.full_name || null;
+  const deptName = departments.find(d => d.id === task.department_id)?.name || null;
+
+  const handleStatusChange = async (newStatus: string) => {
+    await supabase.from("tasks").update({ status: newStatus as any }).eq("id", task.id);
+    toast({ title: "Status atualizado!" });
+    onRefresh();
+  };
+
+  const handleDelete = async () => {
+    const { error } = await supabase.from("tasks").delete().eq("id", task.id);
+    if (error) { toast({ variant: "destructive", title: "Erro", description: error.message }); return; }
+    toast({ title: "Tarefa removida" });
+    onOpenChange(false);
+    onRefresh();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-lg leading-tight">{task.title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Badge className={statusColors[task.status]}>{statusLabels[task.status]}</Badge>
+            <Badge className={priorityColors[task.priority]}>{priorityLabels[task.priority]}</Badge>
+            {task.recurrence_type !== "none" && <Badge variant="outline">{recurrenceLabels[task.recurrence_type]}</Badge>}
+          </div>
+
+          {task.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed">{task.description}</p>
+          )}
+
+          <div className="space-y-3 text-sm">
+            {assignedName && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <User className="h-4 w-4 shrink-0" />
+                <span>Responsável: <span className="text-foreground font-medium">{assignedName}</span></span>
+              </div>
+            )}
+            {deptName && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Building2 className="h-4 w-4 shrink-0" />
+                <span>Setor: <span className="text-foreground font-medium">{deptName}</span></span>
+              </div>
+            )}
+            {task.start_date && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CalendarDays className="h-4 w-4 shrink-0" />
+                <span>Início: <span className="text-foreground font-medium">{format(new Date(task.start_date), "dd/MM/yyyy HH:mm")}</span></span>
+              </div>
+            )}
+            {task.due_date && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>Término: <span className="text-foreground font-medium">{format(new Date(task.due_date), "dd/MM/yyyy HH:mm")}</span></span>
+              </div>
+            )}
+          </div>
+
+          {/* Employee: status update */}
+          {isAssigned && !canManage && (
+            <div className="space-y-2">
+              <span className="text-sm font-medium">Atualizar Status</span>
+              <Select value={task.status} onValueChange={handleStatusChange}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        {canManage && (
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onEdit(task); }}>
+              <Pencil className="mr-2 h-4 w-4" /> Editar
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleDelete}>
+              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

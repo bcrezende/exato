@@ -4,31 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListTodo, Clock, CheckCircle, AlertTriangle, Calendar as CalendarIcon, LayoutGrid } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { format } from "date-fns";
 
-type Task = Tables<"tasks"> & { assigned_profile?: { full_name: string | null } | null };
+type Task = Tables<"tasks">;
 
-const statusLabels: Record<string, string> = {
-  pending: "Pendente",
-  in_progress: "Em Andamento",
-  completed: "Concluída",
-  overdue: "Atrasada",
-};
-
-const priorityColors: Record<string, string> = {
-  low: "bg-muted text-muted-foreground",
-  medium: "bg-warning/10 text-warning",
-  high: "bg-destructive/10 text-destructive",
-};
-
-const statusColors: Record<string, string> = {
-  pending: "bg-muted text-muted-foreground",
-  in_progress: "bg-primary/10 text-primary",
-  completed: "bg-success/10 text-success",
-  overdue: "bg-destructive/10 text-destructive",
-};
+const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
+const priorityColors: Record<string, string> = { low: "bg-muted text-muted-foreground", medium: "bg-warning/10 text-warning", high: "bg-destructive/10 text-destructive" };
+const statusColors: Record<string, string> = { pending: "bg-muted text-muted-foreground", in_progress: "bg-primary/10 text-primary", completed: "bg-success/10 text-success", overdue: "bg-destructive/10 text-destructive" };
 
 export default function Dashboard() {
   const { user, role } = useAuth();
@@ -39,13 +23,10 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchTasks = async () => {
-      let query = supabase
-        .from("tasks")
-        .select("*")
-        .order("due_date", { ascending: true });
+      let query = supabase.from("tasks").select("*").order("due_date", { ascending: true });
       if (role === "employee") query = query.eq("assigned_to", user.id);
       const { data } = await query;
-      if (data) setTasks(data as Task[]);
+      if (data) setTasks(data);
     };
     fetchTasks();
   }, [user]);
@@ -71,7 +52,6 @@ export default function Dashboard() {
 
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
-  // Calendar logic
   const [calendarMonth, setCalendarMonth] = useState(now.getMonth());
   const [calendarYear, setCalendarYear] = useState(now.getFullYear());
   const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
@@ -81,7 +61,7 @@ export default function Dashboard() {
 
   const getTasksForDay = (day: number) => {
     const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return filteredTasks.filter((t) => t.due_date?.startsWith(dateStr));
+    return filteredTasks.filter((t) => t.due_date?.startsWith(dateStr) || t.start_date?.startsWith(dateStr));
   };
 
   return (
@@ -93,52 +73,22 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
-            <ListTodo className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">{stats.total}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
-            <Clock className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">{stats.inProgress}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">{stats.completed}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atrasadas</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">{stats.overdue}</div></CardContent>
-        </Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle><ListTodo className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.total}</div></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Em Andamento</CardTitle><Clock className="h-4 w-4 text-primary" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.inProgress}</div></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Concluídas</CardTitle><CheckCircle className="h-4 w-4 text-success" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.completed}</div></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Atrasadas</CardTitle><AlertTriangle className="h-4 w-4 text-destructive" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.overdue}</div></CardContent></Card>
       </div>
 
       {/* Filters & View Toggle */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex gap-2">
           {([["all", "Todas"], ["today", "Hoje"], ["week", "Esta Semana"], ["overdue", "Atrasadas"]] as const).map(([key, label]) => (
-            <Button key={key} variant={filter === key ? "default" : "outline"} size="sm" onClick={() => setFilter(key)}>
-              {label}
-            </Button>
+            <Button key={key} variant={filter === key ? "default" : "outline"} size="sm" onClick={() => setFilter(key)}>{label}</Button>
           ))}
         </div>
         <div className="ml-auto flex gap-1">
-          <Button variant={view === "kanban" ? "default" : "ghost"} size="icon" onClick={() => setView("kanban")}>
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button variant={view === "calendar" ? "default" : "ghost"} size="icon" onClick={() => setView("calendar")}>
-            <CalendarIcon className="h-4 w-4" />
-          </Button>
+          <Button variant={view === "kanban" ? "default" : "ghost"} size="icon" onClick={() => setView("kanban")}><LayoutGrid className="h-4 w-4" /></Button>
+          <Button variant={view === "calendar" ? "default" : "ghost"} size="icon" onClick={() => setView("calendar")}><CalendarIcon className="h-4 w-4" /></Button>
         </div>
       </div>
 
@@ -148,7 +98,6 @@ export default function Dashboard() {
           {kanbanColumns.map((status) => {
             const columnTasks = filteredTasks.filter((t) => {
               if (status === "overdue") return t.due_date && t.due_date < now.toISOString() && t.status !== "completed";
-              return t.status === status;
               return t.status === status;
             });
             return (
@@ -168,22 +117,14 @@ export default function Dashboard() {
                           <Badge className={priorityColors[task.priority]} variant="secondary">
                             {task.priority === "low" ? "Baixa" : task.priority === "medium" ? "Média" : "Alta"}
                           </Badge>
-                          {task.due_date && (
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(task.due_date).toLocaleDateString("pt-BR")}
-                            </span>
-                          )}
+                          {task.start_date && <span className="text-xs text-muted-foreground">{format(new Date(task.start_date), "dd/MM")}</span>}
+                          {task.due_date && <span className="text-xs text-muted-foreground">→ {format(new Date(task.due_date), "dd/MM")}</span>}
                         </div>
-                        {task.assigned_to && (
-                          <p className="mt-2 text-xs text-muted-foreground">Atribuída</p>
-                        )}
                       </CardContent>
                     </Card>
                   ))}
                   {columnTasks.length === 0 && (
-                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                      Nenhuma tarefa
-                    </div>
+                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma tarefa</div>
                   )}
                 </div>
               </div>
@@ -197,15 +138,9 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <Button variant="ghost" size="sm" onClick={() => {
-                if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
-                else setCalendarMonth(calendarMonth - 1);
-              }}>←</Button>
+              <Button variant="ghost" size="sm" onClick={() => { if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); } else setCalendarMonth(calendarMonth - 1); }}>←</Button>
               <CardTitle>{monthNames[calendarMonth]} {calendarYear}</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => {
-                if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
-                else setCalendarMonth(calendarMonth + 1);
-              }}>→</Button>
+              <Button variant="ghost" size="sm" onClick={() => { if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); } else setCalendarMonth(calendarMonth + 1); }}>→</Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -222,13 +157,9 @@ export default function Dashboard() {
                     <span className={`text-xs font-medium ${isToday ? "text-primary" : "text-muted-foreground"}`}>{day}</span>
                     <div className="mt-1 space-y-0.5">
                       {dayTasks.slice(0, 3).map((t) => (
-                        <div key={t.id} className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${statusColors[t.status]}`}>
-                          {t.title}
-                        </div>
+                        <div key={t.id} className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${statusColors[t.status]}`}>{t.title}</div>
                       ))}
-                      {dayTasks.length > 3 && (
-                        <span className="text-[10px] text-muted-foreground">+{dayTasks.length - 3} mais</span>
-                      )}
+                      {dayTasks.length > 3 && <span className="text-[10px] text-muted-foreground">+{dayTasks.length - 3} mais</span>}
                     </div>
                   </div>
                 );
