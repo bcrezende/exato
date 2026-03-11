@@ -11,9 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Send, Trash2, Users, Building } from "lucide-react";
+import { Plus, Send, Trash2, Users, Building, Pencil } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Tables } from "@/integrations/supabase/types";
+import EditMemberDialog from "@/components/team/EditMemberDialog";
+import EditDepartmentDialog from "@/components/team/EditDepartmentDialog";
 
 type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
@@ -32,7 +34,8 @@ export default function Team() {
   const [inviteModal, setInviteModal] = useState(false);
   const [deptName, setDeptName] = useState("");
   const [inviteForm, setInviteForm] = useState({ email: "", role: "employee" as string, department_id: "" });
-
+  const [editMember, setEditMember] = useState<(Profile & { user_roles?: UserRole[] }) | null>(null);
+  const [editDept, setEditDept] = useState<Department | null>(null);
   const isAdmin = role === "admin";
 
   const fetchData = async () => {
@@ -123,10 +126,11 @@ export default function Team() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Cargo</TableHead>
-                    <TableHead>Papel</TableHead>
-                    <TableHead>Setor</TableHead>
+                     <TableHead>Nome</TableHead>
+                     <TableHead>Cargo</TableHead>
+                     <TableHead>Papel</TableHead>
+                     <TableHead>Setor</TableHead>
+                     {isAdmin && <TableHead />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -152,6 +156,13 @@ export default function Team() {
                           {userRole && <Badge variant="secondary">{roleLabels[userRole]}</Badge>}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{dept?.name || "—"}</TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => setEditMember(m)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })}
@@ -173,9 +184,14 @@ export default function Team() {
                       <CardDescription>{deptMembers.length} membro(s)</CardDescription>
                     </div>
                     {isAdmin && (
-                      <Button variant="ghost" size="icon" onClick={() => deleteDepartment(dept.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setEditDept(dept)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteDepartment(dept.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     )}
                   </CardHeader>
                   <CardContent>
@@ -309,6 +325,21 @@ export default function Team() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditMemberDialog
+        open={!!editMember}
+        onOpenChange={(open) => !open && setEditMember(null)}
+        member={editMember}
+        departments={departments}
+        onSaved={fetchData}
+      />
+
+      <EditDepartmentDialog
+        open={!!editDept}
+        onOpenChange={(open) => !open && setEditDept(null)}
+        department={editDept}
+        onSaved={fetchData}
+      />
     </div>
   );
 }
