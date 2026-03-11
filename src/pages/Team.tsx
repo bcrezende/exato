@@ -40,8 +40,15 @@ export default function Team() {
 
   const fetchData = async () => {
     if (!currentProfile?.company_id) return;
+
+    let membersQuery = supabase.from("profiles").select("*").eq("company_id", currentProfile.company_id);
+    // Managers should only see members from their own department
+    if (role === "manager" && currentProfile.department_id) {
+      membersQuery = membersQuery.eq("department_id", currentProfile.department_id);
+    }
+
     const [membersRes, deptsRes, invitesRes, rolesRes] = await Promise.all([
-      supabase.from("profiles").select("*").eq("company_id", currentProfile.company_id),
+      membersQuery,
       supabase.from("departments").select("*").eq("company_id", currentProfile.company_id),
       supabase.from("invitations").select("*").eq("company_id", currentProfile.company_id).is("accepted_at", null),
       supabase.from("user_roles").select("*"),
