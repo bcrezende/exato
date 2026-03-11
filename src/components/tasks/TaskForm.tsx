@@ -96,7 +96,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editing ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
-        </DialogHeader>
+          <DialogDescription>{editing ? "Atualize os dados da tarefa" : "Preencha os dados para criar uma nova tarefa"}</DialogDescription>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Título</Label>
