@@ -39,10 +39,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchTasks = async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("tasks")
         .select("*")
         .order("due_date", { ascending: true });
+      if (role === "employee") query = query.eq("assigned_to", user.id);
+      const { data } = await query;
       if (data) setTasks(data as Task[]);
     };
     fetchTasks();
