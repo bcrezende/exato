@@ -45,7 +45,7 @@ export default function AcceptInvite() {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: invitation.email,
       password,
-      options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
+      options: { data: { full_name: fullName } },
     });
 
     if (authError || !authData.user) {
@@ -54,18 +54,17 @@ export default function AcceptInvite() {
       return;
     }
 
-    await supabase.from("profiles").update({
-      company_id: invitation.company_id,
-      department_id: invitation.department_id,
-      full_name: fullName,
-    }).eq("id", authData.user.id);
-
-    await supabase.from("user_roles").insert({
-      user_id: authData.user.id,
-      role: invitation.role,
+    const { error: rpcError } = await supabase.rpc("handle_accept_invite", {
+      _user_id: authData.user.id,
+      _invitation_id: invitation.id,
+      _full_name: fullName,
     });
 
-    await supabase.from("invitations").update({ accepted_at: new Date().toISOString() }).eq("id", invitation.id);
+    if (rpcError) {
+      toast({ variant: "destructive", title: "Erro", description: rpcError.message });
+      setSubmitting(false);
+      return;
+    }
 
     toast({ title: "Bem-vindo!", description: "Sua conta foi criada com sucesso." });
     navigate("/dashboard");
