@@ -183,9 +183,14 @@ export default function Team() {
                       <CardDescription>{deptMembers.length} membro(s)</CardDescription>
                     </div>
                     {isAdmin && (
-                      <Button variant="ghost" size="icon" onClick={() => deleteDepartment(dept.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setEditDept(dept)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteDepartment(dept.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     )}
                   </CardHeader>
                   <CardContent>
