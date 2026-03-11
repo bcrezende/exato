@@ -14,7 +14,7 @@ import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 
-type Task = Tables<"tasks"> & { profiles?: { full_name: string | null } | null };
+type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
