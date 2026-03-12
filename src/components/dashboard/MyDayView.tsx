@@ -86,7 +86,16 @@ export default function MyDayView() {
         <p className="text-muted-foreground capitalize">{formattedDate}</p>
       </div>
 
-      <div className="grid gap-4 grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="rounded-full bg-destructive/10 p-2"><AlertTriangle className="h-4 w-4 text-destructive" /></div>
+            <div>
+              <p className="text-2xl font-bold">{stats.overdue}</p>
+              <p className="text-xs text-muted-foreground">Atrasadas</p>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
             <div className="rounded-full bg-warning/10 p-2"><Clock className="h-4 w-4 text-warning" /></div>
