@@ -10,8 +10,9 @@ type Task = Tables<"tasks">;
 export async function updateTaskStatus(
   taskId: string,
   newStatus: "pending" | "in_progress" | "completed" | "overdue",
-  task?: Pick<Task, "recurrence_parent_id" | "recurrence_type"> | null
+  task?: Pick<Task, "recurrence_parent_id" | "recurrence_type" | "status"> | null
 ) {
+  const previousStatus = task?.status;
   const { error } = await supabase
     .from("tasks")
     .update({ status: newStatus })
@@ -23,7 +24,12 @@ export async function updateTaskStatus(
   if (newStatus === "in_progress" || newStatus === "completed") {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const action = newStatus === "in_progress" ? "started" : "completed";
+      let action: string;
+      if (newStatus === "in_progress") {
+        action = previousStatus === "overdue" ? "started_late" : "started";
+      } else {
+        action = "completed";
+      }
       await supabase.from("task_time_logs").insert({
         task_id: taskId,
         user_id: user.id,

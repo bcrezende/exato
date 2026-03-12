@@ -1,0 +1,2 @@
+ALTER TABLE public.task_time_logs DROP CONSTRAINT IF EXISTS task_time_logs_action_check;
+ALTER TABLE public.task_time_logs ADD CONSTRAINT task_time_logs_action_check CHECK (action IN ('started', 'started_late', 'completed'));
