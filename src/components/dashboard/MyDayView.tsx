@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, CheckCircle, Clock, ListTodo } from "lucide-react";
+import { Play, CheckCircle, Clock, ListTodo, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -33,8 +33,16 @@ export default function MyDayView() {
       .from("tasks")
       .select("*")
       .eq("assigned_to", user.id)
-      .or(`and(start_date.gte.${todayStart},start_date.lte.${todayEnd}),and(due_date.gte.${todayStart},due_date.lte.${todayEnd})`)
+      .or(`status.eq.overdue,and(start_date.gte.${todayStart},start_date.lte.${todayEnd}),and(due_date.gte.${todayStart},due_date.lte.${todayEnd})`)
       .order("start_date", { ascending: true, nullsFirst: false });
+    if (data) {
+      // Sort: overdue first, then by start_date
+      data.sort((a, b) => {
+        if (a.status === "overdue" && b.status !== "overdue") return -1;
+        if (a.status !== "overdue" && b.status === "overdue") return 1;
+        return 0;
+      });
+    }
     if (data) setTasks(data);
     setLoading(false);
   };
@@ -54,6 +62,7 @@ export default function MyDayView() {
   };
 
   const stats = {
+    overdue: tasks.filter((t) => t.status === "overdue").length,
     pending: tasks.filter((t) => t.status === "pending").length,
     inProgress: tasks.filter((t) => t.status === "in_progress").length,
     completed: tasks.filter((t) => t.status === "completed").length,
@@ -77,7 +86,16 @@ export default function MyDayView() {
         <p className="text-muted-foreground capitalize">{formattedDate}</p>
       </div>
 
-      <div className="grid gap-4 grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="rounded-full bg-destructive/10 p-2"><AlertTriangle className="h-4 w-4 text-destructive" /></div>
+            <div>
+              <p className="text-2xl font-bold">{stats.overdue}</p>
+              <p className="text-xs text-muted-foreground">Atrasadas</p>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
             <div className="rounded-full bg-warning/10 p-2"><Clock className="h-4 w-4 text-warning" /></div>
