@@ -27,7 +27,8 @@ function AdminManagerDashboard() {
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
-  
+  const [timeLogs, setTimeLogs] = useState<{ id: string; task_id: string; user_id: string; action: string; created_at: string }[]>([]);
+
 
   useEffect(() => {
     if (!user) return;
