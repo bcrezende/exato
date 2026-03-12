@@ -148,9 +148,9 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
           {isAssigned && !canManage && (
             <div className="space-y-2">
               <span className="text-sm font-medium">Atualizar Status</span>
-              {task.status === "pending" && (
+              {(task.status === "pending" || task.status === "overdue") && (
                 <Button size="sm" className="w-full" onClick={() => handleStatusChange("in_progress")}>
-                  <Clock className="mr-2 h-4 w-4" /> Iniciar
+                  <Clock className="mr-2 h-4 w-4" /> {task.status === "overdue" ? "Iniciar (atrasada)" : "Iniciar"}
                 </Button>
               )}
               {task.status === "in_progress" && (
