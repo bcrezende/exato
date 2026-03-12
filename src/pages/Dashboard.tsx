@@ -423,12 +423,7 @@ function TaskMiniCard({ task, getName }: { task: Task; getName: (id: string | nu
   return (
     <div className="rounded-lg border p-3">
       <h5 className="text-sm font-medium truncate">{task.title}</h5>
-      <div className="mt-1 flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">{getName(task.assigned_to)}</span>
-        <Badge className={priorityColors[task.priority]} variant="secondary">
-          {priorityLabels[task.priority]}
-        </Badge>
-      </div>
+      <span className="text-xs text-muted-foreground">{getName(task.assigned_to)}</span>
     </div>
   );
 }
