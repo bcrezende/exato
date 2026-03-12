@@ -72,7 +72,8 @@ export default function Tasks() {
   };
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
-    await supabase.from("tasks").update({ status: newStatus as any }).eq("id", taskId);
+    const task = tasks.find((t) => t.id === taskId);
+    await updateTaskStatus(taskId, newStatus as any, task);
     fetchTasks();
   };
 

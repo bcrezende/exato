@@ -52,9 +52,13 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const deptName = departments.find(d => d.id === task.department_id)?.name || null;
 
   const handleStatusChange = async (newStatus: string) => {
-    await supabase.from("tasks").update({ status: newStatus as any }).eq("id", task.id);
-    toast({ title: "Status atualizado!" });
-    onRefresh();
+    try {
+      await updateTaskStatus(task.id, newStatus as any, task);
+      toast({ title: "Status atualizado!" });
+      onRefresh();
+    } catch {
+      toast({ variant: "destructive", title: "Erro ao atualizar status" });
+    }
   };
 
   const handleDelete = async () => {
