@@ -94,11 +94,8 @@ function AdminManagerDashboard() {
       });
     });
 
-    // Sort overdue: high priority first, then most days delayed
+    // Sort overdue: most days delayed first
     overdue.sort((a, b) => {
-      const pa = priorityOrder[a.priority] ?? 1;
-      const pb = priorityOrder[b.priority] ?? 1;
-      if (pa !== pb) return pa - pb;
       const da = a.due_date ? new Date(a.due_date).getTime() : 0;
       const db = b.due_date ? new Date(b.due_date).getTime() : 0;
       return da - db;
