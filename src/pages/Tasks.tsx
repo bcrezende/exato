@@ -110,7 +110,7 @@ export default function Tasks() {
     setFilterDepartment("all");
     setFilterAssignee("all");
     setFilterRecurrence("all");
-    setFilterDate(undefined);
+    setFilterDate(new Date());
   };
 
   const filtered = useMemo(() => {
