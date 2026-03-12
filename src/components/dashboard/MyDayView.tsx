@@ -134,8 +134,8 @@ export default function MyDayView() {
                   </span>
                 </div>
                 <div className="flex-shrink-0">
-                  {task.status === "pending" && (
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => handleStatusChange(task.id, "in_progress")}>
+                {(task.status === "pending" || task.status === "overdue") && (
+                    <Button size="sm" variant={task.status === "overdue" ? "destructive" : "outline"} className="gap-1.5" onClick={() => handleStatusChange(task.id, "in_progress")}>
                       <Play className="h-3.5 w-3.5" /><span className="hidden sm:inline">Iniciar</span>
                     </Button>
                   )}

@@ -58,14 +58,15 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
         .eq("task_id", task.id)
         .order("created_at", { ascending: true });
       if (!data || data.length === 0) { setExecutionTime(null); return; }
-      const started = data.find(l => l.action === "started");
+      const started = data.find(l => l.action === "started" || l.action === "started_late");
       const completed = data.find(l => l.action === "completed");
+      const lateTag = started?.action === "started_late" ? " (iniciada com atraso)" : "";
       if (started && completed) {
         const diff = new Date(completed.created_at).getTime() - new Date(started.created_at).getTime();
-        setExecutionTime(formatDuration(diff));
+        setExecutionTime(formatDuration(diff) + lateTag);
       } else if (started && task.status === "in_progress") {
         const diff = Date.now() - new Date(started.created_at).getTime();
-        setExecutionTime(`${formatDuration(diff)} (em andamento)`);
+        setExecutionTime(`${formatDuration(diff)} (em andamento)${lateTag}`);
       } else {
         setExecutionTime(null);
       }
