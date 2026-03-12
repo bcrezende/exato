@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   ListTodo, Clock, CheckCircle, AlertTriangle,
-  Calendar as CalendarIcon, LayoutGrid, ChevronRight, Building2
+  Calendar as CalendarIcon, ChevronRight, Building2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
