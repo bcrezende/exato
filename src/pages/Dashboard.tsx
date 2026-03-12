@@ -319,7 +319,7 @@ function AdminManagerDashboard() {
                     <p className="text-xs text-muted-foreground">
                       {day.tasks.length === 0
                         ? "Nenhuma tarefa"
-                        : `${day.tasks.filter((t) => t.priority === "high").length} alta prioridade`}
+                        : `${day.tasks.length} tarefas`}
                     </p>
                     {day.tasks.length > 0 && (
                       <div className="mt-2 space-y-1">
