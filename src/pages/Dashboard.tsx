@@ -355,7 +355,7 @@ function AdminManagerDashboard() {
       {showFullView === "kanban" && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {kanbanColumns.map((status) => {
-            const columnTasks = tasks.filter((t) => {
+            const columnTasks = filteredTasks.filter((t) => {
               if (status === "overdue") return t.due_date && t.due_date < new Date().toISOString() && t.status !== "completed";
               return t.status === status;
             });
