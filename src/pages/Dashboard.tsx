@@ -237,9 +237,6 @@ function AdminManagerDashboard() {
                           <h4 className="font-medium truncate">{task.title}</h4>
                           <p className="text-sm text-muted-foreground">{getName(task.assigned_to)}</p>
                         </div>
-                        <Badge className={priorityColors[task.priority]} variant="secondary">
-                          {priorityLabels[task.priority]}
-                        </Badge>
                         <Badge variant="destructive">
                           {daysLate === 0 ? "Vence hoje" : `${daysLate}d atraso`}
                         </Badge>
