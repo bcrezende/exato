@@ -80,7 +80,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      await updateTaskStatus(task.id, newStatus as any, task);
+      await updateTaskStatus(task.id, newStatus as any, task, task.status);
       toast({ title: "Status atualizado!" });
       onRefresh();
     } catch {
