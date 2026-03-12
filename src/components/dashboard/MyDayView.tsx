@@ -44,7 +44,7 @@ export default function MyDayView() {
   const handleStatusChange = async (taskId: string, newStatus: "in_progress" | "completed") => {
     const task = tasks.find((t) => t.id === taskId);
     try {
-      const { generatedRecurring } = await updateTaskStatus(taskId, newStatus, task);
+      const { generatedRecurring } = await updateTaskStatus(taskId, newStatus, task, task?.status);
       toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
       setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
       if (generatedRecurring) fetchTasks();
