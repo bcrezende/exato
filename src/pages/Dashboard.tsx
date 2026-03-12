@@ -152,13 +152,27 @@ function AdminManagerDashboard() {
             {format(today, "EEEE, dd 'de' MMMM", { locale: ptBR })} — {role === "admin" ? "Visão geral da empresa" : "Visão do setor"}
           </p>
         </div>
-        <div className="flex gap-1">
-          <Button variant={showFullView === "kanban" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "kanban" ? null : "kanban")}>
-            <LayoutGrid className="mr-1 h-4 w-4" /> Kanban
-          </Button>
-          <Button variant={showFullView === "calendar" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "calendar" ? null : "calendar")}>
-            <CalendarIcon className="mr-1 h-4 w-4" /> Calendário
-          </Button>
+        <div className="flex items-center gap-3">
+          <Select value={selectedDepartment ?? "all"} onValueChange={(v) => setSelectedDepartment(v === "all" ? null : v)}>
+            <SelectTrigger className="w-[200px]">
+              <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+              <SelectValue placeholder="Todos os setores" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os setores</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex gap-1">
+            <Button variant={showFullView === "kanban" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "kanban" ? null : "kanban")}>
+              <LayoutGrid className="mr-1 h-4 w-4" /> Kanban
+            </Button>
+            <Button variant={showFullView === "calendar" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "calendar" ? null : "calendar")}>
+              <CalendarIcon className="mr-1 h-4 w-4" /> Calendário
+            </Button>
+          </div>
         </div>
       </div>
 
