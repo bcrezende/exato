@@ -318,6 +318,76 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Insights */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Insights da IA
+          </CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={loadingInsights}
+            onClick={async () => {
+              setLoadingInsights(true);
+              setAiInsights(null);
+              try {
+                const metrics = {
+                  avgExecution: formatDuration(summary.avgExecution),
+                  delayRate: summary.delayRate,
+                  completedLast7: summary.completedLast7,
+                  worstDept: summary.worstDept?.department || null,
+                  timeByDept: avgTimeByDept.map(d => ({ department: d.department, avgMinutes: d.avgMinutes })),
+                  delayByDept: delayRateByDept.map(d => ({ department: d.department, rate: d.rate })),
+                  completionTrend: completedPerDay.map(d => ({ label: d.label, count: d.count })),
+                };
+                const { data, error } = await supabase.functions.invoke("generate-insights", {
+                  body: { metrics },
+                });
+                if (error) throw error;
+                if (data?.error) {
+                  toast({ title: "Erro", description: data.error, variant: "destructive" });
+                } else {
+                  setAiInsights(data.insights);
+                }
+              } catch (e: any) {
+                toast({ title: "Erro ao gerar insights", description: e.message, variant: "destructive" });
+              } finally {
+                setLoadingInsights(false);
+              }
+            }}
+          >
+            {loadingInsights ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Analisando...
+              </>
+            ) : (
+              "Gerar Insights"
+            )}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loadingInsights && (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              A IA está analisando os indicadores...
+            </div>
+          )}
+          {aiInsights && !loadingInsights && (
+            <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
+              {aiInsights}
+            </div>
+          )}
+          {!aiInsights && !loadingInsights && (
+            <p className="text-sm text-muted-foreground">
+              Clique em "Gerar Insights" para que a IA analise os indicadores e sugira melhorias.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
