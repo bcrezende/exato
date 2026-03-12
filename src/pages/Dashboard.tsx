@@ -137,7 +137,7 @@ function AdminManagerDashboard() {
 
   const getTasksForDay = (day: number) => {
     const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return tasks.filter((t) => t.due_date?.startsWith(dateStr) || t.start_date?.startsWith(dateStr));
+    return filteredTasks.filter((t) => t.due_date?.startsWith(dateStr) || t.start_date?.startsWith(dateStr));
   };
 
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
