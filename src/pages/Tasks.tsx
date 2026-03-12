@@ -179,26 +179,30 @@ export default function Tasks() {
                 {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-              <SelectTrigger className="w-[160px]">
-                <Building2 className="mr-1.5 h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="Setor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os setores</SelectItem>
-                {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-              <SelectTrigger className="w-[170px]">
-                <User className="mr-1.5 h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="Responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {canManage && (
+              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+                <SelectTrigger className="w-[160px]">
+                  <Building2 className="mr-1.5 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os setores</SelectItem>
+                  {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            {canManage && (
+              <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+                <SelectTrigger className="w-[170px]">
+                  <User className="mr-1.5 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={filterRecurrence} onValueChange={setFilterRecurrence}>
               <SelectTrigger className="w-[150px]"><SelectValue placeholder="Recorrência" /></SelectTrigger>
               <SelectContent>
@@ -206,6 +210,17 @@ export default function Tasks() {
                 {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("w-[160px] justify-start text-left font-normal", !filterDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-1.5 h-4 w-4" />
+                  {filterDate ? format(filterDate, "dd/MM/yyyy") : "Filtrar data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
                 <X className="mr-1 h-4 w-4" /> Limpar
