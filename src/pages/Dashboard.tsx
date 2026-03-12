@@ -18,10 +18,7 @@ import MyDayView from "@/components/dashboard/MyDayView";
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null };
 
-const priorityLabels: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta" };
-const priorityColors: Record<string, string> = { low: "bg-muted text-muted-foreground", medium: "bg-warning/10 text-warning", high: "bg-destructive/10 text-destructive" };
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
-const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 function AdminManagerDashboard() {
   const { user, role } = useAuth();
@@ -97,11 +94,8 @@ function AdminManagerDashboard() {
       });
     });
 
-    // Sort overdue: high priority first, then most days delayed
+    // Sort overdue: most days delayed first
     overdue.sort((a, b) => {
-      const pa = priorityOrder[a.priority] ?? 1;
-      const pb = priorityOrder[b.priority] ?? 1;
-      if (pa !== pb) return pa - pb;
       const da = a.due_date ? new Date(a.due_date).getTime() : 0;
       const db = b.due_date ? new Date(b.due_date).getTime() : 0;
       return da - db;
@@ -243,9 +237,6 @@ function AdminManagerDashboard() {
                           <h4 className="font-medium truncate">{task.title}</h4>
                           <p className="text-sm text-muted-foreground">{getName(task.assigned_to)}</p>
                         </div>
-                        <Badge className={priorityColors[task.priority]} variant="secondary">
-                          {priorityLabels[task.priority]}
-                        </Badge>
                         <Badge variant="destructive">
                           {daysLate === 0 ? "Vence hoje" : `${daysLate}d atraso`}
                         </Badge>
@@ -328,13 +319,13 @@ function AdminManagerDashboard() {
                     <p className="text-xs text-muted-foreground">
                       {day.tasks.length === 0
                         ? "Nenhuma tarefa"
-                        : `${day.tasks.filter((t) => t.priority === "high").length} alta prioridade`}
+                        : `${day.tasks.length} tarefas`}
                     </p>
                     {day.tasks.length > 0 && (
                       <div className="mt-2 space-y-1">
                         {day.tasks.slice(0, 3).map((t) => (
                           <div key={t.id} className="flex items-center gap-2 text-xs">
-                            <div className={`h-1.5 w-1.5 rounded-full ${t.priority === "high" ? "bg-destructive" : t.priority === "medium" ? "bg-warning" : "bg-muted-foreground"}`} />
+                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                             <span className="truncate">{t.title}</span>
                           </div>
                         ))}
@@ -373,12 +364,9 @@ function AdminManagerDashboard() {
                         <h4 className="font-medium leading-tight">{task.title}</h4>
                         <p className="mt-1 text-xs text-muted-foreground">{getName(task.assigned_to)}</p>
                         {task.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{task.description}</p>}
-                        <div className="mt-3 flex items-center gap-2">
-                          <Badge className={priorityColors[task.priority]} variant="secondary">
-                            {priorityLabels[task.priority]}
-                          </Badge>
-                          {task.due_date && <span className="text-xs text-muted-foreground">{format(new Date(task.due_date), "dd/MM")}</span>}
-                        </div>
+                        {task.due_date && (
+                          <div className="mt-3 text-xs text-muted-foreground">{format(new Date(task.due_date), "dd/MM")}</div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -435,12 +423,7 @@ function TaskMiniCard({ task, getName }: { task: Task; getName: (id: string | nu
   return (
     <div className="rounded-lg border p-3">
       <h5 className="text-sm font-medium truncate">{task.title}</h5>
-      <div className="mt-1 flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">{getName(task.assigned_to)}</span>
-        <Badge className={priorityColors[task.priority]} variant="secondary">
-          {priorityLabels[task.priority]}
-        </Badge>
-      </div>
+      <span className="text-xs text-muted-foreground">{getName(task.assigned_to)}</span>
     </div>
   );
 }
