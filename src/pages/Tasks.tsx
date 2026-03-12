@@ -50,6 +50,7 @@ export default function Tasks() {
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
   const [filterRecurrence, setFilterRecurrence] = useState<string>("all");
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
 
   const canManage = role === "admin" || role === "manager";
 
