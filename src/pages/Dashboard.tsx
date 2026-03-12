@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   ListTodo, Clock, CheckCircle, AlertTriangle,
-  Calendar as CalendarIcon, LayoutGrid, ChevronRight, Building2
+  Calendar as CalendarIcon, ChevronRight, Building2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
@@ -26,7 +26,7 @@ function AdminManagerDashboard() {
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
-  const [showFullView, setShowFullView] = useState<"kanban" | "calendar" | null>(null);
+  
 
   useEffect(() => {
     if (!user) return;
@@ -119,22 +119,6 @@ function AdminManagerDashboard() {
     return Math.max(0, differenceInDays(today, new Date(dueDate)));
   };
 
-  // Calendar state for full view
-  const now = new Date();
-  const [calendarMonth, setCalendarMonth] = useState(now.getMonth());
-  const [calendarYear, setCalendarYear] = useState(now.getFullYear());
-  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
-  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-  const statusColors: Record<string, string> = { pending: "bg-muted text-muted-foreground", in_progress: "bg-primary/10 text-primary", completed: "bg-success/10 text-success", overdue: "bg-destructive/10 text-destructive" };
-
-  const getTasksForDay = (day: number) => {
-    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return filteredTasks.filter((t) => t.due_date?.startsWith(dateStr) || t.start_date?.startsWith(dateStr));
-  };
-
-  const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
   return (
     <div className="space-y-6">
@@ -159,14 +143,6 @@ function AdminManagerDashboard() {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex gap-1">
-            <Button variant={showFullView === "kanban" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "kanban" ? null : "kanban")}>
-              <LayoutGrid className="mr-1 h-4 w-4" /> Kanban
-            </Button>
-            <Button variant={showFullView === "calendar" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "calendar" ? null : "calendar")}>
-              <CalendarIcon className="mr-1 h-4 w-4" /> Calendário
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -214,10 +190,8 @@ function AdminManagerDashboard() {
         </Card>
       </div>
 
-      {/* Show monitoring view or full view */}
-      {showFullView === null && (
-        <>
-          {/* 🔴 Overdue Section */}
+      {/* Monitoring sections */}
+      {/* 🔴 Overdue Section */}
           {overdueTasks.length > 0 && (
             <Card className="border-destructive/30">
               <CardHeader className="pb-3">
@@ -339,82 +313,6 @@ function AdminManagerDashboard() {
               </div>
             </CardContent>
           </Card>
-        </>
-      )}
-
-      {/* Kanban Full View */}
-      {showFullView === "kanban" && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {kanbanColumns.map((status) => {
-            const columnTasks = filteredTasks.filter((t) => {
-              if (status === "overdue") return t.due_date && t.due_date < new Date().toISOString() && t.status !== "completed";
-              return t.status === status;
-            });
-            return (
-              <div key={status} className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : "bg-destructive"}`} />
-                  <h3 className="text-sm font-semibold">{statusLabels[status]}</h3>
-                  <Badge variant="secondary" className="ml-auto">{columnTasks.length}</Badge>
-                </div>
-                <div className="space-y-2">
-                  {columnTasks.map((task) => (
-                    <Card key={task.id} className="cursor-pointer transition-shadow hover:shadow-md">
-                      <CardContent className="p-4">
-                        <h4 className="font-medium leading-tight">{task.title}</h4>
-                        <p className="mt-1 text-xs text-muted-foreground">{getName(task.assigned_to)}</p>
-                        {task.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{task.description}</p>}
-                        {task.due_date && (
-                          <div className="mt-3 text-xs text-muted-foreground">{format(new Date(task.due_date), "dd/MM")}</div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {columnTasks.length === 0 && (
-                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma tarefa</div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Calendar Full View */}
-      {showFullView === "calendar" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <Button variant="ghost" size="sm" onClick={() => { if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); } else setCalendarMonth(calendarMonth - 1); }}>←</Button>
-              <CardTitle>{monthNames[calendarMonth]} {calendarYear}</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => { if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); } else setCalendarMonth(calendarMonth + 1); }}>→</Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-px">
-              {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
-                <div key={d} className="p-2 text-center text-xs font-medium text-muted-foreground">{d}</div>
-              ))}
-              {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
-              {calendarDays.map((day) => {
-                const dayTasks = getTasksForDay(day);
-                const isToday = day === now.getDate() && calendarMonth === now.getMonth() && calendarYear === now.getFullYear();
-                return (
-                  <div key={day} className={`min-h-[80px] rounded-lg border p-1 ${isToday ? "border-primary bg-primary/5" : ""}`}>
-                    <span className={`text-xs font-medium ${isToday ? "text-primary" : "text-muted-foreground"}`}>{day}</span>
-                    <div className="mt-1 space-y-0.5">
-                      {dayTasks.slice(0, 3).map((t) => (
-                        <div key={t.id} className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${statusColors[t.status]}`}>{t.title}</div>
-                      ))}
-                      {dayTasks.length > 3 && <span className="text-[10px] text-muted-foreground">+{dayTasks.length - 3} mais</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
