@@ -15,7 +15,6 @@ type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
-const priorityLabels: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta" };
 const recurrenceLabels: Record<string, string> = { none: "Nenhuma", daily: "Diária", weekly: "Semanal", monthly: "Mensal", yearly: "Anual" };
 
 interface TaskFormProps {
@@ -34,25 +33,43 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   const isManager = role === "manager";
 
   const [form, setForm] = useState(() => getInitialForm(editing, isAdmin, currentProfile));
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Sync form when editing prop changes
   useEffect(() => {
     if (open) {
       setForm(getInitialForm(editing, isAdmin, currentProfile));
+      setErrors({});
     }
   }, [editing, open]);
 
   const resetForm = (task: Task | null) => {
     setForm(getInitialForm(task, isAdmin, currentProfile));
+    setErrors({});
   };
 
-  // Filter members for manager: only their department
   const filteredMembers = isManager && currentProfile?.department_id
     ? members.filter(m => m.department_id === currentProfile.department_id)
     : members;
 
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!form.title.trim()) newErrors.title = "Título é obrigatório";
+    if (!form.assigned_to) newErrors.assigned_to = "Responsável é obrigatório";
+    if (!form.start_date) newErrors.start_date = "Data de início é obrigatória";
+    if (!form.due_date) newErrors.due_date = "Data de término é obrigatória";
+    if (isAdmin && !form.department_id) newErrors.department_id = "Setor é obrigatório";
+    if (!form.recurrence_type) newErrors.recurrence_type = "Recorrência é obrigatória";
+
+    if (form.start_date && form.due_date && new Date(form.start_date) >= new Date(form.due_date)) {
+      newErrors.due_date = "Data de término deve ser após o início";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSave = async () => {
-    if (!form.title.trim()) { toast({ variant: "destructive", title: "Título obrigatório" }); return; }
+    if (!validate()) return;
     if (!currentProfile?.company_id || !user) return;
 
     const departmentId = isAdmin
@@ -63,8 +80,8 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       title: form.title.trim(),
       description: form.description.trim() || null,
       assigned_to: form.assigned_to || null,
-      status: form.status as any,
-      priority: form.priority as any,
+      status: editing ? form.status as any : "pending" as any,
+      priority: "medium" as any,
       start_date: form.start_date ? new Date(form.start_date).toISOString() : null,
       due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
       recurrence_type: form.recurrence_type as any,
@@ -85,11 +102,13 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
     onSaved();
   };
 
-  // Sync form state when dialog opens
   const handleOpenChange = (v: boolean) => {
     if (v) resetForm(editing);
     onOpenChange(v);
   };
+
+  const fieldClass = (field: string) =>
+    errors[field] ? "border-destructive focus:ring-destructive" : "";
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -99,86 +118,113 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
           <DialogDescription>{editing ? "Atualize os dados da tarefa" : "Preencha os dados para criar uma nova tarefa"}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Título */}
           <div className="space-y-2">
-            <Label>Título</Label>
-            <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título da tarefa" />
+            <Label>Título <span className="text-destructive">*</span></Label>
+            <Input
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="Título da tarefa"
+              className={fieldClass("title")}
+            />
+            {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
           </div>
+
+          {/* Descrição */}
           <div className="space-y-2">
             <Label>Descrição</Label>
             <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descreva a tarefa..." rows={3} />
           </div>
+
           <div className="grid grid-cols-2 gap-4">
+            {/* Responsável */}
             <div className="space-y-2">
-              <Label>Responsável</Label>
+              <Label>Responsável <span className="text-destructive">*</span></Label>
               <Select value={form.assigned_to || undefined} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                <SelectTrigger className={fieldClass("assigned_to")}><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
                   {filteredMembers.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {errors.assigned_to && <p className="text-xs text-destructive">{errors.assigned_to}</p>}
             </div>
-            <div className="space-y-2">
-              <Label>Prioridade</Label>
-              <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(priorityLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {isAdmin && (
+
+            {/* Setor (admin) or Recorrência (manager) */}
+            {isAdmin ? (
               <div className="space-y-2">
-                <Label>Setor</Label>
+                <Label>Setor <span className="text-destructive">*</span></Label>
                 <Select value={form.department_id || undefined} onValueChange={(v) => setForm({ ...form, department_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
+                  <SelectTrigger className={fieldClass("department_id")}><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
                   <SelectContent>
                     {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {errors.department_id && <p className="text-xs text-destructive">{errors.department_id}</p>}
               </div>
-            )}
-            {!isAdmin && (
+            ) : (
               <div className="space-y-2">
-                <Label>Recorrência</Label>
+                <Label>Recorrência <span className="text-destructive">*</span></Label>
                 <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className={fieldClass("recurrence_type")}><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {errors.recurrence_type && <p className="text-xs text-destructive">{errors.recurrence_type}</p>}
               </div>
             )}
           </div>
-          {isAdmin && (
-            <div className="space-y-2">
-              <Label>Recorrência</Label>
-              <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Status (only when editing) */}
+            {editing && (
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Recorrência for admin (separate row) */}
+            {isAdmin && (
+              <div className="space-y-2">
+                <Label>Recorrência <span className="text-destructive">*</span></Label>
+                <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
+                  <SelectTrigger className={fieldClass("recurrence_type")}><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {errors.recurrence_type && <p className="text-xs text-destructive">{errors.recurrence_type}</p>}
+              </div>
+            )}
+          </div>
+
+          {/* Datas */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Data/Hora de Início</Label>
-              <Input type="datetime-local" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+              <Label>Data/Hora de Início <span className="text-destructive">*</span></Label>
+              <Input
+                type="datetime-local"
+                value={form.start_date}
+                onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                className={fieldClass("start_date")}
+              />
+              {errors.start_date && <p className="text-xs text-destructive">{errors.start_date}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Data/Hora de Término</Label>
-              <Input type="datetime-local" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+              <Label>Data/Hora de Término <span className="text-destructive">*</span></Label>
+              <Input
+                type="datetime-local"
+                value={form.due_date}
+                onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                className={fieldClass("due_date")}
+              />
+              {errors.due_date && <p className="text-xs text-destructive">{errors.due_date}</p>}
             </div>
           </div>
         </div>
@@ -194,7 +240,6 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
 function toLocalDatetimeString(isoString: string | null): string {
   if (!isoString) return "";
   const d = new Date(isoString);
-  // Format as YYYY-MM-DDTHH:mm in local timezone
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -210,7 +255,6 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
       description: task.description || "",
       assigned_to: task.assigned_to || "",
       status: task.status,
-      priority: task.priority,
       start_date: toLocalDatetimeString(task.start_date),
       due_date: toLocalDatetimeString(task.due_date),
       recurrence_type: task.recurrence_type,
@@ -222,7 +266,6 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
     description: "",
     assigned_to: "",
     status: "pending",
-    priority: "medium",
     start_date: "",
     due_date: "",
     recurrence_type: "none",

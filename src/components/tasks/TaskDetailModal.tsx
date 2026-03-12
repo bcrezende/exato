@@ -1,7 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +14,6 @@ type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
-const priorityLabels: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta" };
 const recurrenceLabels: Record<string, string> = { none: "Nenhuma", daily: "Diária", weekly: "Semanal", monthly: "Mensal", yearly: "Anual" };
 
 const statusColors: Record<string, string> = {
@@ -23,11 +21,6 @@ const statusColors: Record<string, string> = {
   in_progress: "bg-primary/10 text-primary",
   completed: "bg-success/10 text-success",
   overdue: "bg-destructive/10 text-destructive",
-};
-const priorityColors: Record<string, string> = {
-  low: "bg-muted text-muted-foreground",
-  medium: "bg-warning/10 text-warning",
-  high: "bg-destructive/10 text-destructive",
 };
 
 interface TaskDetailModalProps {
@@ -78,7 +71,6 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Badge className={statusColors[task.status]}>{statusLabels[task.status]}</Badge>
-            <Badge className={priorityColors[task.priority]}>{priorityLabels[task.priority]}</Badge>
             {task.recurrence_type !== "none" && <Badge variant="outline">{recurrenceLabels[task.recurrence_type]}</Badge>}
           </div>
 
@@ -113,7 +105,6 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
             )}
           </div>
 
-          {/* Employee: restricted status actions */}
           {isAssigned && !canManage && (
             <div className="space-y-2">
               <span className="text-sm font-medium">Atualizar Status</span>
