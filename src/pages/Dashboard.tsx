@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   ListTodo, Clock, CheckCircle, AlertTriangle,
-  Calendar as CalendarIcon, LayoutGrid, ChevronRight
+  Calendar as CalendarIcon, LayoutGrid, ChevronRight, Building2
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
 import { format, differenceInDays, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -26,16 +27,20 @@ function AdminManagerDashboard() {
   const { user, role } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [showFullView, setShowFullView] = useState<"kanban" | "calendar" | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [tasksRes, profilesRes] = await Promise.all([
+      const [tasksRes, profilesRes, depsRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date", { ascending: true }),
         supabase.from("profiles").select("id, full_name"),
+        supabase.from("departments").select("id, name").order("name"),
       ]);
       if (tasksRes.data) setTasks(tasksRes.data);
+      if (depsRes.data) setDepartments(depsRes.data);
       if (profilesRes.data) {
         const map = new Map<string, string>();
         profilesRes.data.forEach((p: Profile) => map.set(p.id, p.full_name || "Sem nome"));
@@ -47,6 +52,11 @@ function AdminManagerDashboard() {
 
   const today = startOfDay(new Date());
   const todayStr = format(today, "yyyy-MM-dd");
+
+  const filteredTasks = useMemo(() => {
+    if (!selectedDepartment) return tasks;
+    return tasks.filter((t) => t.department_id === selectedDepartment);
+  }, [tasks, selectedDepartment]);
 
   const { overdueTasks, todayTasks, upcomingDays } = useMemo(() => {
     const overdue: Task[] = [];
@@ -62,7 +72,7 @@ function AdminManagerDashboard() {
       });
     }
 
-    tasks.forEach((t) => {
+    filteredTasks.forEach((t) => {
       const isCompleted = t.status === "completed";
       const isOverdue = t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < new Date().toISOString());
 
@@ -98,7 +108,7 @@ function AdminManagerDashboard() {
     });
 
     return { overdueTasks: overdue, todayTasks: todayList, upcomingDays: upcoming };
-  }, [tasks, todayStr]);
+  }, [filteredTasks, todayStr]);
 
   const todayCompleted = todayTasks.filter((t) => t.status === "completed").length;
   const todayTotal = todayTasks.length;
@@ -127,7 +137,7 @@ function AdminManagerDashboard() {
 
   const getTasksForDay = (day: number) => {
     const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return tasks.filter((t) => t.due_date?.startsWith(dateStr) || t.start_date?.startsWith(dateStr));
+    return filteredTasks.filter((t) => t.due_date?.startsWith(dateStr) || t.start_date?.startsWith(dateStr));
   };
 
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
@@ -142,13 +152,27 @@ function AdminManagerDashboard() {
             {format(today, "EEEE, dd 'de' MMMM", { locale: ptBR })} — {role === "admin" ? "Visão geral da empresa" : "Visão do setor"}
           </p>
         </div>
-        <div className="flex gap-1">
-          <Button variant={showFullView === "kanban" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "kanban" ? null : "kanban")}>
-            <LayoutGrid className="mr-1 h-4 w-4" /> Kanban
-          </Button>
-          <Button variant={showFullView === "calendar" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "calendar" ? null : "calendar")}>
-            <CalendarIcon className="mr-1 h-4 w-4" /> Calendário
-          </Button>
+        <div className="flex items-center gap-3">
+          <Select value={selectedDepartment ?? "all"} onValueChange={(v) => setSelectedDepartment(v === "all" ? null : v)}>
+            <SelectTrigger className="w-[200px]">
+              <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+              <SelectValue placeholder="Todos os setores" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os setores</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex gap-1">
+            <Button variant={showFullView === "kanban" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "kanban" ? null : "kanban")}>
+              <LayoutGrid className="mr-1 h-4 w-4" /> Kanban
+            </Button>
+            <Button variant={showFullView === "calendar" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "calendar" ? null : "calendar")}>
+              <CalendarIcon className="mr-1 h-4 w-4" /> Calendário
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -331,7 +355,7 @@ function AdminManagerDashboard() {
       {showFullView === "kanban" && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {kanbanColumns.map((status) => {
-            const columnTasks = tasks.filter((t) => {
+            const columnTasks = filteredTasks.filter((t) => {
               if (status === "overdue") return t.due_date && t.due_date < new Date().toISOString() && t.status !== "completed";
               return t.status === status;
             });
