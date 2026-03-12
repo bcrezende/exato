@@ -102,7 +102,7 @@ export default function Tasks() {
     return departments.find((d) => d.id === departmentId)?.name || null;
   };
 
-  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all";
+  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all" || filterDate !== undefined;
 
   const clearFilters = () => {
     setSearch("");
@@ -110,6 +110,7 @@ export default function Tasks() {
     setFilterDepartment("all");
     setFilterAssignee("all");
     setFilterRecurrence("all");
+    setFilterDate(undefined);
   };
 
   const filtered = useMemo(() => {
