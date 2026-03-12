@@ -26,8 +26,13 @@ export async function updateTaskStatus(
     (task?.recurrence_parent_id || (task?.recurrence_type && task.recurrence_type !== "none"))
   ) {
     try {
-      await supabase.functions.invoke("generate-recurring-tasks");
-      generatedRecurring = true;
+      const { data, error: fnError } = await supabase.functions.invoke("generate-recurring-tasks");
+      if (fnError) {
+        console.error("Edge function error:", fnError);
+      } else {
+        console.log("Recurring tasks response:", data);
+        generatedRecurring = true;
+      }
     } catch (err) {
       console.error("Error triggering recurring task generation:", err);
     }
