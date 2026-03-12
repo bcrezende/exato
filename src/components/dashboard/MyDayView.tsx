@@ -33,8 +33,16 @@ export default function MyDayView() {
       .from("tasks")
       .select("*")
       .eq("assigned_to", user.id)
-      .or(`and(start_date.gte.${todayStart},start_date.lte.${todayEnd}),and(due_date.gte.${todayStart},due_date.lte.${todayEnd})`)
+      .or(`status.eq.overdue,and(start_date.gte.${todayStart},start_date.lte.${todayEnd}),and(due_date.gte.${todayStart},due_date.lte.${todayEnd})`)
       .order("start_date", { ascending: true, nullsFirst: false });
+    if (data) {
+      // Sort: overdue first, then by start_date
+      data.sort((a, b) => {
+        if (a.status === "overdue" && b.status !== "overdue") return -1;
+        if (a.status !== "overdue" && b.status === "overdue") return 1;
+        return 0;
+      });
+    }
     if (data) setTasks(data);
     setLoading(false);
   };
