@@ -364,12 +364,9 @@ function AdminManagerDashboard() {
                         <h4 className="font-medium leading-tight">{task.title}</h4>
                         <p className="mt-1 text-xs text-muted-foreground">{getName(task.assigned_to)}</p>
                         {task.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{task.description}</p>}
-                        <div className="mt-3 flex items-center gap-2">
-                          <Badge className={priorityColors[task.priority]} variant="secondary">
-                            {priorityLabels[task.priority]}
-                          </Badge>
-                          {task.due_date && <span className="text-xs text-muted-foreground">{format(new Date(task.due_date), "dd/MM")}</span>}
-                        </div>
+                        {task.due_date && (
+                          <div className="mt-3 text-xs text-muted-foreground">{format(new Date(task.due_date), "dd/MM")}</div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
