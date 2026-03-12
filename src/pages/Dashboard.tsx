@@ -325,7 +325,7 @@ function AdminManagerDashboard() {
                       <div className="mt-2 space-y-1">
                         {day.tasks.slice(0, 3).map((t) => (
                           <div key={t.id} className="flex items-center gap-2 text-xs">
-                            <div className={`h-1.5 w-1.5 rounded-full ${t.priority === "high" ? "bg-destructive" : t.priority === "medium" ? "bg-warning" : "bg-muted-foreground"}`} />
+                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                             <span className="truncate">{t.title}</span>
                           </div>
                         ))}
