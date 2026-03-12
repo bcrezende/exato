@@ -19,6 +19,19 @@ export async function updateTaskStatus(
 
   if (error) throw error;
 
+  // Log time tracking events
+  if (newStatus === "in_progress" || newStatus === "completed") {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const action = newStatus === "in_progress" ? "started" : "completed";
+      await supabase.from("task_time_logs").insert({
+        task_id: taskId,
+        user_id: user.id,
+        action,
+      });
+    }
+  }
+
   // If completing a recurring task instance, await generation of next instance
   let generatedRecurring = false;
   if (

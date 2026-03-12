@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
-import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2 } from "lucide-react";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer } from "lucide-react";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -23,6 +24,14 @@ const statusColors: Record<string, string> = {
   overdue: "bg-destructive/10 text-destructive",
 };
 
+function formatDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes}min`;
+  return `${hours}h ${minutes}min`;
+}
+
 interface TaskDetailModalProps {
   task: Task | null;
   open: boolean;
@@ -38,6 +47,31 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const { toast } = useToast();
   const canManage = role === "admin" || role === "manager";
   const isAssigned = task?.assigned_to === user?.id;
+  const [executionTime, setExecutionTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!task || !open) { setExecutionTime(null); return; }
+    const fetchLogs = async () => {
+      const { data } = await supabase
+        .from("task_time_logs")
+        .select("action, created_at")
+        .eq("task_id", task.id)
+        .order("created_at", { ascending: true });
+      if (!data || data.length === 0) { setExecutionTime(null); return; }
+      const started = data.find(l => l.action === "started");
+      const completed = data.find(l => l.action === "completed");
+      if (started && completed) {
+        const diff = new Date(completed.created_at).getTime() - new Date(started.created_at).getTime();
+        setExecutionTime(formatDuration(diff));
+      } else if (started && task.status === "in_progress") {
+        const diff = Date.now() - new Date(started.created_at).getTime();
+        setExecutionTime(`${formatDuration(diff)} (em andamento)`);
+      } else {
+        setExecutionTime(null);
+      }
+    };
+    fetchLogs();
+  }, [task?.id, open, task?.status]);
 
   if (!task) return null;
 
@@ -101,6 +135,12 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4 shrink-0" />
                 <span>Término: <span className="text-foreground font-medium">{format(new Date(task.due_date), "dd/MM/yyyy HH:mm")}</span></span>
+              </div>
+            )}
+            {executionTime && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Timer className="h-4 w-4 shrink-0" />
+                <span>Tempo de execução: <span className="text-foreground font-medium">{executionTime}</span></span>
               </div>
             )}
           </div>
