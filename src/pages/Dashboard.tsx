@@ -27,6 +27,8 @@ function AdminManagerDashboard() {
   const { user, role } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [showFullView, setShowFullView] = useState<"kanban" | "calendar" | null>(null);
 
   useEffect(() => {
