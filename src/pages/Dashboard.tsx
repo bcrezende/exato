@@ -14,6 +14,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { format, differenceInDays, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MyDayView from "@/components/dashboard/MyDayView";
+import PerformanceAnalytics from "@/components/dashboard/PerformanceAnalytics";
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null };
@@ -26,18 +27,21 @@ function AdminManagerDashboard() {
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
-  
+  const [timeLogs, setTimeLogs] = useState<{ id: string; task_id: string; user_id: string; action: string; created_at: string }[]>([]);
+
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [tasksRes, profilesRes, depsRes] = await Promise.all([
+      const [tasksRes, profilesRes, depsRes, logsRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date", { ascending: true }),
         supabase.from("profiles").select("id, full_name"),
         supabase.from("departments").select("id, name").order("name"),
+        supabase.from("task_time_logs").select("*").order("created_at", { ascending: true }),
       ]);
       if (tasksRes.data) setTasks(tasksRes.data);
       if (depsRes.data) setDepartments(depsRes.data);
+      if (logsRes.data) setTimeLogs(logsRes.data);
       if (profilesRes.data) {
         const map = new Map<string, string>();
         profilesRes.data.forEach((p: Profile) => map.set(p.id, p.full_name || "Sem nome"));
@@ -312,7 +316,15 @@ function AdminManagerDashboard() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+           </Card>
+
+      {/* Performance Analytics */}
+      <PerformanceAnalytics
+        tasks={tasks}
+        timeLogs={timeLogs}
+        departments={departments}
+        selectedDepartment={selectedDepartment}
+      />
     </div>
   );
 }
