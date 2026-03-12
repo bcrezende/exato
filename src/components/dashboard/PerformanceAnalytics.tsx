@@ -30,6 +30,10 @@ function formatDuration(ms: number): string {
 }
 
 export default function PerformanceAnalytics({ tasks, timeLogs, departments, selectedDepartment }: PerformanceAnalyticsProps) {
+  const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
+  const { toast } = useToast();
+
   const filteredTasks = useMemo(() => {
     if (!selectedDepartment) return tasks;
     return tasks.filter((t) => t.department_id === selectedDepartment);
