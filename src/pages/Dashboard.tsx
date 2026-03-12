@@ -72,7 +72,7 @@ function AdminManagerDashboard() {
       });
     }
 
-    tasks.forEach((t) => {
+    filteredTasks.forEach((t) => {
       const isCompleted = t.status === "completed";
       const isOverdue = t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < new Date().toISOString());
 
