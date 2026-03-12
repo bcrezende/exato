@@ -143,14 +143,6 @@ function AdminManagerDashboard() {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex gap-1">
-            <Button variant={showFullView === "kanban" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "kanban" ? null : "kanban")}>
-              <LayoutGrid className="mr-1 h-4 w-4" /> Kanban
-            </Button>
-            <Button variant={showFullView === "calendar" ? "default" : "outline"} size="sm" onClick={() => setShowFullView(showFullView === "calendar" ? null : "calendar")}>
-              <CalendarIcon className="mr-1 h-4 w-4" /> Calendário
-            </Button>
-          </div>
         </div>
       </div>
 
