@@ -10,8 +10,9 @@ type Task = Tables<"tasks">;
 export async function updateTaskStatus(
   taskId: string,
   newStatus: "pending" | "in_progress" | "completed" | "overdue",
-  task?: Pick<Task, "recurrence_parent_id" | "recurrence_type"> | null
+  task?: Pick<Task, "recurrence_parent_id" | "recurrence_type" | "status"> | null
 ) {
+  const previousStatus = task?.status;
   const { error } = await supabase
     .from("tasks")
     .update({ status: newStatus })
