@@ -16,6 +16,33 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    const now = new Date();
+
+    // === Step 1: Mark overdue tasks ===
+    // Find tasks with due_date in the past that are still pending or in_progress
+    const { data: overdueTasks, error: overdueError } = await supabase
+      .from("tasks")
+      .select("id")
+      .lt("due_date", now.toISOString())
+      .in("status", ["pending", "in_progress"]);
+
+    if (overdueError) {
+      console.error("Error fetching overdue tasks:", overdueError);
+    } else if (overdueTasks && overdueTasks.length > 0) {
+      const overdueIds = overdueTasks.map((t: { id: string }) => t.id);
+      const { error: updateError } = await supabase
+        .from("tasks")
+        .update({ status: "overdue" })
+        .in("id", overdueIds);
+
+      if (updateError) {
+        console.error("Error marking tasks as overdue:", updateError);
+      } else {
+        console.log(`Marked ${overdueIds.length} tasks as overdue`);
+      }
+    }
+
+    // === Step 2: Generate next recurring instances ===
     // Get all recurring parent tasks (recurrence_type != 'none' and no recurrence_parent_id)
     const { data: parentTasks, error: fetchError } = await supabase
       .from("tasks")
@@ -25,13 +52,12 @@ Deno.serve(async (req) => {
 
     if (fetchError) throw fetchError;
     if (!parentTasks || parentTasks.length === 0) {
-      return new Response(JSON.stringify({ message: "No recurring tasks found", created: 0 }), {
+      return new Response(JSON.stringify({ message: "No recurring tasks found", created: 0, overdue: overdueTasks?.length || 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     let createdCount = 0;
-    const now = new Date();
 
     for (const parent of parentTasks) {
       // Find the latest instance of this recurring task
@@ -47,8 +73,8 @@ Deno.serve(async (req) => {
       // Use the parent itself if no instances exist yet
       const reference = latestInstance || parent;
 
-      // Only generate if latest instance is completed, or no instance exists
-      if (latestInstance && latestInstance.status !== "completed") {
+      // Only generate if latest instance is completed OR overdue (not pending/in_progress)
+      if (latestInstance && latestInstance.status !== "completed" && latestInstance.status !== "overdue") {
         continue;
       }
 
@@ -82,10 +108,8 @@ Deno.serve(async (req) => {
           continue;
       }
 
-      // Don't generate tasks too far in the future (more than 1 period ahead)
-      if (newStart > now) {
-        continue;
-      }
+      // Removed the restriction `if (newStart > now) continue`
+      // Now generates even for future dates (next occurrence)
 
       const newEnd = new Date(newStart.getTime() + duration);
 
@@ -127,11 +151,12 @@ Deno.serve(async (req) => {
         console.error(`Error creating instance for task ${parent.id}:`, insertError);
       } else {
         createdCount++;
+        console.log(`Created instance for parent ${parent.id}: ${parent.title} — start: ${newStart.toISOString()}`);
       }
     }
 
     return new Response(
-      JSON.stringify({ message: "Recurring tasks processed", created: createdCount }),
+      JSON.stringify({ message: "Recurring tasks processed", created: createdCount, overdue: overdueTasks?.length || 0 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

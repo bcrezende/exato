@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, List, CalendarDays, Pencil, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { updateTaskStatus } from "@/lib/task-utils";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 import TaskCalendar from "@/components/tasks/TaskCalendar";
@@ -71,7 +72,8 @@ export default function Tasks() {
   };
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
-    await supabase.from("tasks").update({ status: newStatus as any }).eq("id", taskId);
+    const task = tasks.find((t) => t.id === taskId);
+    await updateTaskStatus(taskId, newStatus as any, task);
     fetchTasks();
   };
 

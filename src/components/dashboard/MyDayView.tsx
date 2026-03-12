@@ -8,6 +8,7 @@ import { Play, CheckCircle, Clock, ListTodo, AlertTriangle } from "lucide-react"
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { updateTaskStatus } from "@/lib/task-utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -53,20 +54,16 @@ export default function MyDayView() {
   }, [user]);
 
   const handleStatusChange = async (taskId: string, newStatus: "in_progress" | "completed") => {
-    const { error } = await supabase
-      .from("tasks")
-      .update({ status: newStatus })
-      .eq("id", taskId);
-
-    if (error) {
+    const task = tasks.find((t) => t.id === taskId);
+    try {
+      await updateTaskStatus(taskId, newStatus, task);
+      toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+      );
+    } catch {
       toast.error("Erro ao atualizar status");
-      return;
     }
-
-    toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
-    );
   };
 
   const stats = {
