@@ -18,10 +18,7 @@ import MyDayView from "@/components/dashboard/MyDayView";
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null };
 
-const priorityLabels: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta" };
-const priorityColors: Record<string, string> = { low: "bg-muted text-muted-foreground", medium: "bg-warning/10 text-warning", high: "bg-destructive/10 text-destructive" };
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
-const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 function AdminManagerDashboard() {
   const { user, role } = useAuth();
