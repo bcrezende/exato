@@ -74,7 +74,7 @@ export default function Tasks() {
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     const task = tasks.find((t) => t.id === taskId);
     await updateTaskStatus(taskId, newStatus as any, task);
-    fetchTasks();
+    await fetchTasks();
   };
 
   const getDepartmentName = (departmentId: string | null) => {
