@@ -53,6 +53,11 @@ function AdminManagerDashboard() {
   const today = startOfDay(new Date());
   const todayStr = format(today, "yyyy-MM-dd");
 
+  const filteredTasks = useMemo(() => {
+    if (!selectedDepartment) return tasks;
+    return tasks.filter((t) => t.department_id === selectedDepartment);
+  }, [tasks, selectedDepartment]);
+
   const { overdueTasks, todayTasks, upcomingDays } = useMemo(() => {
     const overdue: Task[] = [];
     const todayList: Task[] = [];
