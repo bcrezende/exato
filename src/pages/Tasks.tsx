@@ -120,9 +120,19 @@ export default function Tasks() {
       if (filterDepartment !== "all" && t.department_id !== filterDepartment) return false;
       if (filterAssignee !== "all" && t.assigned_to !== filterAssignee) return false;
       if (filterRecurrence !== "all" && t.recurrence_type !== filterRecurrence) return false;
+      if (filterDate) {
+        const dayStart = startOfDay(filterDate);
+        const dayEnd = endOfDay(filterDate);
+        const taskStart = t.start_date ? parseISO(t.start_date) : null;
+        const taskDue = t.due_date ? parseISO(t.due_date) : null;
+        const matchesDate = (taskStart && isWithinInterval(taskStart, { start: dayStart, end: dayEnd })) ||
+          (taskDue && isWithinInterval(taskDue, { start: dayStart, end: dayEnd })) ||
+          (taskStart && taskDue && taskStart <= dayEnd && taskDue >= dayStart);
+        if (!matchesDate) return false;
+      }
       return true;
     });
-  }, [tasks, search, filterStatus, filterDepartment, filterAssignee, filterRecurrence]);
+  }, [tasks, search, filterStatus, filterDepartment, filterAssignee, filterRecurrence, filterDate]);
 
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
