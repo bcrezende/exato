@@ -102,7 +102,7 @@ export default function Tasks() {
     return departments.find((d) => d.id === departmentId)?.name || null;
   };
 
-  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all" || filterDate !== undefined;
+  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all" || (filterDate !== undefined && startOfDay(filterDate).getTime() !== startOfDay(new Date()).getTime());
 
   const clearFilters = () => {
     setSearch("");
