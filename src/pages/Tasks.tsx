@@ -50,7 +50,7 @@ export default function Tasks() {
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
   const [filterRecurrence, setFilterRecurrence] = useState<string>("all");
-  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
 
   const canManage = role === "admin" || role === "manager";
 
@@ -102,7 +102,7 @@ export default function Tasks() {
     return departments.find((d) => d.id === departmentId)?.name || null;
   };
 
-  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all" || filterDate !== undefined;
+  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all" || (filterDate !== undefined && startOfDay(filterDate).getTime() !== startOfDay(new Date()).getTime());
 
   const clearFilters = () => {
     setSearch("");
@@ -110,7 +110,7 @@ export default function Tasks() {
     setFilterDepartment("all");
     setFilterAssignee("all");
     setFilterRecurrence("all");
-    setFilterDate(undefined);
+    setFilterDate(new Date());
   };
 
   const filtered = useMemo(() => {
