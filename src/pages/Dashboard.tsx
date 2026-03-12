@@ -190,10 +190,8 @@ function AdminManagerDashboard() {
         </Card>
       </div>
 
-      {/* Show monitoring view or full view */}
-      {showFullView === null && (
-        <>
-          {/* 🔴 Overdue Section */}
+      {/* Monitoring sections */}
+      {/* 🔴 Overdue Section */}
           {overdueTasks.length > 0 && (
             <Card className="border-destructive/30">
               <CardHeader className="pb-3">
