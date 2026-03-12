@@ -108,7 +108,7 @@ function AdminManagerDashboard() {
     });
 
     return { overdueTasks: overdue, todayTasks: todayList, upcomingDays: upcoming };
-  }, [tasks, todayStr]);
+  }, [filteredTasks, todayStr]);
 
   const todayCompleted = todayTasks.filter((t) => t.status === "completed").length;
   const todayTotal = todayTasks.length;
