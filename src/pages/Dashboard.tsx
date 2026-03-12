@@ -14,6 +14,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { format, differenceInDays, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MyDayView from "@/components/dashboard/MyDayView";
+import PerformanceAnalytics from "@/components/dashboard/PerformanceAnalytics";
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null };
