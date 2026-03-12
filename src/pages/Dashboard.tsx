@@ -119,22 +119,6 @@ function AdminManagerDashboard() {
     return Math.max(0, differenceInDays(today, new Date(dueDate)));
   };
 
-  // Calendar state for full view
-  const now = new Date();
-  const [calendarMonth, setCalendarMonth] = useState(now.getMonth());
-  const [calendarYear, setCalendarYear] = useState(now.getFullYear());
-  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
-  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-  const statusColors: Record<string, string> = { pending: "bg-muted text-muted-foreground", in_progress: "bg-primary/10 text-primary", completed: "bg-success/10 text-success", overdue: "bg-destructive/10 text-destructive" };
-
-  const getTasksForDay = (day: number) => {
-    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return filteredTasks.filter((t) => t.due_date?.startsWith(dateStr) || t.start_date?.startsWith(dateStr));
-  };
-
-  const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
   return (
     <div className="space-y-6">
