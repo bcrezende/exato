@@ -19,16 +19,19 @@ export async function updateTaskStatus(
 
   if (error) throw error;
 
-  // If completing a recurring task instance, trigger immediate generation of next instance
+  // If completing a recurring task instance, await generation of next instance
+  let generatedRecurring = false;
   if (
     newStatus === "completed" &&
     (task?.recurrence_parent_id || (task?.recurrence_type && task.recurrence_type !== "none"))
   ) {
-    // Fire and forget — don't block the UI
-    supabase.functions.invoke("generate-recurring-tasks").catch((err) => {
+    try {
+      await supabase.functions.invoke("generate-recurring-tasks");
+      generatedRecurring = true;
+    } catch (err) {
       console.error("Error triggering recurring task generation:", err);
-    });
+    }
   }
 
-  return { error: null };
+  return { error: null, generatedRecurring };
 }
