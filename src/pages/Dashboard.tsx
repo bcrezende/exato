@@ -34,11 +34,13 @@ function AdminManagerDashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [tasksRes, profilesRes] = await Promise.all([
+      const [tasksRes, profilesRes, depsRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date", { ascending: true }),
         supabase.from("profiles").select("id, full_name"),
+        supabase.from("departments").select("id, name").order("name"),
       ]);
       if (tasksRes.data) setTasks(tasksRes.data);
+      if (depsRes.data) setDepartments(depsRes.data);
       if (profilesRes.data) {
         const map = new Map<string, string>();
         profilesRes.data.forEach((p: Profile) => map.set(p.id, p.full_name || "Sem nome"));
