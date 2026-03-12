@@ -23,7 +23,12 @@ export async function updateTaskStatus(
   if (newStatus === "in_progress" || newStatus === "completed") {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const action = newStatus === "in_progress" ? "started" : "completed";
+      let action: string;
+      if (newStatus === "in_progress") {
+        action = previousStatus === "overdue" ? "started_late" : "started";
+      } else {
+        action = "completed";
+      }
       await supabase.from("task_time_logs").insert({
         task_id: taskId,
         user_id: user.id,
