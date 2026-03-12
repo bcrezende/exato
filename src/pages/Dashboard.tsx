@@ -316,7 +316,15 @@ function AdminManagerDashboard() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+           </Card>
+
+      {/* Performance Analytics */}
+      <PerformanceAnalytics
+        tasks={tasks}
+        timeLogs={timeLogs}
+        departments={departments}
+        selectedDepartment={selectedDepartment}
+      />
     </div>
   );
 }
