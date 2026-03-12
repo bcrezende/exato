@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2 } from "lucide-react";
+import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { startOfDay, endOfDay, isWithinInterval, parseISO } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
@@ -46,6 +50,7 @@ export default function Tasks() {
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
   const [filterRecurrence, setFilterRecurrence] = useState<string>("all");
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
 
   const canManage = role === "admin" || role === "manager";
 
@@ -97,7 +102,7 @@ export default function Tasks() {
     return departments.find((d) => d.id === departmentId)?.name || null;
   };
 
-  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all";
+  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all" || filterDate !== undefined;
 
   const clearFilters = () => {
     setSearch("");
@@ -105,6 +110,7 @@ export default function Tasks() {
     setFilterDepartment("all");
     setFilterAssignee("all");
     setFilterRecurrence("all");
+    setFilterDate(undefined);
   };
 
   const filtered = useMemo(() => {
@@ -114,9 +120,19 @@ export default function Tasks() {
       if (filterDepartment !== "all" && t.department_id !== filterDepartment) return false;
       if (filterAssignee !== "all" && t.assigned_to !== filterAssignee) return false;
       if (filterRecurrence !== "all" && t.recurrence_type !== filterRecurrence) return false;
+      if (filterDate) {
+        const dayStart = startOfDay(filterDate);
+        const dayEnd = endOfDay(filterDate);
+        const taskStart = t.start_date ? parseISO(t.start_date) : null;
+        const taskDue = t.due_date ? parseISO(t.due_date) : null;
+        const matchesDate = (taskStart && isWithinInterval(taskStart, { start: dayStart, end: dayEnd })) ||
+          (taskDue && isWithinInterval(taskDue, { start: dayStart, end: dayEnd })) ||
+          (taskStart && taskDue && taskStart <= dayEnd && taskDue >= dayStart);
+        if (!matchesDate) return false;
+      }
       return true;
     });
-  }, [tasks, search, filterStatus, filterDepartment, filterAssignee, filterRecurrence]);
+  }, [tasks, search, filterStatus, filterDepartment, filterAssignee, filterRecurrence, filterDate]);
 
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
@@ -163,26 +179,30 @@ export default function Tasks() {
                 {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-              <SelectTrigger className="w-[160px]">
-                <Building2 className="mr-1.5 h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="Setor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os setores</SelectItem>
-                {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-              <SelectTrigger className="w-[170px]">
-                <User className="mr-1.5 h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="Responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {canManage && (
+              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+                <SelectTrigger className="w-[160px]">
+                  <Building2 className="mr-1.5 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os setores</SelectItem>
+                  {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            {canManage && (
+              <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+                <SelectTrigger className="w-[170px]">
+                  <User className="mr-1.5 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={filterRecurrence} onValueChange={setFilterRecurrence}>
               <SelectTrigger className="w-[150px]"><SelectValue placeholder="Recorrência" /></SelectTrigger>
               <SelectContent>
@@ -190,6 +210,17 @@ export default function Tasks() {
                 {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("w-[160px] justify-start text-left font-normal", !filterDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-1.5 h-4 w-4" />
+                  {filterDate ? format(filterDate, "dd/MM/yyyy") : "Filtrar data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
                 <X className="mr-1 h-4 w-4" /> Limpar
