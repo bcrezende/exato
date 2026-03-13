@@ -40,7 +40,14 @@ function AdminManagerDashboard() {
         supabase.from("task_time_logs").select("*").order("created_at", { ascending: true }),
       ]);
       if (tasksRes.data) setTasks(tasksRes.data);
-      if (depsRes.data) setDepartments(depsRes.data);
+      if (depsRes.data) {
+        if (role === "manager" && profile?.department_id) {
+          setDepartments(depsRes.data.filter(d => d.id === profile.department_id));
+          setSelectedDepartment(profile.department_id);
+        } else {
+          setDepartments(depsRes.data);
+        }
+      }
       if (logsRes.data) setTimeLogs(logsRes.data);
       if (profilesRes.data) {
         const map = new Map<string, string>();
