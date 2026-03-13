@@ -40,13 +40,31 @@ interface ParsedRow {
   recurrenceType?: string;
 }
 
+interface Assignee {
+  profile_id: string;
+  email: string;
+  full_name: string | null;
+  department_id: string | null;
+}
+
 const RECURRENCE_MAP: Record<string, string> = {
   nenhuma: "none",
   diaria: "daily",
+  diária: "daily",
   semanal: "weekly",
   mensal: "monthly",
   anual: "yearly",
 };
+
+/** Normalize text: trim, lowercase, remove accents, collapse spaces */
+function normalize(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
 
 function parseBrDate(raw: string): Date | null {
   if (!raw) return null;
@@ -71,6 +89,12 @@ function resolveDate(rawValue: any, stringValue: string): string | undefined {
   if (rawValue instanceof Date && !isNaN(rawValue.getTime())) {
     return rawValue.toISOString();
   }
+  if (typeof rawValue === "number") {
+    const excelDate = XLSX.SSF.parse_date_code(rawValue);
+    if (excelDate) {
+      return new Date(excelDate.y, excelDate.m - 1, excelDate.d, excelDate.H || 0, excelDate.M || 0).toISOString();
+    }
+  }
   if (stringValue) {
     const d = parseBrDate(stringValue);
     if (d) return d.toISOString();
@@ -79,86 +103,44 @@ function resolveDate(rawValue: any, stringValue: string): string | undefined {
 }
 
 export default function TaskImportDialog({ open, onOpenChange, members, departments, onImported }: TaskImportDialogProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, role } = useAuth();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
   const [step, setStep] = useState<"upload" | "preview" | "done">("upload");
   const [result, setResult] = useState<{ created: number; errors: number }>({ created: 0, errors: 0 });
-  const [emailToProfileId, setEmailToProfileId] = useState<Record<string, string>>({});
+  const [assignees, setAssignees] = useState<Assignee[]>([]);
 
-  // Fetch email→profileId map from accepted invitations
+  // Fetch assignees via RPC when dialog opens
   useEffect(() => {
-    if (!open || !profile?.company_id) return;
-    const fetchEmailMap = async () => {
-      const { data: invitations } = await supabase
-        .from("invitations")
-        .select("email")
-        .eq("company_id", profile.company_id!)
-        .not("accepted_at", "is", null);
-
-      if (!invitations) return;
-
-      // For each invitation email, find matching profile by checking all members
-      // We need to match emails to profile IDs. Since profiles don't store email,
-      // we use the invitation email and try to find the profile that was created
-      // when that invitation was accepted.
-      // Better approach: query profiles joined with auth — not possible client-side.
-      // Pragmatic: use an edge function or RPC. For now, let's query each email.
-      const map: Record<string, string> = {};
-
-      // We'll use supabase auth to get user by email — not available client-side.
-      // Alternative: store email on profiles. For now, match by full_name as primary,
-      // and use invitation email lookup via a simple approach.
-
-      // Actually, we can look up: for each accepted invitation, find the profile
-      // that has the same company_id and was created after the invitation.
-      // But this is fragile. Let's just support both email and name matching.
-      // For email: we'll look up profiles by querying who accepted which invite.
-
-      // Simplest working approach: create an edge function that returns email→profile_id.
-      // For now, let's just store the emails and try to match via the members list
-      // by checking invitation acceptance patterns.
-
-      // Actually the simplest: just try to find profiles via auth.
-      // We can't do that client-side. Let's use a different approach:
-      // Query invitations with accepted_at, then for each, find the profile
-      // that has the same department_id and company_id and was created around that time.
-
-      // The MOST pragmatic approach without schema changes:
-      // For each member, check if there's an accepted invitation with their email.
-      // We match by: invitation.company_id = member.company_id AND 
-      // invitation.department_id = member.department_id (if set)
-      
-      // Actually, let's just do a reverse lookup: for each accepted invitation,
-      // find the member whose department matches. But multiple members could match.
-
-      // BEST approach without changes: use the admin user's own email from auth session,
-      // and for other members, match by name. Let's support BOTH email and name.
-      
-      // For the current user, we know their email:
-      if (user?.email) {
-        map[user.email.toLowerCase()] = user.id;
+    if (!open) return;
+    const fetchAssignees = async () => {
+      const { data, error } = await supabase.rpc("get_task_import_assignees");
+      if (data && !error) {
+        setAssignees(data as Assignee[]);
       }
-
-      setEmailToProfileId(map);
     };
-    fetchEmailMap();
-  }, [open, profile?.company_id, user]);
+    fetchAssignees();
+  }, [open]);
 
-  const findMember = (identifier: string): Profile | undefined => {
+  // Build normalized lookup maps
+  const findMember = (identifier: string): Assignee | undefined => {
     if (!identifier) return undefined;
-    const lower = identifier.toLowerCase().trim();
+    const norm = normalize(identifier);
 
-    // Try email match (current user)
-    const profileIdFromEmail = emailToProfileId[lower];
-    if (profileIdFromEmail) {
-      return members.find((m) => m.id === profileIdFromEmail);
-    }
+    // Try email match
+    const byEmail = assignees.find((a) => normalize(a.email) === norm);
+    if (byEmail) return byEmail;
 
     // Try full_name match
-    return members.find((m) => m.full_name?.toLowerCase().trim() === lower);
+    return assignees.find((a) => a.full_name && normalize(a.full_name) === norm);
+  };
+
+  const findDepartment = (name: string): Department | undefined => {
+    if (!name) return undefined;
+    const norm = normalize(name);
+    return departments.find((d) => normalize(d.name) === norm);
   };
 
   const handleFile = async (file: File) => {
@@ -176,7 +158,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
       // Keep raw values with original types (Date objects preserved)
       const rawValues: Record<string, any> = {};
       for (const key of Object.keys(row)) {
-        rawValues[key.toLowerCase().trim()] = row[key];
+        rawValues[normalize(key)] = row[key];
       }
 
       // String versions for non-date fields
@@ -186,25 +168,40 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
         return v != null ? String(v).trim() : "";
       };
 
-      const titulo = str("titulo") || str("título");
-      const descricao = str("descricao") || str("descrição");
-      const responsavelEmail = str("responsavel_email") || str("responsável_email") || str("responsavel") || str("responsável");
-      const setor = str("setor") || str("departamento");
-      const recorrencia = str("recorrencia") || str("recorrência");
+      // Try multiple normalized header variants
+      const getVal = (...keys: string[]) => {
+        for (const k of keys) {
+          const v = str(k);
+          if (v) return v;
+        }
+        return "";
+      };
+
+      const getRaw = (...keys: string[]) => {
+        for (const k of keys) {
+          if (rawValues[k] !== undefined && rawValues[k] !== "") return rawValues[k];
+        }
+        return undefined;
+      };
+
+      const titulo = getVal("titulo", "título");
+      const descricao = getVal("descricao", "descricão", "descrição");
+      const responsavelEmail = getVal("responsavel_email", "responsavel_email", "responsavel", "responsável_email", "responsavel");
+      const setor = getVal("setor", "departamento");
+      const recorrencia = getVal("recorrencia", "recorrência");
 
       const errors: string[] = [];
 
-      // Validate required non-date fields
       if (!titulo) errors.push("Título obrigatório");
       if (!responsavelEmail) errors.push("Responsável obrigatório");
-      if (!setor) errors.push("Setor obrigatório");
+      if (!setor && role === "admin") errors.push("Setor obrigatório");
       if (!recorrencia) errors.push("Recorrência obrigatória");
 
-      // Resolve dates BEFORE validation
-      const rawInicio = rawValues["data_inicio"] ?? rawValues["data_início"];
-      const rawTermino = rawValues["data_termino"] ?? rawValues["data_término"];
-      const dataInicioStr = str("data_inicio") || str("data_início");
-      const dataTerminoStr = str("data_termino") || str("data_término");
+      // Resolve dates
+      const rawInicio = getRaw("data_inicio", "data_início");
+      const rawTermino = getRaw("data_termino", "data_término");
+      const dataInicioStr = getVal("data_inicio", "data_início");
+      const dataTerminoStr = getVal("data_termino", "data_término");
 
       const startDate = resolveDate(rawInicio, dataInicioStr);
       const dueDate = resolveDate(rawTermino, dataTerminoStr);
@@ -229,7 +226,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
       if (responsavelEmail) {
         const member = findMember(responsavelEmail);
         if (member) {
-          assignedToId = member.id;
+          assignedToId = member.profile_id;
         } else {
           errors.push(`Responsável "${responsavelEmail}" não encontrado`);
         }
@@ -237,25 +234,41 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
 
       // Match department
       let departmentId: string | undefined;
-      if (setor) {
-        const dept = departments.find((d) => d.name.toLowerCase() === setor.toLowerCase());
-        if (dept) {
-          departmentId = dept.id;
-        } else {
-          errors.push(`Setor "${setor}" não encontrado`);
+      if (role === "manager") {
+        // Manager: always use their own department
+        departmentId = profile?.department_id || undefined;
+        if (setor) {
+          const dept = findDepartment(setor);
+          if (dept && dept.id !== departmentId) {
+            errors.push(`Setor "${setor}" difere do seu setor — tarefas serão criadas no seu setor`);
+            // Still allow import but in their department
+          }
+        }
+      } else {
+        // Admin: validate against department list
+        if (setor) {
+          const dept = findDepartment(setor);
+          if (dept) {
+            departmentId = dept.id;
+          } else {
+            errors.push(`Setor "${setor}" não encontrado`);
+          }
         }
       }
 
       // Validate recurrence
       let recurrenceType: string | undefined;
       if (recorrencia) {
-        const mapped = RECURRENCE_MAP[recorrencia.toLowerCase()];
+        const mapped = RECURRENCE_MAP[normalize(recorrencia)];
         if (mapped) {
           recurrenceType = mapped;
         } else {
           errors.push(`Recorrência "${recorrencia}" inválida`);
         }
       }
+
+      // For manager with department mismatch warning, still consider valid if department resolved
+      const filteredErrors = errors.filter(e => !e.includes("difere do seu setor"));
 
       return {
         rowIndex: idx + 2,
@@ -267,7 +280,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
         data_termino: dueDate ? new Date(dueDate).toLocaleDateString("pt-BR") : dataTerminoStr,
         recorrencia,
         errors,
-        valid: errors.length === 0,
+        valid: filteredErrors.length === 0,
         assignedToId,
         departmentId,
         startDate,
@@ -325,7 +338,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
   const downloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
       ["titulo", "descricao", "responsavel_email", "setor", "data_inicio", "data_termino", "recorrencia"],
-      ["Exemplo de tarefa", "Descrição opcional", "Nome do Responsável", "Financeiro", "15/03/2026 09:00", "20/03/2026 18:00", "nenhuma"],
+      ["Exemplo de tarefa", "Descrição opcional", "email@exemplo.com", "Financeiro", "15/03/2026 09:00", "20/03/2026 18:00", "nenhuma"],
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Tarefas");
@@ -371,7 +384,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
               Baixar modelo Excel
             </Button>
             <div className="text-xs text-muted-foreground max-w-md text-center space-y-1">
-              <p><strong>Colunas obrigatórias:</strong> titulo, responsavel_email (nome completo ou email), setor, data_inicio, data_termino, recorrencia</p>
+              <p><strong>Colunas obrigatórias:</strong> titulo, responsavel_email (email ou nome completo), setor, data_inicio, data_termino, recorrencia</p>
               <p><strong>Coluna opcional:</strong> descricao</p>
               <p><strong>Recorrência:</strong> nenhuma, diaria, semanal, mensal, anual</p>
               <p><strong>Datas:</strong> DD/MM/AAAA HH:MM ou formato de data do Excel</p>

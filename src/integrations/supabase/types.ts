@@ -361,6 +361,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_task_import_assignees: {
+        Args: never
+        Returns: {
+          department_id: string
+          email: string
+          full_name: string
+          profile_id: string
+        }[]
+      }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
       handle_accept_invite: {
