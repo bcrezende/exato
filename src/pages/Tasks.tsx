@@ -47,6 +47,9 @@ export default function Tasks() {
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  // Sorting
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   // Filters
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
