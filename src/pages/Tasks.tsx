@@ -18,6 +18,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import TaskCalendar from "@/components/tasks/TaskCalendar";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import TaskForm from "@/components/tasks/TaskForm";
+import TaskImportDialog from "@/components/tasks/TaskImportDialog";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
