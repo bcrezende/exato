@@ -130,7 +130,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
 
   const handleFile = async (file: File) => {
     const data = await file.arrayBuffer();
-    const wb = XLSX.read(data, { type: "array" });
+    const wb = XLSX.read(data, { type: "array", cellDates: true });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
 
@@ -141,9 +141,13 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
 
     // Normalize header keys
     const parsed: ParsedRow[] = jsonData.map((row, idx) => {
-      const normalized: Record<string, string> = {};
+      const rawValues: Record<string, any> = {};
       for (const key of Object.keys(row)) {
-        normalized[key.toLowerCase().trim()] = String(row[key]).trim();
+        rawValues[key.toLowerCase().trim()] = row[key];
+      }
+      const normalized: Record<string, string> = {};
+      for (const key of Object.keys(rawValues)) {
+        normalized[key] = rawValues[key] instanceof Date ? "" : String(rawValues[key]).trim();
       }
 
       const titulo = normalized["titulo"] || normalized["título"] || "";
@@ -191,9 +195,14 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
         }
       }
 
-      // Parse dates
+      // Parse dates — accept Date objects (cellDates:true) or strings
+      const rawInicio = rawValues["data_inicio"] ?? rawValues["data_início"];
+      const rawTermino = rawValues["data_termino"] ?? rawValues["data_término"];
+
       let startDate: string | undefined;
-      if (dataInicio) {
+      if (rawInicio instanceof Date && !isNaN(rawInicio.getTime())) {
+        startDate = rawInicio.toISOString();
+      } else if (dataInicio) {
         const d = parseBrDate(dataInicio);
         if (d) {
           startDate = d.toISOString();
@@ -203,7 +212,9 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
       }
 
       let dueDate: string | undefined;
-      if (dataTermino) {
+      if (rawTermino instanceof Date && !isNaN(rawTermino.getTime())) {
+        dueDate = rawTermino.toISOString();
+      } else if (dataTermino) {
         const d = parseBrDate(dataTermino);
         if (d) {
           dueDate = d.toISOString();
