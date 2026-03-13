@@ -76,7 +76,7 @@ export default function MyDayView() {
         setTimeout(() => setHighlightedId(null), 800);
       } else {
         setSuccessId(taskId);
-        setTimeout(() => setSuccessId(null), 1000);
+        setTimeout(() => setSuccessId(null), 1500);
       }
       
       toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
