@@ -169,10 +169,19 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
     const completedLast7 = completedPerDay.reduce((sum, d) => sum + d.count, 0);
 
-    const worstDept = avgTimeByDept.length > 0 ? avgTimeByDept[0] : null;
+    // Find the task with the longest execution time
+    let worstTask: { title: string; duration: number } | null = null;
+    if (executionData.length > 0) {
+      const sorted = [...executionData].sort((a, b) => b.duration - a.duration);
+      const worst = sorted[0];
+      if (worst && worst.duration > 0) {
+        const task = filteredTasks.find((t) => t.id === worst.taskId);
+        worstTask = { title: task?.title || "—", duration: worst.duration };
+      }
+    }
 
-    return { avgExecution, delayRate, completedLast7, worstDept };
-  }, [executionData, completedPerDay, avgTimeByDept]);
+    return { avgExecution, delayRate, completedLast7, worstTask };
+  }, [executionData, completedPerDay, filteredTasks]);
 
   const chartConfigTime = {
     avgMinutes: { label: "Tempo médio (min)", color: "hsl(var(--primary))" },
