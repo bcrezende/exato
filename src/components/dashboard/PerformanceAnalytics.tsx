@@ -169,10 +169,19 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
     const completedLast7 = completedPerDay.reduce((sum, d) => sum + d.count, 0);
 
-    const worstDept = avgTimeByDept.length > 0 ? avgTimeByDept[0] : null;
+    // Find the task with the longest execution time
+    let worstTask: { title: string; duration: number } | null = null;
+    if (executionData.length > 0) {
+      const sorted = [...executionData].sort((a, b) => b.duration - a.duration);
+      const worst = sorted[0];
+      if (worst && worst.duration > 0) {
+        const task = filteredTasks.find((t) => t.id === worst.taskId);
+        worstTask = { title: task?.title || "—", duration: worst.duration };
+      }
+    }
 
-    return { avgExecution, delayRate, completedLast7, worstDept };
-  }, [executionData, completedPerDay, avgTimeByDept]);
+    return { avgExecution, delayRate, completedLast7, worstTask };
+  }, [executionData, completedPerDay, filteredTasks]);
 
   const chartConfigTime = {
     avgMinutes: { label: "Tempo médio (min)", color: "hsl(var(--primary))" },
@@ -237,15 +246,15 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <p className="text-xs text-muted-foreground">últimos 7 dias</p>
           </CardContent>
         </Card>
-        <Card className={summary.worstDept ? "border-warning/50 bg-warning/5" : ""}>
+        <Card className={summary.worstTask ? "border-warning/50 bg-warning/5" : ""}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Maior Gargalo</CardTitle>
-            <AlertTriangle className={`h-4 w-4 ${summary.worstDept ? "text-warning" : "text-muted-foreground"}`} />
+            <AlertTriangle className={`h-4 w-4 ${summary.worstTask ? "text-warning" : "text-muted-foreground"}`} />
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold truncate">{summary.worstDept?.department || "—"}</div>
+            <div className="text-lg font-bold truncate">{summary.worstTask?.title || "—"}</div>
             <p className="text-xs text-muted-foreground">
-              {summary.worstDept ? formatDuration(summary.worstDept.avgMs) + " por tarefa" : "sem dados"}
+              {summary.worstTask ? formatDuration(summary.worstTask.duration) + " de execução" : "sem dados"}
             </p>
           </CardContent>
         </Card>
@@ -338,7 +347,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
                   avgExecution: formatDuration(summary.avgExecution),
                   delayRate: summary.delayRate,
                   completedLast7: summary.completedLast7,
-                  worstDept: summary.worstDept?.department || null,
+                  worstTask: summary.worstTask?.title || null,
                   timeByDept: avgTimeByDept.map(d => ({ department: d.department, avgMinutes: d.avgMinutes })),
                   delayByDept: delayRateByDept.map(d => ({ department: d.department, rate: d.rate })),
                   completionTrend: completedPerDay.map(d => ({ label: d.label, count: d.count })),
