@@ -191,9 +191,14 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
         }
       }
 
-      // Parse dates
+      // Parse dates — accept Date objects (cellDates:true) or strings
+      const rawInicio = rawValues["data_inicio"] ?? rawValues["data_início"];
+      const rawTermino = rawValues["data_termino"] ?? rawValues["data_término"];
+
       let startDate: string | undefined;
-      if (dataInicio) {
+      if (rawInicio instanceof Date && !isNaN(rawInicio.getTime())) {
+        startDate = rawInicio.toISOString();
+      } else if (dataInicio) {
         const d = parseBrDate(dataInicio);
         if (d) {
           startDate = d.toISOString();
@@ -203,7 +208,9 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
       }
 
       let dueDate: string | undefined;
-      if (dataTermino) {
+      if (rawTermino instanceof Date && !isNaN(rawTermino.getTime())) {
+        dueDate = rawTermino.toISOString();
+      } else if (dataTermino) {
         const d = parseBrDate(dataTermino);
         if (d) {
           dueDate = d.toISOString();
