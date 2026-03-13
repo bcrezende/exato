@@ -148,7 +148,12 @@ Deno.serve(async (req) => {
       });
 
       if (insertError) {
-        console.error(`Error creating instance for task ${parent.id}:`, insertError);
+        // 23505 = unique_violation — means instance already exists (race condition), safe to skip
+        if (insertError.code === "23505") {
+          console.log(`Skipped duplicate for parent ${parent.id}: ${parent.title} — ${newStart.toISOString()}`);
+        } else {
+          console.error(`Error creating instance for task ${parent.id}:`, insertError);
+        }
       } else {
         createdCount++;
         console.log(`Created instance for parent ${parent.id}: ${parent.title} — start: ${newStart.toISOString()}`);

@@ -387,6 +387,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      to_date_immutable: { Args: { ts: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "manager" | "employee"
