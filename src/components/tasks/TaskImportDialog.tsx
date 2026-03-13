@@ -381,7 +381,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
                       <TableCell className="text-xs">{row.rowIndex}</TableCell>
                       <TableCell>
                         {row.valid ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <CheckCircle2 className="h-4 w-4 text-success" />
                         ) : (
                           <XCircle className="h-4 w-4 text-destructive" />
                         )}
