@@ -45,9 +45,14 @@ interface TaskDetailModalProps {
 export default function TaskDetailModal({ task, open, onOpenChange, members, departments, onEdit, onRefresh }: TaskDetailModalProps) {
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const [localTask, setLocalTask] = useState<Task | null>(task);
   const canManage = role === "admin" || role === "manager";
-  const isAssigned = task?.assigned_to === user?.id;
+  const isAssigned = localTask?.assigned_to === user?.id;
   const [executionTime, setExecutionTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalTask(task);
+  }, [task]);
 
   useEffect(() => {
     if (!task || !open) { setExecutionTime(null); return; }
