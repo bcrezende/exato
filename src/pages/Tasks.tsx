@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -47,6 +47,9 @@ export default function Tasks() {
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  // Sorting
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   // Filters
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -141,6 +144,42 @@ export default function Tasks() {
       return true;
     });
   }, [tasks, search, filterStatus, filterDepartment, filterAssignee, filterRecurrence, filterDate, viewMode]);
+
+  const sortedFiltered = useMemo(() => {
+    if (!sortColumn) return filtered;
+    const sorted = [...filtered].sort((a, b) => {
+      let valA: string | null = null;
+      let valB: string | null = null;
+      switch (sortColumn) {
+        case "title": valA = a.title; valB = b.title; break;
+        case "status": valA = a.status; valB = b.status; break;
+        case "department": valA = getDepartmentName(a.department_id) || ""; valB = getDepartmentName(b.department_id) || ""; break;
+        case "recurrence": valA = a.recurrence_type; valB = b.recurrence_type; break;
+        case "assignee": valA = getMemberName(a.assigned_to); valB = getMemberName(b.assigned_to); break;
+        case "start_date": valA = a.start_date || ""; valB = b.start_date || ""; break;
+        case "due_date": valA = a.due_date || ""; valB = b.due_date || ""; break;
+        default: return 0;
+      }
+      const cmp = (valA || "").localeCompare(valB || "", "pt-BR");
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filtered, sortColumn, sortDirection, members, departments]);
+
+  const toggleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") setSortDirection("desc");
+      else { setSortColumn(null); setSortDirection("asc"); }
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDirection === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
@@ -342,21 +381,35 @@ export default function Tasks() {
       {/* List View */}
       {viewMode === "list" && (
         <ScrollArea className="w-full rounded-lg border">
-          <Table>
+           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[200px]">Tarefa</TableHead>
-                <TableHead className="min-w-[120px]">Status</TableHead>
-                <TableHead className="min-w-[130px]">Departamento</TableHead>
-                <TableHead className="min-w-[100px]">Recorrência</TableHead>
-                <TableHead className="min-w-[150px]">Responsável</TableHead>
-                <TableHead className="min-w-[150px]">Início</TableHead>
-                <TableHead className="min-w-[150px]">Término</TableHead>
+                <TableHead className="min-w-[200px] cursor-pointer select-none" onClick={() => toggleSort("title")}>
+                  <span className="flex items-center">Tarefa <SortIcon column="title" /></span>
+                </TableHead>
+                <TableHead className="min-w-[120px] cursor-pointer select-none" onClick={() => toggleSort("status")}>
+                  <span className="flex items-center">Status <SortIcon column="status" /></span>
+                </TableHead>
+                <TableHead className="min-w-[130px] cursor-pointer select-none" onClick={() => toggleSort("department")}>
+                  <span className="flex items-center">Departamento <SortIcon column="department" /></span>
+                </TableHead>
+                <TableHead className="min-w-[100px] cursor-pointer select-none" onClick={() => toggleSort("recurrence")}>
+                  <span className="flex items-center">Recorrência <SortIcon column="recurrence" /></span>
+                </TableHead>
+                <TableHead className="min-w-[150px] cursor-pointer select-none" onClick={() => toggleSort("assignee")}>
+                  <span className="flex items-center">Responsável <SortIcon column="assignee" /></span>
+                </TableHead>
+                <TableHead className="min-w-[150px] cursor-pointer select-none" onClick={() => toggleSort("start_date")}>
+                  <span className="flex items-center">Início <SortIcon column="start_date" /></span>
+                </TableHead>
+                <TableHead className="min-w-[150px] cursor-pointer select-none" onClick={() => toggleSort("due_date")}>
+                  <span className="flex items-center">Término <SortIcon column="due_date" /></span>
+                </TableHead>
                 <TableHead className="min-w-[120px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((task) => {
+              {sortedFiltered.map((task) => {
                 const deptName = getDepartmentName(task.department_id);
                 return (
                   <TableRow key={task.id} className="cursor-pointer" onClick={() => openDetail(task)}>
