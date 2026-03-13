@@ -98,6 +98,15 @@ export default function Tasks() {
     try {
       const task = tasks.find((t) => t.id === taskId);
       await updateTaskStatus(taskId, newStatus as any, task);
+      
+      if (newStatus === "in_progress") {
+        setHighlightedId(taskId);
+        setTimeout(() => setHighlightedId(null), 800);
+      } else if (newStatus === "completed") {
+        setSuccessId(taskId);
+        setTimeout(() => setSuccessId(null), 1000);
+      }
+      
       toast({ title: "Status atualizado!" });
       await fetchTasks();
     } catch {
