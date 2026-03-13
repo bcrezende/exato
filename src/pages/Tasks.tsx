@@ -44,7 +44,7 @@ export default function Tasks() {
   const [editing, setEditing] = useState<Task | null>(null);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-
+  const [importOpen, setImportOpen] = useState(false);
   // Filters
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
