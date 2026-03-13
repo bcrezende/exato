@@ -164,12 +164,12 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
             <div className="space-y-2">
               <span className="text-sm font-medium">Atualizar Status</span>
               {(localTask.status === "pending" || localTask.status === "overdue") && (
-                <Button size="sm" className="w-full" onClick={() => handleStatusChange("in_progress")}>
+                <Button size="sm" className="w-full" disabled={statusLoading} onClick={() => handleStatusChange("in_progress")}>
                   <Clock className="mr-2 h-4 w-4" /> {localTask.status === "overdue" ? "Iniciar (atrasada)" : "Iniciar"}
                 </Button>
               )}
               {localTask.status === "in_progress" && (
-                <Button size="sm" className="w-full bg-success text-success-foreground hover:bg-success/90" onClick={() => handleStatusChange("completed")}>
+                <Button size="sm" className="w-full bg-success text-success-foreground hover:bg-success/90" disabled={statusLoading} onClick={() => handleStatusChange("completed")}>
                   <Flag className="mr-2 h-4 w-4" /> Concluir
                 </Button>
               )}
