@@ -295,7 +295,7 @@ export default function Tasks() {
 
       {/* Kanban View */}
       {viewMode === "kanban" && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
           {kanbanColumns.map((status) => {
             const columnTasks = filtered.filter((t) => {
               if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < new Date().toISOString() && t.status === "pending");
