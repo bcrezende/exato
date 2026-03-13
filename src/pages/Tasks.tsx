@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon, FileSpreadsheet } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -339,57 +341,84 @@ export default function Tasks() {
 
       {/* List View */}
       {viewMode === "list" && (
-        <div className="space-y-2">
-          {filtered.map((task) => {
-            const deptName = getDepartmentName(task.department_id);
-            return (
-              <Card key={task.id} className="transition-shadow hover:shadow-md cursor-pointer" onClick={() => openDetail(task)}>
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold truncate">{task.title}</h3>
+        <ScrollArea className="w-full rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[200px]">Tarefa</TableHead>
+                <TableHead className="min-w-[120px]">Status</TableHead>
+                <TableHead className="min-w-[130px]">Departamento</TableHead>
+                <TableHead className="min-w-[100px]">Recorrência</TableHead>
+                <TableHead className="min-w-[150px]">Responsável</TableHead>
+                <TableHead className="min-w-[150px]">Início</TableHead>
+                <TableHead className="min-w-[150px]">Término</TableHead>
+                <TableHead className="min-w-[120px] text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((task) => {
+                const deptName = getDepartmentName(task.department_id);
+                return (
+                  <TableRow key={task.id} className="cursor-pointer" onClick={() => openDetail(task)}>
+                    <TableCell className="font-medium">
+                      <div className="truncate max-w-[300px]">{task.title}</div>
+                      {task.description && <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">{task.description}</p>}
+                    </TableCell>
+                    <TableCell>
                       <Badge className={statusColors[task.status]} variant="secondary">{statusLabels[task.status]}</Badge>
-                      {deptName && <Badge variant="outline" className="text-xs">{deptName}</Badge>}
-                      {task.recurrence_type !== "none" && <Badge variant="outline" className="text-xs">{recurrenceLabels[task.recurrence_type]}</Badge>}
-                    </div>
-                    {task.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{task.description}</p>}
-                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><User className="h-3 w-3" /> {getMemberName(task.assigned_to)}</span>
-                      {task.start_date && <span>Início: {format(new Date(task.start_date), "dd/MM/yyyy HH:mm")}</span>}
-                      {task.due_date && <span>Término: {format(new Date(task.due_date), "dd/MM/yyyy HH:mm")}</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    {(role === "employee" && task.assigned_to === user?.id) && (
-                      <>
-                        {task.status === "pending" && (
-                          <Button size="sm" variant="outline" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
+                    </TableCell>
+                    <TableCell>
+                      {deptName ? <Badge variant="outline" className="text-xs">{deptName}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {recurrenceLabels[task.recurrence_type]}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {getMemberName(task.assigned_to)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {task.start_date ? format(new Date(task.start_date), "dd/MM/yyyy HH:mm") : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy HH:mm") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
+                        {(role === "employee" && task.assigned_to === user?.id) && (
+                          <>
+                            {task.status === "pending" && (
+                              <Button size="sm" variant="outline" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
+                            )}
+                            {task.status === "in_progress" && (
+                              <Button size="sm" variant="outline" className="text-success border-success hover:bg-success/10" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
+                            )}
+                            {task.status === "completed" && (
+                              <Badge className="bg-success/10 text-success">✓</Badge>
+                            )}
+                          </>
                         )}
-                        {task.status === "in_progress" && (
-                          <Button size="sm" variant="outline" className="text-success border-success hover:bg-success/10" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
+                        {canManage && (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(task)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </>
                         )}
-                        {task.status === "completed" && (
-                          <Badge className="bg-success/10 text-success">Concluída</Badge>
-                        )}
-                      </>
-                    )}
-                    {canManage && (
-                      <>
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(task)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-              Nenhuma tarefa encontrada
-            </div>
-          )}
-        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                    Nenhuma tarefa encontrada
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       )}
 
       <TaskForm open={formOpen} onOpenChange={setFormOpen} editing={editing} members={members} departments={departments} onSaved={fetchTasks} />
