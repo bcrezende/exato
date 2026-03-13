@@ -22,7 +22,7 @@ type Profile = { id: string; full_name: string | null };
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
 
 function AdminManagerDashboard() {
-  const { user, role } = useAuth();
+  const { user, role, profile } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
