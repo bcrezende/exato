@@ -88,9 +88,14 @@ export default function Tasks() {
   };
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
-    const task = tasks.find((t) => t.id === taskId);
-    await updateTaskStatus(taskId, newStatus as any, task);
-    await fetchTasks();
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      await updateTaskStatus(taskId, newStatus as any, task);
+      toast({ title: "Status atualizado!" });
+      await fetchTasks();
+    } catch {
+      toast({ variant: "destructive", title: "Erro ao atualizar status" });
+    }
   };
 
   const getMemberName = (id: string | null) => {
@@ -241,9 +246,9 @@ export default function Tasks() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {kanbanColumns.map((status) => {
             const columnTasks = filtered.filter((t) => {
-              if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < new Date().toISOString() && t.status !== "completed");
+              if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < new Date().toISOString() && t.status === "pending");
               if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < new Date().toISOString());
-              if (status === "in_progress") return t.status === "in_progress" && !(t.due_date && t.due_date < new Date().toISOString());
+              if (status === "in_progress") return t.status === "in_progress";
               return t.status === status;
             });
             const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : "bg-destructive";
