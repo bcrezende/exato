@@ -34,7 +34,7 @@ export default function Login() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
             <Building2 className="h-7 w-7" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">TaskCorp</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Exato</h1>
           <p className="text-muted-foreground">Monitoramento de Tarefas Corporativas</p>
         </div>
         <Card>

@@ -49,7 +49,7 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-sidebar-foreground">TaskCorp</span>
+              <span className="text-sm font-bold text-sidebar-foreground">Exato</span>
               <span className="text-xs text-sidebar-foreground/60">Gestão de Tarefas</span>
             </div>
           )}
