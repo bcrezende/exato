@@ -32,7 +32,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
-          <img src={logoDark} alt="Exato" className="h-24 w-auto" />
+          <img src={logoDark} alt="Exato" className="h-32 w-auto" />
           <p className="text-muted-foreground">Monitoramento de Tarefas Corporativas</p>
         </div>
         <Card>
