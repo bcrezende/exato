@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon } from "lucide-react";
+import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon, FileSpreadsheet } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
