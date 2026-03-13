@@ -1,0 +1,1 @@
+ALTER FUNCTION public.to_date_immutable(timestamptz) SET search_path = public;
