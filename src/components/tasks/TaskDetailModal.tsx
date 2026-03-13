@@ -107,16 +107,16 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-lg leading-tight">{task.title}</DialogTitle>
+          <DialogTitle className="text-lg leading-tight">{localTask.title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            <Badge className={statusColors[task.status]}>{statusLabels[task.status]}</Badge>
-            {task.recurrence_type !== "none" && <Badge variant="outline">{recurrenceLabels[task.recurrence_type]}</Badge>}
+            <Badge className={statusColors[localTask.status]}>{statusLabels[localTask.status]}</Badge>
+            {localTask.recurrence_type !== "none" && <Badge variant="outline">{recurrenceLabels[localTask.recurrence_type]}</Badge>}
           </div>
 
-          {task.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">{task.description}</p>
+          {localTask.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed">{localTask.description}</p>
           )}
 
           <div className="space-y-3 text-sm">
@@ -132,16 +132,16 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                 <span>Setor: <span className="text-foreground font-medium">{deptName}</span></span>
               </div>
             )}
-            {task.start_date && (
+            {localTask.start_date && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <CalendarDays className="h-4 w-4 shrink-0" />
-                <span>Início: <span className="text-foreground font-medium">{format(new Date(task.start_date), "dd/MM/yyyy HH:mm")}</span></span>
+                <span>Início: <span className="text-foreground font-medium">{format(new Date(localTask.start_date), "dd/MM/yyyy HH:mm")}</span></span>
               </div>
             )}
-            {task.due_date && (
+            {localTask.due_date && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span>Término: <span className="text-foreground font-medium">{format(new Date(task.due_date), "dd/MM/yyyy HH:mm")}</span></span>
+                <span>Término: <span className="text-foreground font-medium">{format(new Date(localTask.due_date), "dd/MM/yyyy HH:mm")}</span></span>
               </div>
             )}
             {executionTime && (
@@ -155,17 +155,17 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
           {isAssigned && !canManage && (
             <div className="space-y-2">
               <span className="text-sm font-medium">Atualizar Status</span>
-              {(task.status === "pending" || task.status === "overdue") && (
+              {(localTask.status === "pending" || localTask.status === "overdue") && (
                 <Button size="sm" className="w-full" onClick={() => handleStatusChange("in_progress")}>
-                  <Clock className="mr-2 h-4 w-4" /> {task.status === "overdue" ? "Iniciar (atrasada)" : "Iniciar"}
+                  <Clock className="mr-2 h-4 w-4" /> {localTask.status === "overdue" ? "Iniciar (atrasada)" : "Iniciar"}
                 </Button>
               )}
-              {task.status === "in_progress" && (
+              {localTask.status === "in_progress" && (
                 <Button size="sm" className="w-full bg-success text-success-foreground hover:bg-success/90" onClick={() => handleStatusChange("completed")}>
                   <Flag className="mr-2 h-4 w-4" /> Concluir
                 </Button>
               )}
-              {task.status === "completed" && (
+              {localTask.status === "completed" && (
                 <div className="text-center space-y-1">
                   <Badge className="bg-success/10 text-success">Concluída</Badge>
                   <p className="text-xs text-muted-foreground">Para alterar, solicite ao gerente</p>
@@ -177,7 +177,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
 
         {canManage && (
           <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onEdit(task); }}>
+            <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onEdit(localTask); }}>
               <Pencil className="mr-2 h-4 w-4" /> Editar
             </Button>
             <Button variant="destructive" size="sm" onClick={handleDelete}>
