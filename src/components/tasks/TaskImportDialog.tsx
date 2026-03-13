@@ -141,9 +141,13 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
 
     // Normalize header keys
     const parsed: ParsedRow[] = jsonData.map((row, idx) => {
-      const normalized: Record<string, string> = {};
+      const rawValues: Record<string, any> = {};
       for (const key of Object.keys(row)) {
-        normalized[key.toLowerCase().trim()] = String(row[key]).trim();
+        rawValues[key.toLowerCase().trim()] = row[key];
+      }
+      const normalized: Record<string, string> = {};
+      for (const key of Object.keys(rawValues)) {
+        normalized[key] = rawValues[key] instanceof Date ? "" : String(rawValues[key]).trim();
       }
 
       const titulo = normalized["titulo"] || normalized["título"] || "";
