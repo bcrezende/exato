@@ -41,7 +41,7 @@ export async function updateTaskStatus(
           task_id: taskId,
           user_id: userId,
           action,
-        })
+        }).then(() => {})
       );
     }
   }
