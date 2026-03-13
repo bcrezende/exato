@@ -88,9 +88,14 @@ export default function Tasks() {
   };
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
-    const task = tasks.find((t) => t.id === taskId);
-    await updateTaskStatus(taskId, newStatus as any, task);
-    await fetchTasks();
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      await updateTaskStatus(taskId, newStatus as any, task);
+      toast({ title: "Status atualizado!" });
+      await fetchTasks();
+    } catch {
+      toast({ variant: "destructive", title: "Erro ao atualizar status" });
+    }
   };
 
   const getMemberName = (id: string | null) => {
