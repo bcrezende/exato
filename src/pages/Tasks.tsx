@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon } from "lucide-react";
+import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon, FileSpreadsheet } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import TaskCalendar from "@/components/tasks/TaskCalendar";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import TaskForm from "@/components/tasks/TaskForm";
+import TaskImportDialog from "@/components/tasks/TaskImportDialog";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
@@ -43,7 +44,7 @@ export default function Tasks() {
   const [editing, setEditing] = useState<Task | null>(null);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-
+  const [importOpen, setImportOpen] = useState(false);
   // Filters
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -157,9 +158,14 @@ export default function Tasks() {
             </Button>
           </div>
           {canManage && (
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" /> Nova Tarefa
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar Excel
+              </Button>
+              <Button onClick={openCreate}>
+                <Plus className="mr-2 h-4 w-4" /> Nova Tarefa
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -383,6 +389,7 @@ export default function Tasks() {
 
       <TaskForm open={formOpen} onOpenChange={setFormOpen} editing={editing} members={members} departments={departments} onSaved={fetchTasks} />
       <TaskDetailModal task={detailTask} open={detailOpen} onOpenChange={setDetailOpen} members={members} departments={departments} onEdit={openEdit} onRefresh={fetchTasks} />
+      <TaskImportDialog open={importOpen} onOpenChange={setImportOpen} members={members} departments={departments} onImported={fetchTasks} />
     </div>
   );
 }
