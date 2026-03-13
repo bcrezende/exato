@@ -224,22 +224,26 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
 
-  const getTasksForDayAndHour = (day: Date, hour: number) =>
-    tasks.filter(t => {
-      const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
-      if (!start) return false;
-      return isSameDay(start, day) && start.getHours() === hour;
-    });
-
   const getTaskDurationHours = (t: Task) => {
     if (!t.start_date || !t.due_date) return 1;
     const diff = (new Date(t.due_date).getTime() - new Date(t.start_date).getTime()) / (1000 * 60 * 60);
     return Math.max(1, Math.min(diff, 12));
   };
 
+  const dayLayouts = useMemo(() => {
+    const map = new Map<number, LayoutedTask[]>();
+    weekDays.forEach((day, i) => {
+      const dayTasks = tasks.filter(t => {
+        const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
+        return start && isSameDay(start, day);
+      });
+      map.set(i, layoutOverlappingTasks(dayTasks));
+    });
+    return map;
+  }, [tasks, weekStart.getTime()]);
+
   return (
     <div className="overflow-auto max-h-[600px]">
-      {/* Day headers */}
       <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b sticky top-0 bg-card z-10">
         <div className="border-r" />
         {weekDays.map((day, i) => (
@@ -249,7 +253,6 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
           </div>
         ))}
       </div>
-      {/* Hour rows */}
       <div className="grid grid-cols-[60px_repeat(7,1fr)]">
         {HOURS.map(hour => (
           <div key={hour} className="contents">
@@ -257,22 +260,24 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
               {String(hour).padStart(2, "0")}:00
             </div>
             {weekDays.map((day, di) => {
-              const hourTasks = getTasksForDayAndHour(day, hour);
+              const layouted = (dayLayouts.get(di) || []).filter(lt => Math.floor(lt.startHour) === hour);
               return (
                 <div key={di} className={`border-r border-b h-14 relative ${isSameDay(day, today) ? "bg-primary/5" : ""}`}>
-                  {hourTasks.map(t => {
-                    const c = statusCalendarColors[t.status] || statusCalendarColors.pending;
-                    const durationHours = getTaskDurationHours(t);
+                  {layouted.map(lt => {
+                    const c = statusCalendarColors[lt.task.status] || statusCalendarColors.pending;
+                    const durationHours = getTaskDurationHours(lt.task);
+                    const w = `calc((100% - 4px) / ${lt.totalColumns})`;
+                    const l = `calc(${lt.columnIndex} * (100% - 4px) / ${lt.totalColumns} + 2px)`;
                     return (
                       <div
-                        key={t.id}
-                        onClick={() => onTaskClick(t)}
-                        className={`absolute inset-x-0.5 rounded border px-1 py-0.5 text-[11px] font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
-                        style={{ height: `${durationHours * 56 - 4}px`, top: "2px" }}
+                        key={lt.task.id}
+                        onClick={() => onTaskClick(lt.task)}
+                        className={`absolute rounded border px-1 py-0.5 text-[11px] font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
+                        style={{ height: `${durationHours * 56 - 4}px`, top: "2px", width: w, left: l }}
                       >
-                        <div className="truncate">{t.title}</div>
-                        {durationHours > 1 && t.start_date && (
-                          <div className="text-[10px] opacity-70">{format(new Date(t.start_date), "HH:mm")} - {t.due_date ? format(new Date(t.due_date), "HH:mm") : ""}</div>
+                        <div className="truncate">{lt.task.title}</div>
+                        {durationHours > 1 && lt.task.start_date && (
+                          <div className="text-[10px] opacity-70">{format(new Date(lt.task.start_date), "HH:mm")} - {lt.task.due_date ? format(new Date(lt.task.due_date), "HH:mm") : ""}</div>
                         )}
                       </div>
                     );
@@ -286,8 +291,6 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
     </div>
   );
 }
-
-/* ──── Day View ──── */
 function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks: Task[]; onTaskClick: (t: Task) => void }) {
   const getTaskDurationHours = (t: Task) => {
     if (!t.start_date || !t.due_date) return 1;
