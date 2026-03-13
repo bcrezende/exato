@@ -56,7 +56,7 @@ function AdminManagerDashboard() {
       }
     };
     fetchData();
-  }, [user]);
+  }, [user, role, profile]);
 
   const today = startOfDay(new Date());
   const todayStr = format(today, "yyyy-MM-dd");
