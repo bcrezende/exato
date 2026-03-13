@@ -158,9 +158,14 @@ export default function Tasks() {
             </Button>
           </div>
           {canManage && (
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" /> Nova Tarefa
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar Excel
+              </Button>
+              <Button onClick={openCreate}>
+                <Plus className="mr-2 h-4 w-4" /> Nova Tarefa
+              </Button>
+            </>
           )}
         </div>
       </div>
