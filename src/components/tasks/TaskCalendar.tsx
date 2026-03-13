@@ -289,44 +289,47 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
 
 /* ──── Day View ──── */
 function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks: Task[]; onTaskClick: (t: Task) => void }) {
-  const getTasksForHour = (hour: number) =>
-    tasks.filter(t => {
-      const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
-      if (!start) return false;
-      return isSameDay(start, currentDate) && start.getHours() === hour;
-    });
-
   const getTaskDurationHours = (t: Task) => {
     if (!t.start_date || !t.due_date) return 1;
     const diff = (new Date(t.due_date).getTime() - new Date(t.start_date).getTime()) / (1000 * 60 * 60);
     return Math.max(1, Math.min(diff, 12));
   };
 
+  const layouted = useMemo(() => {
+    const dayTasks = tasks.filter(t => {
+      const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
+      return start && isSameDay(start, currentDate);
+    });
+    return layoutOverlappingTasks(dayTasks);
+  }, [tasks, currentDate.toDateString()]);
+
   return (
     <div className="overflow-auto max-h-[600px]">
       {HOURS.map(hour => {
-        const hourTasks = getTasksForHour(hour);
+        const hourTasks = layouted.filter(lt => Math.floor(lt.startHour) === hour);
         return (
           <div key={hour} className="grid grid-cols-[60px_1fr] border-b">
             <div className="border-r px-2 py-1 text-right text-xs text-muted-foreground h-14 flex items-start justify-end pt-1">
               {String(hour).padStart(2, "0")}:00
             </div>
             <div className="h-14 relative">
-              {hourTasks.map(t => {
-                const c = statusCalendarColors[t.status] || statusCalendarColors.pending;
-                const durationHours = getTaskDurationHours(t);
+              {hourTasks.map(lt => {
+                const c = statusCalendarColors[lt.task.status] || statusCalendarColors.pending;
+                const durationHours = getTaskDurationHours(lt.task);
+                const w = `calc((100% - 4px) / ${lt.totalColumns})`;
+                const l = `calc(${lt.columnIndex} * (100% - 4px) / ${lt.totalColumns} + 2px)`;
                 return (
                   <div
-                    key={t.id}
-                    onClick={() => onTaskClick(t)}
-                    className={`absolute left-1 right-1 rounded border px-2 py-1 text-xs font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
-                    style={{ height: `${durationHours * 56 - 4}px`, top: "2px" }}
+                    key={lt.task.id}
+                    onClick={() => onTaskClick(lt.task)}
+                    className={`absolute rounded border px-2 py-1 text-xs font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
+                    style={{ height: `${durationHours * 56 - 4}px`, top: "2px", width: w, left: l }}
                   >
-                    <div className="truncate font-semibold">{t.title}</div>
-                    {t.start_date && (
-                      <div className="text-[10px] opacity-70">{format(new Date(t.start_date), "HH:mm")} - {t.due_date ? format(new Date(t.due_date), "HH:mm") : ""}</div>
+                    <div className="truncate font-semibold">{lt.task.title}</div>
+                    {lt.task.start_date && (
+                      <div className="text-[10px] opacity-70">{format(new Date(lt.task.start_date), "HH:mm")} - {lt.task.due_date ? format(new Date(lt.task.due_date), "HH:mm") : ""}</div>
                     )}
-                    {t.description && durationHours >= 2 && <div className="truncate text-[10px] opacity-60 mt-0.5">{t.description}</div>}
+                    {lt.task.description && durationHours >= 2 && <div className="truncate text-[10px] opacity-60 mt-0.5">{lt.task.description}</div>}
                   </div>
                 );
               })}
