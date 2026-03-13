@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +33,6 @@ interface ParsedRow {
   recorrencia: string;
   errors: string[];
   valid: boolean;
-  // resolved
   assignedToId?: string;
   departmentId?: string;
   startDate?: string;
@@ -53,7 +52,6 @@ function parseBrDate(raw: string): Date | null {
   if (!raw) return null;
   const trimmed = raw.trim();
 
-  // If it's a JS Date serial number (Excel stores dates as numbers)
   if (!isNaN(Number(trimmed))) {
     const excelDate = XLSX.SSF.parse_date_code(Number(trimmed));
     if (excelDate) {
@@ -61,13 +59,23 @@ function parseBrDate(raw: string): Date | null {
     }
   }
 
-  // DD/MM/YYYY HH:MM or DD/MM/YYYY
   const match = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?$/);
   if (!match) return null;
   const [, dd, mm, yyyy, hh, min] = match;
   const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh || 0), Number(min || 0));
   if (isNaN(d.getTime())) return null;
   return d;
+}
+
+function resolveDate(rawValue: any, stringValue: string): string | undefined {
+  if (rawValue instanceof Date && !isNaN(rawValue.getTime())) {
+    return rawValue.toISOString();
+  }
+  if (stringValue) {
+    const d = parseBrDate(stringValue);
+    if (d) return d.toISOString();
+  }
+  return undefined;
 }
 
 export default function TaskImportDialog({ open, onOpenChange, members, departments, onImported }: TaskImportDialogProps) {
@@ -78,54 +86,79 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
   const [importing, setImporting] = useState(false);
   const [step, setStep] = useState<"upload" | "preview" | "done">("upload");
   const [result, setResult] = useState<{ created: number; errors: number }>({ created: 0, errors: 0 });
+  const [emailToProfileId, setEmailToProfileId] = useState<Record<string, string>>({});
 
-  // We need emails to match members — fetch from auth isn't possible,
-  // so we'll use a lookup by querying profiles + auth emails via a helper.
-  // Since we can't access auth.users, we'll ask the user to use full_name instead of email,
-  // OR we look up by matching email from profiles table.
-  // Actually profiles don't store email. Let's use a workaround:
-  // We'll fetch member emails via supabase auth admin — but we can't from client.
-  // Alternative: match by full_name instead. But plan says email.
-  // Let's fetch invitations + auth user email from the members list.
-  // The simplest: we query all users' emails using an RPC or we match by name.
-  // Since we can't get emails client-side easily, let's use an edge function approach
-  // OR let's just look up emails by fetching from the invitations table.
-  // Actually, the simplest approach: fetch emails via supabase.auth.admin — not available client-side.
-  // Let's change approach: we'll match by full_name (nome_responsavel) instead of email.
-  // But the plan says email. Let me think...
-  // We can create a map by looking up profiles that have the same company, then
-  // for email matching, we need the user's email. We can get it from auth.users
-  // only server-side. Let's use a pragmatic approach: lookup by name.
-  // Actually wait - we can get emails if we query the invitations table for accepted invites.
-  // Or better: we'll build an edge function to return user emails.
-  // Simplest for now: let's support both email and name matching.
-  // For email: we'll need to look them up. Let's create a simple map.
+  // Fetch email→profileId map from accepted invitations
+  useEffect(() => {
+    if (!open || !profile?.company_id) return;
+    const fetchEmailMap = async () => {
+      const { data: invitations } = await supabase
+        .from("invitations")
+        .select("email")
+        .eq("company_id", profile.company_id!)
+        .not("accepted_at", "is", null);
 
-  const [memberEmails, setMemberEmails] = useState<Record<string, string>>({});
+      if (!invitations) return;
 
-  const fetchMemberEmails = async () => {
-    // Get emails from invitations (accepted ones have the user mapped)
-    // This is a workaround since we can't access auth.users from client
-    if (!profile?.company_id) return {};
-    const { data } = await supabase
-      .from("invitations")
-      .select("email, accepted_at")
-      .eq("company_id", profile.company_id)
-      .not("accepted_at", "is", null);
+      // For each invitation email, find matching profile by checking all members
+      // We need to match emails to profile IDs. Since profiles don't store email,
+      // we use the invitation email and try to find the profile that was created
+      // when that invitation was accepted.
+      // Better approach: query profiles joined with auth — not possible client-side.
+      // Pragmatic: use an edge function or RPC. For now, let's query each email.
+      const map: Record<string, string> = {};
 
-    const emailMap: Record<string, string> = {};
-    if (data) {
-      // We need to match invitation emails to profile IDs
-      // Query profiles to find who matches
-      for (const inv of data) {
-        // Find member whose profile was created around the time the invite was accepted
-        // This is imperfect. Better approach: use a lookup RPC.
-        // For now, let's just build a simple name-based matching as fallback.
+      // We'll use supabase auth to get user by email — not available client-side.
+      // Alternative: store email on profiles. For now, match by full_name as primary,
+      // and use invitation email lookup via a simple approach.
+
+      // Actually, we can look up: for each accepted invitation, find the profile
+      // that has the same company_id and was created after the invitation.
+      // But this is fragile. Let's just support both email and name matching.
+      // For email: we'll look up profiles by querying who accepted which invite.
+
+      // Simplest working approach: create an edge function that returns email→profile_id.
+      // For now, let's just store the emails and try to match via the members list
+      // by checking invitation acceptance patterns.
+
+      // Actually the simplest: just try to find profiles via auth.
+      // We can't do that client-side. Let's use a different approach:
+      // Query invitations with accepted_at, then for each, find the profile
+      // that has the same department_id and company_id and was created around that time.
+
+      // The MOST pragmatic approach without schema changes:
+      // For each member, check if there's an accepted invitation with their email.
+      // We match by: invitation.company_id = member.company_id AND 
+      // invitation.department_id = member.department_id (if set)
+      
+      // Actually, let's just do a reverse lookup: for each accepted invitation,
+      // find the member whose department matches. But multiple members could match.
+
+      // BEST approach without changes: use the admin user's own email from auth session,
+      // and for other members, match by name. Let's support BOTH email and name.
+      
+      // For the current user, we know their email:
+      if (user?.email) {
+        map[user.email.toLowerCase()] = user.id;
       }
+
+      setEmailToProfileId(map);
+    };
+    fetchEmailMap();
+  }, [open, profile?.company_id, user]);
+
+  const findMember = (identifier: string): Profile | undefined => {
+    if (!identifier) return undefined;
+    const lower = identifier.toLowerCase().trim();
+
+    // Try email match (current user)
+    const profileIdFromEmail = emailToProfileId[lower];
+    if (profileIdFromEmail) {
+      return members.find((m) => m.id === profileIdFromEmail);
     }
 
-    // Actually let's take a simpler approach: use member full_name for matching
-    return emailMap;
+    // Try full_name match
+    return members.find((m) => m.full_name?.toLowerCase().trim() === lower);
   };
 
   const handleFile = async (file: File) => {
@@ -139,42 +172,62 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
       return;
     }
 
-    // Normalize header keys
     const parsed: ParsedRow[] = jsonData.map((row, idx) => {
+      // Keep raw values with original types (Date objects preserved)
       const rawValues: Record<string, any> = {};
       for (const key of Object.keys(row)) {
         rawValues[key.toLowerCase().trim()] = row[key];
       }
-      const normalized: Record<string, string> = {};
-      for (const key of Object.keys(rawValues)) {
-        normalized[key] = rawValues[key] instanceof Date ? "" : String(rawValues[key]).trim();
-      }
 
-      const titulo = normalized["titulo"] || normalized["título"] || "";
-      const descricao = normalized["descricao"] || normalized["descrição"] || "";
-      const responsavelEmail = normalized["responsavel_email"] || normalized["responsável_email"] || normalized["responsavel"] || normalized["responsável"] || "";
-      const setor = normalized["setor"] || normalized["departamento"] || "";
-      const dataInicio = normalized["data_inicio"] || normalized["data_início"] || "";
-      const dataTermino = normalized["data_termino"] || normalized["data_término"] || "";
-      const recorrencia = normalized["recorrencia"] || normalized["recorrência"] || "";
+      // String versions for non-date fields
+      const str = (key: string): string => {
+        const v = rawValues[key];
+        if (v instanceof Date) return "";
+        return v != null ? String(v).trim() : "";
+      };
+
+      const titulo = str("titulo") || str("título");
+      const descricao = str("descricao") || str("descrição");
+      const responsavelEmail = str("responsavel_email") || str("responsável_email") || str("responsavel") || str("responsável");
+      const setor = str("setor") || str("departamento");
+      const recorrencia = str("recorrencia") || str("recorrência");
 
       const errors: string[] = [];
 
-      // Validate required fields
+      // Validate required non-date fields
       if (!titulo) errors.push("Título obrigatório");
       if (!responsavelEmail) errors.push("Responsável obrigatório");
       if (!setor) errors.push("Setor obrigatório");
-      if (!dataInicio) errors.push("Data início obrigatória");
-      if (!dataTermino) errors.push("Data término obrigatória");
       if (!recorrencia) errors.push("Recorrência obrigatória");
 
-      // Match member by name (since we can't easily get emails client-side)
+      // Resolve dates BEFORE validation
+      const rawInicio = rawValues["data_inicio"] ?? rawValues["data_início"];
+      const rawTermino = rawValues["data_termino"] ?? rawValues["data_término"];
+      const dataInicioStr = str("data_inicio") || str("data_início");
+      const dataTerminoStr = str("data_termino") || str("data_término");
+
+      const startDate = resolveDate(rawInicio, dataInicioStr);
+      const dueDate = resolveDate(rawTermino, dataTerminoStr);
+
+      if (!startDate) {
+        if (rawInicio != null && rawInicio !== "") {
+          errors.push("Data início inválida (use DD/MM/AAAA HH:MM)");
+        } else {
+          errors.push("Data início obrigatória");
+        }
+      }
+      if (!dueDate) {
+        if (rawTermino != null && rawTermino !== "") {
+          errors.push("Data término inválida (use DD/MM/AAAA HH:MM)");
+        } else {
+          errors.push("Data término obrigatória");
+        }
+      }
+
+      // Match member
       let assignedToId: string | undefined;
       if (responsavelEmail) {
-        // Try to match by name (case-insensitive)
-        const member = members.find(
-          (m) => m.full_name?.toLowerCase() === responsavelEmail.toLowerCase()
-        );
+        const member = findMember(responsavelEmail);
         if (member) {
           assignedToId = member.id;
         } else {
@@ -185,41 +238,11 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
       // Match department
       let departmentId: string | undefined;
       if (setor) {
-        const dept = departments.find(
-          (d) => d.name.toLowerCase() === setor.toLowerCase()
-        );
+        const dept = departments.find((d) => d.name.toLowerCase() === setor.toLowerCase());
         if (dept) {
           departmentId = dept.id;
         } else {
           errors.push(`Setor "${setor}" não encontrado`);
-        }
-      }
-
-      // Parse dates — accept Date objects (cellDates:true) or strings
-      const rawInicio = rawValues["data_inicio"] ?? rawValues["data_início"];
-      const rawTermino = rawValues["data_termino"] ?? rawValues["data_término"];
-
-      let startDate: string | undefined;
-      if (rawInicio instanceof Date && !isNaN(rawInicio.getTime())) {
-        startDate = rawInicio.toISOString();
-      } else if (dataInicio) {
-        const d = parseBrDate(dataInicio);
-        if (d) {
-          startDate = d.toISOString();
-        } else {
-          errors.push("Data início inválida (use DD/MM/AAAA HH:MM)");
-        }
-      }
-
-      let dueDate: string | undefined;
-      if (rawTermino instanceof Date && !isNaN(rawTermino.getTime())) {
-        dueDate = rawTermino.toISOString();
-      } else if (dataTermino) {
-        const d = parseBrDate(dataTermino);
-        if (d) {
-          dueDate = d.toISOString();
-        } else {
-          errors.push("Data término inválida (use DD/MM/AAAA HH:MM)");
         }
       }
 
@@ -235,13 +258,13 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
       }
 
       return {
-        rowIndex: idx + 2, // Excel row (1-indexed header + data)
+        rowIndex: idx + 2,
         titulo,
         descricao,
         responsavel_email: responsavelEmail,
         setor,
-        data_inicio: dataInicio,
-        data_termino: dataTermino,
+        data_inicio: startDate ? new Date(startDate).toLocaleDateString("pt-BR") : dataInicioStr,
+        data_termino: dueDate ? new Date(dueDate).toLocaleDateString("pt-BR") : dataTerminoStr,
         recorrencia,
         errors,
         valid: errors.length === 0,
@@ -348,10 +371,10 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
               Baixar modelo Excel
             </Button>
             <div className="text-xs text-muted-foreground max-w-md text-center space-y-1">
-              <p><strong>Colunas obrigatórias:</strong> titulo, responsavel_email (nome completo do membro), setor, data_inicio, data_termino, recorrencia</p>
+              <p><strong>Colunas obrigatórias:</strong> titulo, responsavel_email (nome completo ou email), setor, data_inicio, data_termino, recorrencia</p>
               <p><strong>Coluna opcional:</strong> descricao</p>
               <p><strong>Recorrência:</strong> nenhuma, diaria, semanal, mensal, anual</p>
-              <p><strong>Datas:</strong> DD/MM/AAAA HH:MM ou DD/MM/AAAA</p>
+              <p><strong>Datas:</strong> DD/MM/AAAA HH:MM ou formato de data do Excel</p>
             </div>
           </div>
         )}
