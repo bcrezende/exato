@@ -130,7 +130,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
 
   const handleFile = async (file: File) => {
     const data = await file.arrayBuffer();
-    const wb = XLSX.read(data, { type: "array" });
+    const wb = XLSX.read(data, { type: "array", cellDates: true });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
 
