@@ -37,11 +37,11 @@ export async function updateTaskStatus(
         action = "completed";
       }
       secondaryOps.push(
-        supabase.from("task_time_logs").insert({
+        Promise.resolve(supabase.from("task_time_logs").insert({
           task_id: taskId,
           user_id: userId,
           action,
-        }).then(() => {})
+        }))
       );
     }
   }
