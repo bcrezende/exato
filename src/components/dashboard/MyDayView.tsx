@@ -166,7 +166,7 @@ export default function MyDayView() {
               key={task.id}
               className={`transition-all hover-lift ${task.status === "completed" ? "opacity-60" : ""} ${
                 highlightedId === task.id ? "animate-highlight-flash" : ""
-              } ${successId === task.id ? "animate-highlight-success animate-pulse-success" : ""}`}
+              } ${successId === task.id ? "animate-highlight-success animate-pulse-success border-2 border-success/50" : ""}`}
             >
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="hidden sm:flex flex-col items-center text-xs text-muted-foreground min-w-[80px]">
