@@ -425,7 +425,9 @@ export default function Tasks() {
               {sortedFiltered.map((task) => {
                 const deptName = getDepartmentName(task.department_id);
                 return (
-                  <TableRow key={task.id} className="cursor-pointer" onClick={() => openDetail(task)}>
+                  <TableRow key={task.id} className={`cursor-pointer transition-colors ${
+                    highlightedId === task.id ? "animate-highlight-flash" : ""
+                  } ${successId === task.id ? "animate-highlight-success" : ""}`} onClick={() => openDetail(task)}>
                     <TableCell className="font-medium">
                       <div className="truncate max-w-[300px]">{task.title}</div>
                       {task.description && <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">{task.description}</p>}
