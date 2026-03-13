@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, Building2 } from "lucide-react";
+import { LogIn } from "lucide-react";
+import logoDark from "@/assets/logo-dark.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -31,10 +32,7 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Building2 className="h-7 w-7" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Exato</h1>
+          <img src={logoDark} alt="Exato" className="h-16 w-auto" />
           <p className="text-muted-foreground">Monitoramento de Tarefas Corporativas</p>
         </div>
         <Card>
