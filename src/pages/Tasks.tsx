@@ -120,7 +120,7 @@ export default function Tasks() {
       if (filterDepartment !== "all" && t.department_id !== filterDepartment) return false;
       if (filterAssignee !== "all" && t.assigned_to !== filterAssignee) return false;
       if (filterRecurrence !== "all" && t.recurrence_type !== filterRecurrence) return false;
-      if (filterDate) {
+      if (filterDate && viewMode !== "calendar") {
         const dayStart = startOfDay(filterDate);
         const dayEnd = endOfDay(filterDate);
         const taskStart = t.start_date ? parseISO(t.start_date) : null;
