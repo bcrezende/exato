@@ -97,11 +97,12 @@ export default {
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "highlight-flash": {
-          "0%": { backgroundColor: "hsl(var(--primary) / 0.15)" },
+          "0%": { backgroundColor: "hsl(var(--primary) / 0.3)" },
           "100%": { backgroundColor: "transparent" },
         },
         "highlight-success": {
-          "0%": { backgroundColor: "hsl(var(--success) / 0.2)" },
+          "0%": { backgroundColor: "transparent" },
+          "50%": { backgroundColor: "hsl(var(--success) / 0.35)" },
           "100%": { backgroundColor: "transparent" },
         },
         "shake": {
