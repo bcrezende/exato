@@ -115,8 +115,8 @@ export default {
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "pulse-success": {
-          "0%": { boxShadow: "0 0 0 0 hsl(var(--success) / 0.4)" },
-          "70%": { boxShadow: "0 0 0 10px hsl(var(--success) / 0)" },
+          "0%": { boxShadow: "0 0 0 0 hsl(var(--success) / 0.6)" },
+          "70%": { boxShadow: "0 0 0 16px hsl(var(--success) / 0)" },
           "100%": { boxShadow: "0 0 0 0 hsl(var(--success) / 0)" },
         },
       },
