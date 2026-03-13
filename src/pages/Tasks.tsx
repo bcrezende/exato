@@ -433,7 +433,7 @@ export default function Tasks() {
                       {task.description && <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">{task.description}</p>}
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusColors[task.status]} variant="secondary">{statusLabels[task.status]}</Badge>
+                      <Badge className={`${statusColors[task.status]} animate-scale-in`} variant="secondary">{statusLabels[task.status]}</Badge>
                     </TableCell>
                     <TableCell>
                       {deptName ? <Badge variant="outline" className="text-xs">{deptName}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
