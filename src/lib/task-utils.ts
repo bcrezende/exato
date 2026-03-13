@@ -13,6 +13,8 @@ export async function updateTaskStatus(
   task?: Pick<Task, "recurrence_parent_id" | "recurrence_type" | "status"> | null
 ) {
   const previousStatus = task?.status;
+
+  // 1. Essential: update status in DB
   const { error } = await supabase
     .from("tasks")
     .update({ status: newStatus })
@@ -20,41 +22,46 @@ export async function updateTaskStatus(
 
   if (error) throw error;
 
-  // Log time tracking events
+  // 2. Fire-and-forget secondary operations (time log + recurring generation)
+  const secondaryOps: Promise<unknown>[] = [];
+
   if (newStatus === "in_progress" || newStatus === "completed") {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
+    // Use getSession (reads from local cache) instead of getUser (network call)
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (userId) {
       let action: string;
       if (newStatus === "in_progress") {
         action = previousStatus === "overdue" ? "started_late" : "started";
       } else {
         action = "completed";
       }
-      await supabase.from("task_time_logs").insert({
-        task_id: taskId,
-        user_id: user.id,
-        action,
-      });
+      secondaryOps.push(
+        Promise.resolve(supabase.from("task_time_logs").insert({
+          task_id: taskId,
+          user_id: userId,
+          action,
+        }))
+      );
     }
   }
 
-  // If completing a recurring task instance, await generation of next instance
   let generatedRecurring = false;
   if (
     newStatus === "completed" &&
     (task?.recurrence_parent_id || (task?.recurrence_type && task.recurrence_type !== "none"))
   ) {
-    try {
-      const { data, error: fnError } = await supabase.functions.invoke("generate-recurring-tasks");
-      if (fnError) {
-        console.error("Edge function error:", fnError);
-      } else {
-        console.log("Recurring tasks response:", data);
-        generatedRecurring = true;
-      }
-    } catch (err) {
-      console.error("Error triggering recurring task generation:", err);
-    }
+    secondaryOps.push(
+      supabase.functions.invoke("generate-recurring-tasks").then(({ error: fnError }) => {
+        if (fnError) console.error("Edge function error:", fnError);
+        else generatedRecurring = true;
+      }).catch(err => console.error("Error triggering recurring task generation:", err))
+    );
+  }
+
+  // Don't block on secondary ops — fire them in parallel
+  if (secondaryOps.length > 0) {
+    Promise.all(secondaryOps).catch(console.error);
   }
 
   return { error: null, generatedRecurring };

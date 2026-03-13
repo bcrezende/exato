@@ -68,21 +68,25 @@ export default function MyDayView() {
 
   const handleStatusChange = async (taskId: string, newStatus: "in_progress" | "completed") => {
     const task = tasks.find((t) => t.id === taskId);
+    const previousTasks = tasks;
+
+    // Optimistic update — instant feedback
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
+    if (newStatus === "in_progress") {
+      setHighlightedId(taskId);
+      setTimeout(() => setHighlightedId(null), 800);
+    } else {
+      setSuccessId(taskId);
+      setTimeout(() => setSuccessId(null), 1500);
+    }
+    toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
+
     try {
       const { generatedRecurring } = await updateTaskStatus(taskId, newStatus, task);
-      
-      if (newStatus === "in_progress") {
-        setHighlightedId(taskId);
-        setTimeout(() => setHighlightedId(null), 800);
-      } else {
-        setSuccessId(taskId);
-        setTimeout(() => setSuccessId(null), 1500);
-      }
-      
-      toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
       if (generatedRecurring) fetchTasks();
     } catch {
+      // Revert on error
+      setTasks(previousTasks);
       toast.error("Erro ao atualizar status");
     }
   };
