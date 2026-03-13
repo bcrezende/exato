@@ -349,7 +349,7 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
           <div className="flex-1 flex flex-col gap-4 min-h-0">
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                 {validCount} válida(s)
               </Badge>
               {errorCount > 0 && (
