@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
       .from("tasks")
       .select("id")
       .lt("due_date", now.toISOString())
-      .in("status", ["pending", "in_progress"]);
+      .in("status", ["pending"]);
 
     if (overdueError) {
       console.error("Error fetching overdue tasks:", overdueError);
