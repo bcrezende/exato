@@ -47,6 +47,8 @@ export default function Tasks() {
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [successId, setSuccessId] = useState<string | null>(null);
   // Sorting
   const [sortColumn, setSortColumn] = useState<string | null>("start_date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
