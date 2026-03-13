@@ -1,8 +1,16 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useEffect, useState } from "react";
 
 export function AppLayout() {
+  const location = useLocation();
+  const [pageKey, setPageKey] = useState(location.pathname);
+
+  useEffect(() => {
+    setPageKey(location.pathname);
+  }, [location.pathname]);
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -12,7 +20,9 @@ export function AppLayout() {
             <SidebarTrigger />
           </header>
           <main className="flex-1 overflow-auto p-4 lg:p-6">
-            <Outlet />
+            <div key={pageKey} className="animate-fade-in">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>

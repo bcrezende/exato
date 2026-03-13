@@ -47,6 +47,8 @@ export default function Tasks() {
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [successId, setSuccessId] = useState<string | null>(null);
   // Sorting
   const [sortColumn, setSortColumn] = useState<string | null>("start_date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -96,6 +98,15 @@ export default function Tasks() {
     try {
       const task = tasks.find((t) => t.id === taskId);
       await updateTaskStatus(taskId, newStatus as any, task);
+      
+      if (newStatus === "in_progress") {
+        setHighlightedId(taskId);
+        setTimeout(() => setHighlightedId(null), 800);
+      } else if (newStatus === "completed") {
+        setSuccessId(taskId);
+        setTimeout(() => setSuccessId(null), 1000);
+      }
+      
       toast({ title: "Status atualizado!" });
       await fetchTasks();
     } catch {
@@ -284,7 +295,7 @@ export default function Tasks() {
 
       {/* Kanban View */}
       {viewMode === "kanban" && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
           {kanbanColumns.map((status) => {
             const columnTasks = filtered.filter((t) => {
               if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < new Date().toISOString() && t.status === "pending");
@@ -306,7 +317,9 @@ export default function Tasks() {
                     return (
                       <Card
                         key={task.id}
-                        className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+                        className={`cursor-pointer hover-lift ${
+                          highlightedId === task.id ? "animate-highlight-flash" : ""
+                        } ${successId === task.id ? "animate-highlight-success animate-pulse-success" : ""}`}
                         onClick={() => openDetail(task)}
                       >
                         <CardContent className="p-4 space-y-3">
@@ -412,13 +425,15 @@ export default function Tasks() {
               {sortedFiltered.map((task) => {
                 const deptName = getDepartmentName(task.department_id);
                 return (
-                  <TableRow key={task.id} className="cursor-pointer" onClick={() => openDetail(task)}>
+                  <TableRow key={task.id} className={`cursor-pointer transition-colors ${
+                    highlightedId === task.id ? "animate-highlight-flash" : ""
+                  } ${successId === task.id ? "animate-highlight-success" : ""}`} onClick={() => openDetail(task)}>
                     <TableCell className="font-medium">
                       <div className="truncate max-w-[300px]">{task.title}</div>
                       {task.description && <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">{task.description}</p>}
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusColors[task.status]} variant="secondary">{statusLabels[task.status]}</Badge>
+                      <Badge className={`${statusColors[task.status]} animate-scale-in`} variant="secondary">{statusLabels[task.status]}</Badge>
                     </TableCell>
                     <TableCell>
                       {deptName ? <Badge variant="outline" className="text-xs">{deptName}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
