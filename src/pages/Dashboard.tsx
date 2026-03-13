@@ -22,7 +22,7 @@ type Profile = { id: string; full_name: string | null };
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
 
 function AdminManagerDashboard() {
-  const { user, role } = useAuth();
+  const { user, role, profile } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
@@ -40,7 +40,14 @@ function AdminManagerDashboard() {
         supabase.from("task_time_logs").select("*").order("created_at", { ascending: true }),
       ]);
       if (tasksRes.data) setTasks(tasksRes.data);
-      if (depsRes.data) setDepartments(depsRes.data);
+      if (depsRes.data) {
+        if (role === "manager" && profile?.department_id) {
+          setDepartments(depsRes.data.filter(d => d.id === profile.department_id));
+          setSelectedDepartment(profile.department_id);
+        } else {
+          setDepartments(depsRes.data);
+        }
+      }
       if (logsRes.data) setTimeLogs(logsRes.data);
       if (profilesRes.data) {
         const map = new Map<string, string>();
@@ -49,7 +56,7 @@ function AdminManagerDashboard() {
       }
     };
     fetchData();
-  }, [user]);
+  }, [user, role, profile]);
 
   const today = startOfDay(new Date());
   const todayStr = format(today, "yyyy-MM-dd");
