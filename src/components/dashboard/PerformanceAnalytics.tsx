@@ -246,15 +246,15 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <p className="text-xs text-muted-foreground">últimos 7 dias</p>
           </CardContent>
         </Card>
-        <Card className={summary.worstDept ? "border-warning/50 bg-warning/5" : ""}>
+        <Card className={summary.worstTask ? "border-warning/50 bg-warning/5" : ""}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Maior Gargalo</CardTitle>
-            <AlertTriangle className={`h-4 w-4 ${summary.worstDept ? "text-warning" : "text-muted-foreground"}`} />
+            <AlertTriangle className={`h-4 w-4 ${summary.worstTask ? "text-warning" : "text-muted-foreground"}`} />
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold truncate">{summary.worstDept?.department || "—"}</div>
+            <div className="text-lg font-bold truncate">{summary.worstTask?.title || "—"}</div>
             <p className="text-xs text-muted-foreground">
-              {summary.worstDept ? formatDuration(summary.worstDept.avgMs) + " por tarefa" : "sem dados"}
+              {summary.worstTask ? formatDuration(summary.worstTask.duration) + " de execução" : "sem dados"}
             </p>
           </CardContent>
         </Card>
