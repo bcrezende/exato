@@ -55,12 +55,12 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   }, [task]);
 
   useEffect(() => {
-    if (!task || !open) { setExecutionTime(null); return; }
+    if (!localTask || !open) { setExecutionTime(null); return; }
     const fetchLogs = async () => {
       const { data } = await supabase
         .from("task_time_logs")
         .select("action, created_at")
-        .eq("task_id", task.id)
+        .eq("task_id", localTask.id)
         .order("created_at", { ascending: true });
       if (!data || data.length === 0) { setExecutionTime(null); return; }
       const started = data.find(l => l.action === "started" || l.action === "started_late");
@@ -69,7 +69,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
       if (started && completed) {
         const diff = new Date(completed.created_at).getTime() - new Date(started.created_at).getTime();
         setExecutionTime(formatDuration(diff) + lateTag);
-      } else if (started && task.status === "in_progress") {
+      } else if (started && localTask.status === "in_progress") {
         const diff = Date.now() - new Date(started.created_at).getTime();
         setExecutionTime(`${formatDuration(diff)} (em andamento)${lateTag}`);
       } else {
@@ -77,16 +77,17 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
       }
     };
     fetchLogs();
-  }, [task?.id, open, task?.status]);
+  }, [localTask?.id, open, localTask?.status]);
 
-  if (!task) return null;
+  if (!localTask) return null;
 
-  const assignedName = members.find(m => m.id === task.assigned_to)?.full_name || null;
-  const deptName = departments.find(d => d.id === task.department_id)?.name || null;
+  const assignedName = members.find(m => m.id === localTask.assigned_to)?.full_name || null;
+  const deptName = departments.find(d => d.id === localTask.department_id)?.name || null;
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      await updateTaskStatus(task.id, newStatus as any, task);
+      await updateTaskStatus(localTask.id, newStatus as any, localTask);
+      setLocalTask({ ...localTask, status: newStatus as any });
       toast({ title: "Status atualizado!" });
       onRefresh();
     } catch {
@@ -95,7 +96,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   };
 
   const handleDelete = async () => {
-    const { error } = await supabase.from("tasks").delete().eq("id", task.id);
+    const { error } = await supabase.from("tasks").delete().eq("id", localTask.id);
     if (error) { toast({ variant: "destructive", title: "Erro", description: error.message }); return; }
     toast({ title: "Tarefa removida" });
     onOpenChange(false);
