@@ -145,6 +145,42 @@ export default function Tasks() {
     });
   }, [tasks, search, filterStatus, filterDepartment, filterAssignee, filterRecurrence, filterDate, viewMode]);
 
+  const sortedFiltered = useMemo(() => {
+    if (!sortColumn) return filtered;
+    const sorted = [...filtered].sort((a, b) => {
+      let valA: string | null = null;
+      let valB: string | null = null;
+      switch (sortColumn) {
+        case "title": valA = a.title; valB = b.title; break;
+        case "status": valA = a.status; valB = b.status; break;
+        case "department": valA = getDepartmentName(a.department_id) || ""; valB = getDepartmentName(b.department_id) || ""; break;
+        case "recurrence": valA = a.recurrence_type; valB = b.recurrence_type; break;
+        case "assignee": valA = getMemberName(a.assigned_to); valB = getMemberName(b.assigned_to); break;
+        case "start_date": valA = a.start_date || ""; valB = b.start_date || ""; break;
+        case "due_date": valA = a.due_date || ""; valB = b.due_date || ""; break;
+        default: return 0;
+      }
+      const cmp = (valA || "").localeCompare(valB || "", "pt-BR");
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [filtered, sortColumn, sortDirection, members, departments]);
+
+  const toggleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") setSortDirection("desc");
+      else { setSortColumn(null); setSortDirection("asc"); }
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDirection === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
+
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
   return (
