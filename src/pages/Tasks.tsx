@@ -132,7 +132,7 @@ export default function Tasks() {
       }
       return true;
     });
-  }, [tasks, search, filterStatus, filterDepartment, filterAssignee, filterRecurrence, filterDate]);
+  }, [tasks, search, filterStatus, filterDepartment, filterAssignee, filterRecurrence, filterDate, viewMode]);
 
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
