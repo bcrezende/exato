@@ -381,21 +381,35 @@ export default function Tasks() {
       {/* List View */}
       {viewMode === "list" && (
         <ScrollArea className="w-full rounded-lg border">
-          <Table>
+           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[200px]">Tarefa</TableHead>
-                <TableHead className="min-w-[120px]">Status</TableHead>
-                <TableHead className="min-w-[130px]">Departamento</TableHead>
-                <TableHead className="min-w-[100px]">Recorrência</TableHead>
-                <TableHead className="min-w-[150px]">Responsável</TableHead>
-                <TableHead className="min-w-[150px]">Início</TableHead>
-                <TableHead className="min-w-[150px]">Término</TableHead>
+                <TableHead className="min-w-[200px] cursor-pointer select-none" onClick={() => toggleSort("title")}>
+                  <span className="flex items-center">Tarefa <SortIcon column="title" /></span>
+                </TableHead>
+                <TableHead className="min-w-[120px] cursor-pointer select-none" onClick={() => toggleSort("status")}>
+                  <span className="flex items-center">Status <SortIcon column="status" /></span>
+                </TableHead>
+                <TableHead className="min-w-[130px] cursor-pointer select-none" onClick={() => toggleSort("department")}>
+                  <span className="flex items-center">Departamento <SortIcon column="department" /></span>
+                </TableHead>
+                <TableHead className="min-w-[100px] cursor-pointer select-none" onClick={() => toggleSort("recurrence")}>
+                  <span className="flex items-center">Recorrência <SortIcon column="recurrence" /></span>
+                </TableHead>
+                <TableHead className="min-w-[150px] cursor-pointer select-none" onClick={() => toggleSort("assignee")}>
+                  <span className="flex items-center">Responsável <SortIcon column="assignee" /></span>
+                </TableHead>
+                <TableHead className="min-w-[150px] cursor-pointer select-none" onClick={() => toggleSort("start_date")}>
+                  <span className="flex items-center">Início <SortIcon column="start_date" /></span>
+                </TableHead>
+                <TableHead className="min-w-[150px] cursor-pointer select-none" onClick={() => toggleSort("due_date")}>
+                  <span className="flex items-center">Término <SortIcon column="due_date" /></span>
+                </TableHead>
                 <TableHead className="min-w-[120px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((task) => {
+              {sortedFiltered.map((task) => {
                 const deptName = getDepartmentName(task.department_id);
                 return (
                   <TableRow key={task.id} className="cursor-pointer" onClick={() => openDetail(task)}>
