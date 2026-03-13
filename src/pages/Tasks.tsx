@@ -317,7 +317,9 @@ export default function Tasks() {
                     return (
                       <Card
                         key={task.id}
-                        className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+                        className={`cursor-pointer hover-lift ${
+                          highlightedId === task.id ? "animate-highlight-flash" : ""
+                        } ${successId === task.id ? "animate-highlight-success animate-pulse-success" : ""}`}
                         onClick={() => openDetail(task)}
                       >
                         <CardContent className="p-4 space-y-3">
