@@ -405,10 +405,10 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
 
         {step === "done" && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8">
-            <CheckCircle2 className="h-16 w-16 text-green-600" />
+            <CheckCircle2 className="h-16 w-16 text-success" />
             <p className="text-xl font-semibold">Importação concluída!</p>
             <div className="flex gap-4 text-sm">
-              <span className="text-green-600 font-medium">{result.created} tarefa(s) criada(s)</span>
+              <span className="text-success font-medium">{result.created} tarefa(s) criada(s)</span>
               {result.errors > 0 && <span className="text-destructive font-medium">{result.errors} linha(s) com erro</span>}
             </div>
           </div>
