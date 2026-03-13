@@ -347,7 +347,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
                   avgExecution: formatDuration(summary.avgExecution),
                   delayRate: summary.delayRate,
                   completedLast7: summary.completedLast7,
-                  worstDept: summary.worstDept?.department || null,
+                  worstTask: summary.worstTask?.title || null,
                   timeByDept: avgTimeByDept.map(d => ({ department: d.department, avgMinutes: d.avgMinutes })),
                   delayByDept: delayRateByDept.map(d => ({ department: d.department, rate: d.rate })),
                   completionTrend: completedPerDay.map(d => ({ label: d.label, count: d.count })),
