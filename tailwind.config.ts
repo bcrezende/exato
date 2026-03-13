@@ -97,11 +97,12 @@ export default {
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "highlight-flash": {
-          "0%": { backgroundColor: "hsl(var(--primary) / 0.15)" },
+          "0%": { backgroundColor: "hsl(var(--primary) / 0.3)" },
           "100%": { backgroundColor: "transparent" },
         },
         "highlight-success": {
-          "0%": { backgroundColor: "hsl(var(--success) / 0.2)" },
+          "0%": { backgroundColor: "transparent" },
+          "50%": { backgroundColor: "hsl(var(--success) / 0.35)" },
           "100%": { backgroundColor: "transparent" },
         },
         "shake": {
@@ -114,8 +115,8 @@ export default {
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "pulse-success": {
-          "0%": { boxShadow: "0 0 0 0 hsl(var(--success) / 0.4)" },
-          "70%": { boxShadow: "0 0 0 10px hsl(var(--success) / 0)" },
+          "0%": { boxShadow: "0 0 0 0 hsl(var(--success) / 0.6)" },
+          "70%": { boxShadow: "0 0 0 16px hsl(var(--success) / 0)" },
           "100%": { boxShadow: "0 0 0 0 hsl(var(--success) / 0)" },
         },
       },
@@ -127,10 +128,10 @@ export default {
         "scale-in": "scale-in 0.2s ease-out forwards",
         "slide-up": "slide-up 0.4s ease-out forwards",
         "highlight-flash": "highlight-flash 0.8s ease-out",
-        "highlight-success": "highlight-success 1s ease-out",
+        "highlight-success": "highlight-success 1.5s ease-out",
         "shake": "shake 0.5s ease-in-out",
         "count-up": "count-up 0.5s ease-out forwards",
-        "pulse-success": "pulse-success 0.6s ease-out",
+        "pulse-success": "pulse-success 1s ease-out",
       },
     },
   },
