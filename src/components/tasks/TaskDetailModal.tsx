@@ -46,6 +46,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const { user, role } = useAuth();
   const { toast } = useToast();
   const [localTask, setLocalTask] = useState<Task | null>(task);
+  const [statusLoading, setStatusLoading] = useState(false);
   const canManage = role === "admin" || role === "manager";
   const isAssigned = localTask?.assigned_to === user?.id;
   const [executionTime, setExecutionTime] = useState<string | null>(null);
@@ -85,13 +86,20 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const deptName = departments.find(d => d.id === localTask.department_id)?.name || null;
 
   const handleStatusChange = async (newStatus: string) => {
+    const previousTask = localTask;
+    // Optimistic update — instant feedback
+    setLocalTask({ ...localTask, status: newStatus as any });
+    setStatusLoading(true);
     try {
-      await updateTaskStatus(localTask.id, newStatus as any, localTask);
-      setLocalTask({ ...localTask, status: newStatus as any });
+      await updateTaskStatus(localTask.id, newStatus as any, previousTask);
       toast({ title: "Status atualizado!" });
       onRefresh();
     } catch {
+      // Revert on error
+      setLocalTask(previousTask);
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
+    } finally {
+      setStatusLoading(false);
     }
   };
 
