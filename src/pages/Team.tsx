@@ -312,6 +312,7 @@ export default function Team() {
               <Select value={inviteForm.role} onValueChange={(v) => setInviteForm({ ...inviteForm, role: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
                   {isAdmin && <SelectItem value="manager">Gerente</SelectItem>}
                   <SelectItem value="employee">Funcionário</SelectItem>
                 </SelectContent>
