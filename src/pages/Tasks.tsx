@@ -309,95 +309,124 @@ export default function Tasks() {
 
       {/* Kanban View */}
       {viewMode === "kanban" && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
-          {kanbanColumns.map((status) => {
-            const columnTasks = filtered.filter((t) => {
-              if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < new Date().toISOString() && t.status === "pending");
-              if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < new Date().toISOString());
-              if (status === "in_progress") return t.status === "in_progress";
-              return t.status === status;
-            });
-            const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : "bg-destructive";
-            return (
-              <div key={status} className="space-y-3">
-                <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3">
-                  <div className={`h-2.5 w-2.5 rounded-full ${dotColor}`} />
-                  <h3 className="text-sm font-semibold">{statusLabels[status]}</h3>
-                  <Badge variant="secondary" className="ml-auto text-xs">{columnTasks.length}</Badge>
-                </div>
-                <div className="space-y-2 min-h-[100px]">
-                  {columnTasks.map((task) => {
-                    const deptName = getDepartmentName(task.department_id);
-                    return (
-                      <Card
-                        key={task.id}
-                        className={`cursor-pointer hover-lift ${
-                          highlightedId === task.id ? "animate-highlight-flash" : ""
-                        } ${successId === task.id ? "animate-highlight-success animate-pulse-success" : ""}`}
-                        onClick={() => openDetail(task)}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
+            {kanbanColumns.map((status) => {
+              const columnTasks = filtered.filter((t) => {
+                if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < new Date().toISOString() && t.status === "pending");
+                if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < new Date().toISOString());
+                if (status === "in_progress") return t.status === "in_progress";
+                return t.status === status;
+              });
+              const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : "bg-destructive";
+              const isOverdueColumn = status === "overdue";
+              return (
+                <div key={status} className="space-y-3">
+                  <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3">
+                    <div className={`h-2.5 w-2.5 rounded-full ${dotColor}`} />
+                    <h3 className="text-sm font-semibold">{statusLabels[status]}</h3>
+                    <Badge variant="secondary" className="ml-auto text-xs">{columnTasks.length}</Badge>
+                  </div>
+                  <Droppable droppableId={status} isDropDisabled={isOverdueColumn}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={cn(
+                          "space-y-2 min-h-[100px] rounded-lg transition-colors",
+                          snapshot.isDraggingOver && !isOverdueColumn && "bg-primary/5 ring-2 ring-primary/20"
+                        )}
                       >
-                        <CardContent className="p-4 space-y-3">
-                          <h4 className="font-medium leading-tight text-sm">{task.title}</h4>
-                          {task.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
-                          )}
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {deptName && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                <Building2 className="mr-1 h-3 w-3" />{deptName}
-                              </Badge>
-                            )}
-                            {task.recurrence_type !== "none" && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                {recurrenceLabels[task.recurrence_type]}
-                              </Badge>
-                            )}
+                        {columnTasks.map((task, index) => {
+                          const deptName = getDepartmentName(task.department_id);
+                          const isDragDisabled = role === "employee" && task.assigned_to !== user?.id;
+                          return (
+                            <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={isDragDisabled}>
+                              {(dragProvided, dragSnapshot) => (
+                                <div
+                                  ref={dragProvided.innerRef}
+                                  {...dragProvided.draggableProps}
+                                  {...dragProvided.dragHandleProps}
+                                >
+                                  <Card
+                                    className={cn(
+                                      "cursor-pointer hover-lift",
+                                      highlightedId === task.id && "animate-highlight-flash",
+                                      successId === task.id && "animate-highlight-success animate-pulse-success",
+                                      dragSnapshot.isDragging && "shadow-lg ring-2 ring-primary/30 rotate-[2deg]",
+                                      isDragDisabled && "cursor-default"
+                                    )}
+                                    onClick={() => !dragSnapshot.isDragging && openDetail(task)}
+                                  >
+                                    <CardContent className="p-4 space-y-3">
+                                      <h4 className="font-medium leading-tight text-sm">{task.title}</h4>
+                                      {task.description && (
+                                        <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+                                      )}
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        {deptName && (
+                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                            <Building2 className="mr-1 h-3 w-3" />{deptName}
+                                          </Badge>
+                                        )}
+                                        {task.recurrence_type !== "none" && (
+                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                            {recurrenceLabels[task.recurrence_type]}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                        <div className="flex items-center gap-1">
+                                          <User className="h-3 w-3" />
+                                          <span className="truncate max-w-[100px]">{getMemberName(task.assigned_to)}</span>
+                                        </div>
+                                        {task.due_date && (
+                                          <div className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            <span>{format(new Date(task.due_date), "dd/MM")}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {/* Quick actions */}
+                                      <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
+                                        {role === "employee" && task.assigned_to === user?.id && (
+                                          <>
+                                            {task.status === "pending" && (
+                                              <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
+                                            )}
+                                            {task.status === "in_progress" && (
+                                              <Button size="sm" variant="ghost" className="h-7 text-xs flex-1 text-success" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
+                                            )}
+                                          </>
+                                        )}
+                                        {canManage && (
+                                          <>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(task)}><Pencil className="h-3.5 w-3.5" /></Button>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(task.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                        {columnTasks.length === 0 && (
+                          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                            Nenhuma tarefa
                           </div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              <span className="truncate max-w-[100px]">{getMemberName(task.assigned_to)}</span>
-                            </div>
-                            {task.due_date && (
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span>{format(new Date(task.due_date), "dd/MM")}</span>
-                              </div>
-                            )}
-                          </div>
-                          {/* Quick actions */}
-                          <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
-                            {role === "employee" && task.assigned_to === user?.id && (
-                              <>
-                                {task.status === "pending" && (
-                                  <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
-                                )}
-                                {task.status === "in_progress" && (
-                                  <Button size="sm" variant="ghost" className="h-7 text-xs flex-1 text-success" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
-                                )}
-                              </>
-                            )}
-                            {canManage && (
-                              <>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(task)}><Pencil className="h-3.5 w-3.5" /></Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(task.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                              </>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                  {columnTasks.length === 0 && (
-                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                      Nenhuma tarefa
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </DragDropContext>
       )}
 
       {/* Calendar View */}
