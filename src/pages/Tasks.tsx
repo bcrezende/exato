@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -363,74 +364,79 @@ export default function Tasks() {
                           const isDragDisabled = role === "employee" && task.assigned_to !== user?.id;
                           return (
                             <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={isDragDisabled}>
-                              {(dragProvided, dragSnapshot) => (
-                                <div
-                                  ref={dragProvided.innerRef}
-                                  {...dragProvided.draggableProps}
-                                  {...dragProvided.dragHandleProps}
-                                >
-                                    <Card
-                                    className={cn(
-                                      "cursor-pointer hover-lift transition-all duration-200",
-                                      highlightedId === task.id && "animate-highlight-flash",
-                                      successId === task.id && "animate-highlight-success animate-pulse-success",
-                                      dragSnapshot.isDragging && "shadow-2xl ring-2 ring-primary/40 rotate-[2deg] scale-105 z-50",
-                                      isDragDisabled && "cursor-default"
-                                    )}
-                                    onClick={() => !dragSnapshot.isDragging && openDetail(task)}
+                              {(dragProvided, dragSnapshot) => {
+                                const cardElement = (
+                                  <div
+                                    ref={dragProvided.innerRef}
+                                    {...dragProvided.draggableProps}
+                                    {...dragProvided.dragHandleProps}
                                   >
-                                    <CardContent className="p-4 space-y-3">
-                                      <h4 className="font-medium leading-tight text-sm">{task.title}</h4>
-                                      {task.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
+                                    <Card
+                                      className={cn(
+                                        "cursor-pointer hover-lift transition-all duration-200",
+                                        highlightedId === task.id && "animate-highlight-flash",
+                                        successId === task.id && "animate-highlight-success animate-pulse-success",
+                                        dragSnapshot.isDragging && "shadow-2xl ring-2 ring-primary/40 rotate-[2deg] scale-105 z-50",
+                                        isDragDisabled && "cursor-default"
                                       )}
-                                      <div className="flex flex-wrap items-center gap-1.5">
-                                        {deptName && (
-                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                            <Building2 className="mr-1 h-3 w-3" />{deptName}
-                                          </Badge>
+                                      onClick={() => !dragSnapshot.isDragging && openDetail(task)}
+                                    >
+                                      <CardContent className="p-4 space-y-3">
+                                        <h4 className="font-medium leading-tight text-sm">{task.title}</h4>
+                                        {task.description && (
+                                          <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
                                         )}
-                                        {task.recurrence_type !== "none" && (
-                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                            {recurrenceLabels[task.recurrence_type]}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                          <User className="h-3 w-3" />
-                                          <span className="truncate max-w-[100px]">{getMemberName(task.assigned_to)}</span>
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          {deptName && (
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                              <Building2 className="mr-1 h-3 w-3" />{deptName}
+                                            </Badge>
+                                          )}
+                                          {task.recurrence_type !== "none" && (
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                              {recurrenceLabels[task.recurrence_type]}
+                                            </Badge>
+                                          )}
                                         </div>
-                                        {task.due_date && (
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
                                           <div className="flex items-center gap-1">
-                                            <Clock className="h-3 w-3" />
-                                            <span>{format(new Date(task.due_date), "dd/MM")}</span>
+                                            <User className="h-3 w-3" />
+                                            <span className="truncate max-w-[100px]">{getMemberName(task.assigned_to)}</span>
                                           </div>
-                                        )}
-                                      </div>
-                                      {/* Quick actions */}
-                                      <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
-                                        {role === "employee" && task.assigned_to === user?.id && (
-                                          <>
-                                            {task.status === "pending" && (
-                                              <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
-                                            )}
-                                            {task.status === "in_progress" && (
-                                              <Button size="sm" variant="ghost" className="h-7 text-xs flex-1 text-success" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
-                                            )}
-                                          </>
-                                        )}
-                                        {canManage && (
-                                          <>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(task)}><Pencil className="h-3.5 w-3.5" /></Button>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(task.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                                          </>
-                                        )}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              )}
+                                          {task.due_date && (
+                                            <div className="flex items-center gap-1">
+                                              <Clock className="h-3 w-3" />
+                                              <span>{format(new Date(task.due_date), "dd/MM")}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                        {/* Quick actions */}
+                                        <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
+                                          {role === "employee" && task.assigned_to === user?.id && (
+                                            <>
+                                              {task.status === "pending" && (
+                                                <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
+                                              )}
+                                              {task.status === "in_progress" && (
+                                                <Button size="sm" variant="ghost" className="h-7 text-xs flex-1 text-success" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
+                                              )}
+                                            </>
+                                          )}
+                                          {canManage && (
+                                            <>
+                                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(task)}><Pencil className="h-3.5 w-3.5" /></Button>
+                                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(task.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                                            </>
+                                          )}
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                );
+                                return dragSnapshot.isDragging
+                                  ? createPortal(cardElement, document.body)
+                                  : cardElement;
+                              }}
                             </Draggable>
                           );
                         })}
