@@ -37,7 +37,7 @@ function AdminManagerDashboard() {
     const fetchData = async () => {
       const [tasksRes, profilesRes, depsRes, logsRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date", { ascending: true }),
-        supabase.from("profiles").select("id, full_name"),
+        supabase.from("profiles").select("id, full_name, department_id"),
         supabase.from("departments").select("id, name").order("name"),
         supabase.from("task_time_logs").select("*").order("created_at", { ascending: true }),
       ]);
