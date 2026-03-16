@@ -14,7 +14,8 @@ export function AppLayout() {
         <div className="flex flex-1 flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:px-6">
             <SidebarTrigger />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-3">
+              <ProfileCompletionBadge />
               <NotificationBell />
             </div>
           </header>
