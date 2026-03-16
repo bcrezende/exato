@@ -369,12 +369,12 @@ export default function Tasks() {
                                   {...dragProvided.draggableProps}
                                   {...dragProvided.dragHandleProps}
                                 >
-                                  <Card
+                                    <Card
                                     className={cn(
-                                      "cursor-pointer hover-lift",
+                                      "cursor-pointer hover-lift transition-all duration-200",
                                       highlightedId === task.id && "animate-highlight-flash",
                                       successId === task.id && "animate-highlight-success animate-pulse-success",
-                                      dragSnapshot.isDragging && "shadow-lg ring-2 ring-primary/30 rotate-[2deg]",
+                                      dragSnapshot.isDragging && "shadow-2xl ring-2 ring-primary/40 rotate-[2deg] scale-105 z-50",
                                       isDragDisabled && "cursor-default"
                                     )}
                                     onClick={() => !dragSnapshot.isDragging && openDetail(task)}
