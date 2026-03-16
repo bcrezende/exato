@@ -209,6 +209,18 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             )}
           </div>
 
+          {/* Tempo estimado */}
+          <div className="space-y-2">
+            <Label>Tempo estimado (minutos)</Label>
+            <Input
+              type="number"
+              min="1"
+              value={form.estimated_minutes}
+              onChange={(e) => setForm({ ...form, estimated_minutes: e.target.value })}
+              placeholder="Ex: 60"
+            />
+          </div>
+
           {/* Datas */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
