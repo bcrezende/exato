@@ -154,7 +154,16 @@ export default function MyDayView() {
         </Card>
       </div>
 
-      {tasks.length === 0 ? (
+      {allCompleted ? (
+        <Card className="animate-scale-in border-success/30 bg-success/5">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center relative overflow-hidden">
+            <ConfettiCanvas />
+            <PartyPopper className="h-12 w-12 text-success mb-3 animate-scale-in" />
+            <h3 className="font-semibold text-lg">Parabéns! Todas as tarefas concluídas! 🎉</h3>
+            <p className="text-sm text-muted-foreground">Excelente trabalho hoje!</p>
+          </CardContent>
+        </Card>
+      ) : tasks.length === 0 ? (
         <Card className="animate-scale-in">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <ListTodo className="h-12 w-12 text-muted-foreground/40 mb-3" />
