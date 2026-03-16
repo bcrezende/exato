@@ -43,6 +43,15 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
     }
   }, [editing, open]);
 
+  useEffect(() => {
+    if (form.start_date && form.due_date) {
+      const diff = new Date(form.due_date).getTime() - new Date(form.start_date).getTime();
+      if (diff > 0) {
+        setForm(prev => ({ ...prev, estimated_minutes: String(Math.round(diff / 60000)) }));
+      }
+    }
+  }, [form.start_date, form.due_date]);
+
   const resetForm = (task: Task | null) => {
     setForm(getInitialForm(task, isAdmin, currentProfile));
     setErrors({});
@@ -210,16 +219,26 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             )}
           </div>
 
-          {/* Tempo estimado */}
+          {/* Tempo estimado (auto-calculado) */}
           <div className="space-y-2">
-            <Label>Tempo estimado (minutos)</Label>
+            <Label>Tempo estimado</Label>
             <Input
-              type="number"
-              min="1"
-              value={form.estimated_minutes}
-              onChange={(e) => setForm({ ...form, estimated_minutes: e.target.value })}
-              placeholder="Ex: 60"
+              type="text"
+              value={form.estimated_minutes ? (() => {
+                const mins = parseInt(form.estimated_minutes, 10);
+                if (isNaN(mins) || mins <= 0) return "";
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return h > 0 ? `${h}h ${m > 0 ? `${m}min` : ""}`.trim() : `${m}min`;
+              })() : ""}
+              readOnly
+              disabled
+              placeholder="Calculado automaticamente"
+              className="bg-muted"
             />
+            {form.start_date && form.due_date && parseInt(form.estimated_minutes, 10) > 0 && (
+              <p className="text-xs text-muted-foreground">Auto-calculado a partir das datas</p>
+            )}
           </div>
 
           {/* Datas */}
