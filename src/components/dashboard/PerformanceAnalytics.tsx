@@ -260,10 +260,22 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <AlertTriangle className={`h-4 w-4 ${summary.worstTask ? "text-warning" : "text-muted-foreground"}`} />
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold truncate">{summary.worstTask?.title || "—"}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary.worstTask ? formatDuration(summary.worstTask.duration) + " de execução" : "sem dados"}
-            </p>
+            {summary.worstTask ? (
+              <>
+                <div className="text-lg font-bold truncate">{summary.worstTask.title}</div>
+                <p className="text-xs text-muted-foreground">
+                  {formatDuration(summary.worstTask.duration)} de execução
+                </p>
+                <p className="text-xs text-destructive font-medium">
+                  +{formatDuration(summary.worstTask.overflow)} além do previsto
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-lg font-bold">Nenhum gargalo</div>
+                <p className="text-xs text-muted-foreground">todas dentro do prazo</p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
