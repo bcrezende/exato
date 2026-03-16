@@ -90,6 +90,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       recurrence_type: form.recurrence_type as any,
       company_id: currentProfile.company_id,
       department_id: departmentId,
+      estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes, 10) : null,
     };
 
     if (editing) {
