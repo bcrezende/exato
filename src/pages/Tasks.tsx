@@ -64,7 +64,7 @@ export default function Tasks() {
 
   const fetchTasks = async () => {
     let query = supabase.from("tasks").select("*").order("created_at", { ascending: false });
-    if (role === "employee" && user) query = query.eq("assigned_to", user.id);
+    if (role === "employee" && user) query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
     const { data } = await query;
     if (data) setTasks(data);
   };
@@ -215,15 +215,13 @@ export default function Tasks() {
             </Button>
           </div>
           {canManage && (
-            <>
-              <Button variant="outline" onClick={() => setImportOpen(true)}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar Excel
-              </Button>
-              <Button onClick={openCreate}>
-                <Plus className="mr-2 h-4 w-4" /> Nova Tarefa
-              </Button>
-            </>
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar Excel
+            </Button>
           )}
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Nova Tarefa
+          </Button>
         </div>
       </div>
 

@@ -31,6 +31,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   const { toast } = useToast();
   const isAdmin = role === "admin";
   const isManager = role === "manager";
+  const isEmployee = role === "employee";
 
   const [form, setForm] = useState(() => getInitialForm(editing, isAdmin, currentProfile));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,7 +55,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.title.trim()) newErrors.title = "Título é obrigatório";
-    if (!form.assigned_to) newErrors.assigned_to = "Responsável é obrigatório";
+    if (!isEmployee && !form.assigned_to) newErrors.assigned_to = "Responsável é obrigatório";
     if (!form.start_date) newErrors.start_date = "Data de início é obrigatória";
     if (!form.due_date) newErrors.due_date = "Data de término é obrigatória";
     if (isAdmin && !form.department_id) newErrors.department_id = "Setor é obrigatório";
@@ -76,10 +77,12 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       ? (form.department_id || null)
       : (currentProfile.department_id || null);
 
+    const assignedTo = isEmployee ? user.id : (form.assigned_to || null);
+
     const payload = {
       title: form.title.trim(),
       description: form.description.trim() || null,
-      assigned_to: form.assigned_to || null,
+      assigned_to: assignedTo,
       status: editing ? form.status as any : "pending" as any,
       priority: "medium" as any,
       start_date: form.start_date ? new Date(form.start_date).toISOString() : null,
@@ -136,44 +139,46 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descreva a tarefa..." rows={3} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Responsável */}
-            <div className="space-y-2">
-              <Label>Responsável <span className="text-destructive">*</span></Label>
-              <Select value={form.assigned_to || undefined} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
-                <SelectTrigger className={fieldClass("assigned_to")}><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                <SelectContent>
-                  {filteredMembers.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              {errors.assigned_to && <p className="text-xs text-destructive">{errors.assigned_to}</p>}
-            </div>
+          {!isEmployee && (
+            <div className="grid grid-cols-2 gap-4">
+              {/* Responsável */}
+              <div className="space-y-2">
+                <Label>Responsável <span className="text-destructive">*</span></Label>
+                <Select value={form.assigned_to || undefined} onValueChange={(v) => setForm({ ...form, assigned_to: v })}>
+                  <SelectTrigger className={fieldClass("assigned_to")}><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    {filteredMembers.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {errors.assigned_to && <p className="text-xs text-destructive">{errors.assigned_to}</p>}
+              </div>
 
-            {/* Setor (admin) or Recorrência (manager) */}
-            {isAdmin ? (
-              <div className="space-y-2">
-                <Label>Setor <span className="text-destructive">*</span></Label>
-                <Select value={form.department_id || undefined} onValueChange={(v) => setForm({ ...form, department_id: v })}>
-                  <SelectTrigger className={fieldClass("department_id")}><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                {errors.department_id && <p className="text-xs text-destructive">{errors.department_id}</p>}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>Recorrência <span className="text-destructive">*</span></Label>
-                <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
-                  <SelectTrigger className={fieldClass("recurrence_type")}><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                {errors.recurrence_type && <p className="text-xs text-destructive">{errors.recurrence_type}</p>}
-              </div>
-            )}
-          </div>
+              {/* Setor (admin) or Recorrência (manager) */}
+              {isAdmin ? (
+                <div className="space-y-2">
+                  <Label>Setor <span className="text-destructive">*</span></Label>
+                  <Select value={form.department_id || undefined} onValueChange={(v) => setForm({ ...form, department_id: v })}>
+                    <SelectTrigger className={fieldClass("department_id")}><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
+                    <SelectContent>
+                      {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {errors.department_id && <p className="text-xs text-destructive">{errors.department_id}</p>}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Recorrência <span className="text-destructive">*</span></Label>
+                  <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
+                    <SelectTrigger className={fieldClass("recurrence_type")}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {errors.recurrence_type && <p className="text-xs text-destructive">{errors.recurrence_type}</p>}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             {/* Status (only when editing) */}
@@ -189,8 +194,8 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
               </div>
             )}
 
-            {/* Recorrência for admin (separate row) */}
-            {isAdmin && (
+            {/* Recorrência for admin or employee */}
+            {(isAdmin || isEmployee) && (
               <div className="space-y-2">
                 <Label>Recorrência <span className="text-destructive">*</span></Label>
                 <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>

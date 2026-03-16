@@ -48,6 +48,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const [localTask, setLocalTask] = useState<Task | null>(task);
   const [statusLoading, setStatusLoading] = useState(false);
   const canManage = role === "admin" || role === "manager";
+  const isCreator = localTask?.created_by === user?.id;
   const isAssigned = localTask?.assigned_to === user?.id;
   const [executionTime, setExecutionTime] = useState<string | null>(null);
 
@@ -183,7 +184,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
           )}
         </div>
 
-        {canManage && (
+        {(canManage || isCreator) && (
           <DialogFooter className="gap-2">
             <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onEdit(localTask); }}>
               <Pencil className="mr-2 h-4 w-4" /> Editar
