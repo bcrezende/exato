@@ -18,41 +18,58 @@ Deno.serve(async (req) => {
 
     const now = new Date();
 
-    // === Step 1: Mark overdue tasks ===
-    // Find tasks with due_date in the past that are still pending or in_progress
-    const { data: overdueTasks, error: overdueError } = await supabase
-      .from("tasks")
-      .select("id")
-      .lt("due_date", now.toISOString())
-      .in("status", ["pending"]);
+    // Parse optional parentId from request body
+    let singleParentId: string | null = null;
+    try {
+      const body = await req.json();
+      singleParentId = body?.parentId || null;
+    } catch {
+      // No body (cron job call) — process all
+    }
 
-    if (overdueError) {
-      console.error("Error fetching overdue tasks:", overdueError);
-    } else if (overdueTasks && overdueTasks.length > 0) {
-      const overdueIds = overdueTasks.map((t: { id: string }) => t.id);
-      const { error: updateError } = await supabase
+    // === Step 1: Mark overdue tasks (only on full cron runs) ===
+    let overdueCount = 0;
+    if (!singleParentId) {
+      const { data: overdueTasks, error: overdueError } = await supabase
         .from("tasks")
-        .update({ status: "overdue" })
-        .in("id", overdueIds);
+        .select("id")
+        .lt("due_date", now.toISOString())
+        .in("status", ["pending"]);
 
-      if (updateError) {
-        console.error("Error marking tasks as overdue:", updateError);
-      } else {
-        console.log(`Marked ${overdueIds.length} tasks as overdue`);
+      if (overdueError) {
+        console.error("Error fetching overdue tasks:", overdueError);
+      } else if (overdueTasks && overdueTasks.length > 0) {
+        const overdueIds = overdueTasks.map((t: { id: string }) => t.id);
+        const { error: updateError } = await supabase
+          .from("tasks")
+          .update({ status: "overdue" })
+          .in("id", overdueIds);
+
+        if (updateError) {
+          console.error("Error marking tasks as overdue:", updateError);
+        } else {
+          overdueCount = overdueIds.length;
+          console.log(`Marked ${overdueIds.length} tasks as overdue`);
+        }
       }
     }
 
     // === Step 2: Generate next recurring instances ===
-    // Get all recurring parent tasks (recurrence_type != 'none' and no recurrence_parent_id)
-    const { data: parentTasks, error: fetchError } = await supabase
+    let query = supabase
       .from("tasks")
       .select("*")
       .neq("recurrence_type", "none")
       .is("recurrence_parent_id", null);
 
+    if (singleParentId) {
+      query = query.eq("id", singleParentId);
+    }
+
+    const { data: parentTasks, error: fetchError } = await query;
+
     if (fetchError) throw fetchError;
     if (!parentTasks || parentTasks.length === 0) {
-      return new Response(JSON.stringify({ message: "No recurring tasks found", created: 0, overdue: overdueTasks?.length || 0 }), {
+      return new Response(JSON.stringify({ message: "No recurring tasks found", created: 0, overdue: overdueCount }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -161,7 +178,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ message: "Recurring tasks processed", created: createdCount, overdue: overdueTasks?.length || 0 }),
+      JSON.stringify({ message: "Recurring tasks processed", created: createdCount, overdue: overdueCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
