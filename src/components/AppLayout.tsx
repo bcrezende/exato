@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ProfileCompletionBadge } from "@/components/ProfileCompletionBadge";
 
 export function AppLayout() {
   const location = useLocation();
@@ -13,7 +14,8 @@ export function AppLayout() {
         <div className="flex flex-1 flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:px-6">
             <SidebarTrigger />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-3">
+              <ProfileCompletionBadge />
               <NotificationBell />
             </div>
           </header>
