@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      analysis_history: {
+        Row: {
+          company_id: string
+          content: string
+          created_at: string
+          employee_name: string | null
+          id: string
+          period_label: string | null
+          sector_name: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          content: string
+          created_at?: string
+          employee_name?: string | null
+          id?: string
+          period_label?: string | null
+          sector_name?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          content?: string
+          created_at?: string
+          employee_name?: string | null
+          id?: string
+          period_label?: string | null
+          sector_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
