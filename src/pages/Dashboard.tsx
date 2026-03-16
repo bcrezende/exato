@@ -24,6 +24,7 @@ const statusLabels: Record<string, string> = { pending: "Pendente", in_progress:
 
 function AdminManagerDashboard() {
   const { user, role, profile } = useAuth();
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
   const [profilesList, setProfilesList] = useState<Profile[]>([]);
