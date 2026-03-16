@@ -1,14 +1,15 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, CheckCircle, Clock, ListTodo, AlertTriangle } from "lucide-react";
+import { Play, CheckCircle, Clock, ListTodo, AlertTriangle, PartyPopper } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { updateTaskStatus } from "@/lib/task-utils";
+import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -101,12 +102,10 @@ export default function MyDayView() {
   const today = new Date();
   const formattedDate = format(today, "EEEE, dd 'de' MMMM", { locale: ptBR });
 
+  const allCompleted = tasks.length > 0 && stats.completed === tasks.length;
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <MyDaySkeleton />;
   }
 
   return (
@@ -155,7 +154,16 @@ export default function MyDayView() {
         </Card>
       </div>
 
-      {tasks.length === 0 ? (
+      {allCompleted ? (
+        <Card className="animate-scale-in border-success/30 bg-success/5">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center relative overflow-hidden">
+            <ConfettiCanvas />
+            <PartyPopper className="h-12 w-12 text-success mb-3 animate-scale-in" />
+            <h3 className="font-semibold text-lg">Parabéns! Todas as tarefas concluídas! 🎉</h3>
+            <p className="text-sm text-muted-foreground">Excelente trabalho hoje!</p>
+          </CardContent>
+        </Card>
+      ) : tasks.length === 0 ? (
         <Card className="animate-scale-in">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <ListTodo className="h-12 w-12 text-muted-foreground/40 mb-3" />
@@ -209,5 +217,82 @@ export default function MyDayView() {
         </div>
       )}
     </div>
+  );
+}
+
+function ConfettiCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    const colors = [
+      "hsl(142, 71%, 45%)", // success
+      "hsl(221, 83%, 53%)", // primary
+      "hsl(38, 92%, 50%)",  // warning
+      "hsl(280, 65%, 60%)", // purple
+      "hsl(350, 80%, 55%)", // pink
+    ];
+
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -10 - Math.random() * canvas.height * 0.5,
+      w: 4 + Math.random() * 6,
+      h: 4 + Math.random() * 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 4,
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 10,
+      opacity: 1,
+    }));
+
+    let animationId: number;
+    const start = performance.now();
+    const duration = 3000;
+
+    const animate = (now: number) => {
+      const elapsed = now - start;
+      if (elapsed > duration) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const fade = elapsed > duration * 0.7 ? 1 - (elapsed - duration * 0.7) / (duration * 0.3) : 1;
+
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08;
+        p.rotation += p.rotationSpeed;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+    />
   );
 }

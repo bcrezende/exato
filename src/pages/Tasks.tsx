@@ -22,6 +22,7 @@ import TaskCalendar from "@/components/tasks/TaskCalendar";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import TaskForm from "@/components/tasks/TaskForm";
 import TaskImportDialog from "@/components/tasks/TaskImportDialog";
+import { TasksSkeleton } from "@/components/skeletons/TasksSkeleton";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
@@ -50,6 +51,7 @@ export default function Tasks() {
   const [importOpen, setImportOpen] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   // Sorting
   const [sortColumn, setSortColumn] = useState<string | null>("start_date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -68,6 +70,7 @@ export default function Tasks() {
     if (role === "employee" && user) query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
     const { data } = await query;
     if (data) setTasks(data);
+    setLoading(false);
   };
 
   const fetchMembers = async () => {
@@ -221,6 +224,8 @@ export default function Tasks() {
     await handleStatusChange(draggableId, newStatus);
   }, [tasks, role, user?.id, handleStatusChange]);
 
+  if (loading) return <TasksSkeleton />;
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -349,8 +354,8 @@ export default function Tasks() {
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                         className={cn(
-                          "space-y-2 min-h-[100px] rounded-lg transition-colors",
-                          snapshot.isDraggingOver && !isOverdueColumn && "bg-primary/5 ring-2 ring-primary/20"
+                          "space-y-2 min-h-[100px] rounded-lg transition-all duration-300",
+                          snapshot.isDraggingOver && !isOverdueColumn && "bg-primary/5 ring-2 ring-primary/20 animate-ring-pulse scale-[1.01]"
                         )}
                       >
                         {columnTasks.map((task, index) => {
@@ -364,12 +369,12 @@ export default function Tasks() {
                                   {...dragProvided.draggableProps}
                                   {...dragProvided.dragHandleProps}
                                 >
-                                  <Card
+                                    <Card
                                     className={cn(
-                                      "cursor-pointer hover-lift",
+                                      "cursor-pointer hover-lift transition-all duration-200",
                                       highlightedId === task.id && "animate-highlight-flash",
                                       successId === task.id && "animate-highlight-success animate-pulse-success",
-                                      dragSnapshot.isDragging && "shadow-lg ring-2 ring-primary/30 rotate-[2deg]",
+                                      dragSnapshot.isDragging && "shadow-2xl ring-2 ring-primary/40 rotate-[2deg] scale-105 z-50",
                                       isDragDisabled && "cursor-default"
                                     )}
                                     onClick={() => !dragSnapshot.isDragging && openDetail(task)}

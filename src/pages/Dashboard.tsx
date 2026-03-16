@@ -16,6 +16,7 @@ import { format, differenceInDays, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MyDayView from "@/components/dashboard/MyDayView";
 import PerformanceAnalytics from "@/components/dashboard/PerformanceAnalytics";
+import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null; department_id: string | null };
@@ -32,7 +33,7 @@ function AdminManagerDashboard() {
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [timeLogs, setTimeLogs] = useState<{ id: string; task_id: string; user_id: string; action: string; created_at: string }[]>([]);
-
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
@@ -59,6 +60,7 @@ function AdminManagerDashboard() {
         setProfiles(map);
         setProfilesList(profilesRes.data as Profile[]);
       }
+      setLoading(false);
     };
     fetchData();
   }, [user, role, profile]);
@@ -153,6 +155,8 @@ function AdminManagerDashboard() {
     return Math.max(0, differenceInDays(today, new Date(dueDate)));
   };
 
+
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-6">

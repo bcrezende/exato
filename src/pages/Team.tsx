@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Tables } from "@/integrations/supabase/types";
 import EditMemberDialog from "@/components/team/EditMemberDialog";
 import EditDepartmentDialog from "@/components/team/EditDepartmentDialog";
+import { TeamSkeleton } from "@/components/skeletons/TeamSkeleton";
 
 type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
@@ -27,6 +28,7 @@ const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente",
 export default function Team() {
   const { user, role, profile: currentProfile } = useAuth();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<(Profile & { user_roles?: UserRole[] })[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -62,6 +64,7 @@ export default function Team() {
       }));
       setMembers(merged);
     }
+    setLoading(false);
   };
 
   useEffect(() => { if (user) fetchData(); }, [user, currentProfile?.company_id]);
@@ -101,6 +104,8 @@ export default function Team() {
   };
 
   const getInviteLink = (token: string) => `${window.location.origin}/accept-invite?token=${token}`;
+
+  if (loading) return <TeamSkeleton />;
 
   return (
     <div className="space-y-6">
