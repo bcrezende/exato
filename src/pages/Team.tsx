@@ -105,6 +105,8 @@ export default function Team() {
 
   const getInviteLink = (token: string) => `${window.location.origin}/accept-invite?token=${token}`;
 
+  if (loading) return <TeamSkeleton />;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
