@@ -186,7 +186,7 @@ export function NotificationBell() {
                     </p>
                     {n.message && (
                       <p className="truncate text-xs text-muted-foreground">
-                        {n.message}
+                        {translateMessage(n.message)}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
