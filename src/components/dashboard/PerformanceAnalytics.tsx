@@ -169,15 +169,23 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
     const completedLast7 = completedPerDay.reduce((sum, d) => sum + d.count, 0);
 
-    // Find the task with the longest execution time
-    let worstTask: { title: string; duration: number } | null = null;
+    // Find the task with the biggest overflow (actual - planned)
+    let worstTask: { title: string; duration: number; plannedDuration: number; overflow: number } | null = null;
     if (executionData.length > 0) {
-      const sorted = [...executionData].sort((a, b) => b.duration - a.duration);
-      const worst = sorted[0];
-      if (worst && worst.duration > 0) {
-        const task = filteredTasks.find((t) => t.id === worst.taskId);
-        worstTask = { title: task?.title || "—", duration: worst.duration };
-      }
+      let maxOverflow = 0;
+      executionData.filter((e) => e.duration > 0).forEach((e) => {
+        const task = filteredTasks.find((t) => t.id === e.taskId);
+        if (task?.start_date && task?.due_date) {
+          const plannedDuration = differenceInMilliseconds(new Date(task.due_date), new Date(task.start_date));
+          if (plannedDuration > 0) {
+            const overflow = e.duration - plannedDuration;
+            if (overflow > maxOverflow) {
+              maxOverflow = overflow;
+              worstTask = { title: task.title, duration: e.duration, plannedDuration, overflow };
+            }
+          }
+        }
+      });
     }
 
     return { avgExecution, delayRate, completedLast7, worstTask };
@@ -252,10 +260,22 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <AlertTriangle className={`h-4 w-4 ${summary.worstTask ? "text-warning" : "text-muted-foreground"}`} />
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold truncate">{summary.worstTask?.title || "—"}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary.worstTask ? formatDuration(summary.worstTask.duration) + " de execução" : "sem dados"}
-            </p>
+            {summary.worstTask ? (
+              <>
+                <div className="text-lg font-bold truncate">{summary.worstTask.title}</div>
+                <p className="text-xs text-muted-foreground">
+                  {formatDuration(summary.worstTask.duration)} de execução
+                </p>
+                <p className="text-xs text-destructive font-medium">
+                  +{formatDuration(summary.worstTask.overflow)} além do previsto
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-lg font-bold">Nenhum gargalo</div>
+                <p className="text-xs text-muted-foreground">todas dentro do prazo</p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
