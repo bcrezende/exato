@@ -26,6 +26,7 @@ const mainItems = [
 
 const managementItems = [
   { title: "Equipe & Setores", url: "/team", icon: Users },
+  { title: "Análise IA", url: "/analysis", icon: BrainCircuit },
 ];
 
 const bottomItems = [
