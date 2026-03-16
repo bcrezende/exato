@@ -64,7 +64,7 @@ export async function updateTaskStatus(
 
   // Don't block on secondary ops — fire them in parallel
   if (secondaryOps.length > 0) {
-    Promise.all(secondaryOps).catch(console.error);
+    await Promise.all(secondaryOps);
   }
 
   return { error: null, generatedRecurring };
