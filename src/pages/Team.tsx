@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Tables } from "@/integrations/supabase/types";
 import EditMemberDialog from "@/components/team/EditMemberDialog";
 import EditDepartmentDialog from "@/components/team/EditDepartmentDialog";
+import { TeamSkeleton } from "@/components/skeletons/TeamSkeleton";
 
 type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
