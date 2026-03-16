@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
-import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer } from "lucide-react";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star } from "lucide-react";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -51,6 +52,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const isCreator = localTask?.created_by === user?.id;
   const isAssigned = localTask?.assigned_to === user?.id;
   const [executionTime, setExecutionTime] = useState<string | null>(null);
+  const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
 
   useEffect(() => {
     setLocalTask(task);
@@ -83,25 +85,29 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
 
   if (!localTask) return null;
 
+  const extTask = localTask as any;
   const assignedName = members.find(m => m.id === localTask.assigned_to)?.full_name || null;
   const deptName = departments.find(d => d.id === localTask.department_id)?.name || null;
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string, difficultyRating?: number) => {
     const previousTask = localTask;
-    // Optimistic update — instant feedback
     setLocalTask({ ...localTask, status: newStatus as any });
     setStatusLoading(true);
     try {
-      await updateTaskStatus(localTask.id, newStatus as any, previousTask);
+      await updateTaskStatus(localTask.id, newStatus as any, previousTask, difficultyRating);
       toast({ title: "Status atualizado!" });
       onRefresh();
     } catch {
-      // Revert on error
       setLocalTask(previousTask);
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
     } finally {
       setStatusLoading(false);
     }
+  };
+
+  const handleCompleteWithDifficulty = (rating: number) => {
+    setShowDifficultyPopover(false);
+    handleStatusChange("completed", rating);
   };
 
   const handleDelete = async () => {
@@ -111,6 +117,8 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
     onOpenChange(false);
     onRefresh();
   };
+
+  const difficultyLabels = ["Muito fácil", "Fácil", "Moderada", "Difícil", "Muito difícil"];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,6 +130,11 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
           <div className="flex flex-wrap gap-2">
             <Badge className={statusColors[localTask.status]}>{statusLabels[localTask.status]}</Badge>
             {localTask.recurrence_type !== "none" && <Badge variant="outline">{recurrenceLabels[localTask.recurrence_type]}</Badge>}
+            {extTask.difficulty_rating && (
+              <Badge variant="outline" className="gap-1">
+                <Star className="h-3 w-3" /> Dificuldade: {extTask.difficulty_rating}/5
+              </Badge>
+            )}
           </div>
 
           {localTask.description && (
@@ -153,6 +166,12 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                 <span>Término: <span className="text-foreground font-medium">{format(new Date(localTask.due_date), "dd/MM/yyyy HH:mm")}</span></span>
               </div>
             )}
+            {extTask.estimated_minutes && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Hourglass className="h-4 w-4 shrink-0" />
+                <span>Estimativa: <span className="text-foreground font-medium">{extTask.estimated_minutes}min</span></span>
+              </div>
+            )}
             {executionTime && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Timer className="h-4 w-4 shrink-0" />
@@ -170,9 +189,33 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                 </Button>
               )}
               {localTask.status === "in_progress" && (
-                <Button size="sm" className="w-full bg-success text-success-foreground hover:bg-success/90" disabled={statusLoading} onClick={() => handleStatusChange("completed")}>
-                  <Flag className="mr-2 h-4 w-4" /> Concluir
-                </Button>
+                <Popover open={showDifficultyPopover} onOpenChange={setShowDifficultyPopover}>
+                  <PopoverTrigger asChild>
+                    <Button size="sm" className="w-full bg-success text-success-foreground hover:bg-success/90" disabled={statusLoading}>
+                      <Flag className="mr-2 h-4 w-4" /> Concluir
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64" align="center">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium">Qual a dificuldade desta tarefa?</p>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <Button
+                            key={rating}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 h-10 flex flex-col gap-0.5 p-1"
+                            onClick={() => handleCompleteWithDifficulty(rating)}
+                          >
+                            <Star className={`h-4 w-4 ${rating <= 2 ? 'text-success' : rating <= 3 ? 'text-warning' : 'text-destructive'}`} />
+                            <span className="text-[10px]">{rating}</span>
+                          </Button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground text-center">1 = Muito fácil · 5 = Muito difícil</p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               )}
               {localTask.status === "completed" && (
                 <div className="text-center space-y-1">

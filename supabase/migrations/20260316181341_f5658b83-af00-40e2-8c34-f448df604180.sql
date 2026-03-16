@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN estimated_minutes integer, ADD COLUMN difficulty_rating smallint;

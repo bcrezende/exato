@@ -90,6 +90,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       recurrence_type: form.recurrence_type as any,
       company_id: currentProfile.company_id,
       department_id: departmentId,
+      estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes, 10) : null,
     };
 
     if (editing) {
@@ -209,6 +210,18 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             )}
           </div>
 
+          {/* Tempo estimado */}
+          <div className="space-y-2">
+            <Label>Tempo estimado (minutos)</Label>
+            <Input
+              type="number"
+              min="1"
+              value={form.estimated_minutes}
+              onChange={(e) => setForm({ ...form, estimated_minutes: e.target.value })}
+              placeholder="Ex: 60"
+            />
+          </div>
+
           {/* Datas */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -264,6 +277,7 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
       due_date: toLocalDatetimeString(task.due_date),
       recurrence_type: task.recurrence_type,
       department_id: task.department_id || "",
+      estimated_minutes: (task as any).estimated_minutes ? String((task as any).estimated_minutes) : "",
     };
   }
   return {
@@ -275,5 +289,6 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
     due_date: "",
     recurrence_type: "none",
     department_id: isAdmin ? "" : (currentProfile?.department_id || ""),
+    estimated_minutes: "",
   };
 }

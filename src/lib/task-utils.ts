@@ -10,14 +10,19 @@ type Task = Tables<"tasks">;
 export async function updateTaskStatus(
   taskId: string,
   newStatus: "pending" | "in_progress" | "completed" | "overdue",
-  task?: Pick<Task, "recurrence_parent_id" | "recurrence_type" | "status"> | null
+  task?: Pick<Task, "recurrence_parent_id" | "recurrence_type" | "status"> | null,
+  difficultyRating?: number | null
 ) {
   const previousStatus = task?.status;
 
   // 1. Essential: update status in DB
+  const updatePayload: Record<string, unknown> = { status: newStatus };
+  if (newStatus === "completed" && difficultyRating) {
+    updatePayload.difficulty_rating = difficultyRating;
+  }
   const { error } = await supabase
     .from("tasks")
-    .update({ status: newStatus })
+    .update(updatePayload)
     .eq("id", taskId);
 
   if (error) throw error;
