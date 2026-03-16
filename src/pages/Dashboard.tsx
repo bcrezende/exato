@@ -163,7 +163,7 @@ function AdminManagerDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={selectedDepartment ?? "all"} onValueChange={(v) => setSelectedDepartment(v === "all" ? null : v)}>
+          <Select value={selectedDepartment ?? "all"} onValueChange={(v) => { setSelectedDepartment(v === "all" ? null : v); setSelectedEmployee(null); }}>
             <SelectTrigger className="w-[200px]">
               <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
               <SelectValue placeholder="Todos os setores" />
@@ -172,6 +172,18 @@ function AdminManagerDashboard() {
               <SelectItem value="all">Todos os setores</SelectItem>
               {departments.map((d) => (
                 <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedEmployee ?? "all"} onValueChange={(v) => setSelectedEmployee(v === "all" ? null : v)}>
+            <SelectTrigger className="w-[200px]">
+              <User className="mr-2 h-4 w-4 text-muted-foreground" />
+              <SelectValue placeholder="Todos os funcionários" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os funcionários</SelectItem>
+              {employeeOptions.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.full_name || "Sem nome"}</SelectItem>
               ))}
             </SelectContent>
           </Select>
