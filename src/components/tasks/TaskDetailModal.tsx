@@ -161,7 +161,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
             )}
           </div>
 
-          {isAssigned && !canManage && (
+          {isAssigned && (
             <div className="space-y-2">
               <span className="text-sm font-medium">Atualizar Status</span>
               {(localTask.status === "pending" || localTask.status === "overdue") && (
