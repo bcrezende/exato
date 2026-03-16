@@ -354,8 +354,8 @@ export default function Tasks() {
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                         className={cn(
-                          "space-y-2 min-h-[100px] rounded-lg transition-colors",
-                          snapshot.isDraggingOver && !isOverdueColumn && "bg-primary/5 ring-2 ring-primary/20"
+                          "space-y-2 min-h-[100px] rounded-lg transition-all duration-300",
+                          snapshot.isDraggingOver && !isOverdueColumn && "bg-primary/5 ring-2 ring-primary/20 animate-ring-pulse scale-[1.01]"
                         )}
                       >
                         {columnTasks.map((task, index) => {
