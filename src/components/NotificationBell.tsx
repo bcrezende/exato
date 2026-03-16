@@ -80,6 +80,21 @@ export function NotificationBell() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const clearAll = async () => {
+    if (!user) return;
+    await supabase.from("notifications").delete().eq("user_id", user.id);
+    setNotifications([]);
+  };
+
+  const translateMessage = (msg: string | null) => {
+    if (!msg) return msg;
+    return msg
+      .replace(/\bin_progress\b/g, "Em andamento")
+      .replace(/\bpending\b/g, "Pendente")
+      .replace(/\bcompleted\b/g, "Concluída")
+      .replace(/\boverdue\b/g, "Atrasada");
+  };
+
   const handleClick = (notification: Notification) => {
     markAsRead(notification.id);
     if (notification.reference_id) {
