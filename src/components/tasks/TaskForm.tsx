@@ -31,6 +31,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   const { toast } = useToast();
   const isAdmin = role === "admin";
   const isManager = role === "manager";
+  const isEmployee = role === "employee";
 
   const [form, setForm] = useState(() => getInitialForm(editing, isAdmin, currentProfile));
   const [errors, setErrors] = useState<Record<string, string>>({});
