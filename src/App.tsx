@@ -16,6 +16,7 @@ import Tasks from "./pages/Tasks";
 import MyDayView from "./components/dashboard/MyDayView";
 import Team from "./pages/Team";
 import Settings from "./pages/Settings";
+import Analysis from "./pages/Analysis";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
