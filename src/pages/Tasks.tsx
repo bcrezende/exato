@@ -306,6 +306,11 @@ export default function Tasks() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
+                <div className="p-2 border-b">
+                  <Button variant="ghost" size="sm" className="w-full justify-start text-sm" onClick={() => setFilterDate(undefined)}>
+                    Todos os dias
+                  </Button>
+                </div>
                 <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
