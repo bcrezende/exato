@@ -95,7 +95,7 @@ export default function Tasks() {
     fetchTasks();
   };
 
-  const handleStatusChange = async (taskId: string, newStatus: string) => {
+  const handleStatusChange = useCallback(async (taskId: string, newStatus: string) => {
     try {
       const task = tasks.find((t) => t.id === taskId);
       await updateTaskStatus(taskId, newStatus as any, task);
@@ -113,7 +113,7 @@ export default function Tasks() {
     } catch {
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
     }
-  };
+  }, [tasks, toast, fetchTasks]);
 
   const getMemberName = (id: string | null) => {
     if (!id) return "Não atribuída";
