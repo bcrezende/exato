@@ -224,6 +224,8 @@ export default function Tasks() {
     await handleStatusChange(draggableId, newStatus);
   }, [tasks, role, user?.id, handleStatusChange]);
 
+  if (loading) return <TasksSkeleton />;
+
   return (
     <div className="space-y-4">
       {/* Header */}
