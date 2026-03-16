@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ const statusLabels: Record<string, string> = { pending: "Pendente", in_progress:
 
 function AdminManagerDashboard() {
   const { user, role, profile } = useAuth();
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
   const [profilesList, setProfilesList] = useState<Profile[]>([]);
@@ -163,6 +165,10 @@ function AdminManagerDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => navigate("/my-day")} className="gap-2">
+            <CalendarIcon className="h-4 w-4" />
+            Meu Dia
+          </Button>
           <Select value={selectedDepartment ?? "all"} onValueChange={(v) => { setSelectedDepartment(v === "all" ? null : v); setSelectedEmployee(null); }}>
             <SelectTrigger className="w-[200px]">
               <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />

@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AcceptInvite from "./pages/AcceptInvite";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
+import MyDayView from "./components/dashboard/MyDayView";
 import Team from "./pages/Team";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -37,6 +38,7 @@ const App = () => (
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tasks" element={<Tasks />} />
+              <Route path="/my-day" element={<MyDayView />} />
               <Route path="/team" element={<ProtectedRoute allowedRoles={["admin", "manager"]}><Team /></ProtectedRoute>} />
               <Route path="/settings" element={<Settings />} />
             </Route>
