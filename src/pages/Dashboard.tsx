@@ -60,6 +60,7 @@ function AdminManagerDashboard() {
         setProfiles(map);
         setProfilesList(profilesRes.data as Profile[]);
       }
+      setLoading(false);
     };
     fetchData();
   }, [user, role, profile]);
