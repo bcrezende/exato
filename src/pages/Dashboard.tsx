@@ -17,7 +17,7 @@ import MyDayView from "@/components/dashboard/MyDayView";
 import PerformanceAnalytics from "@/components/dashboard/PerformanceAnalytics";
 
 type Task = Tables<"tasks">;
-type Profile = { id: string; full_name: string | null };
+type Profile = { id: string; full_name: string | null; department_id: string | null };
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
 
