@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { Bell, Check, CheckCheck, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -80,6 +80,21 @@ export function NotificationBell() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const clearAll = async () => {
+    if (!user) return;
+    await supabase.from("notifications").delete().eq("user_id", user.id);
+    setNotifications([]);
+  };
+
+  const translateMessage = (msg: string | null) => {
+    if (!msg) return msg;
+    return msg
+      .replace(/\bin_progress\b/g, "Em andamento")
+      .replace(/\bpending\b/g, "Pendente")
+      .replace(/\bcompleted\b/g, "Concluída")
+      .replace(/\boverdue\b/g, "Atrasada");
+  };
+
   const handleClick = (notification: Notification) => {
     markAsRead(notification.id);
     if (notification.reference_id) {
@@ -120,17 +135,30 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h4 className="text-sm font-semibold">Notificações</h4>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto gap-1 px-2 py-1 text-xs text-muted-foreground"
-              onClick={markAllAsRead}
-            >
-              <CheckCheck className="h-3 w-3" />
-              Marcar todas como lidas
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto gap-1 px-2 py-1 text-xs text-muted-foreground"
+                onClick={markAllAsRead}
+              >
+                <CheckCheck className="h-3 w-3" />
+                Marcar como lidas
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto gap-1 px-2 py-1 text-xs text-destructive hover:text-destructive"
+                onClick={clearAll}
+              >
+                <Trash2 className="h-3 w-3" />
+                Limpar
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="max-h-80">
           {notifications.length === 0 ? (
@@ -158,7 +186,7 @@ export function NotificationBell() {
                     </p>
                     {n.message && (
                       <p className="truncate text-xs text-muted-foreground">
-                        {n.message}
+                        {translateMessage(n.message)}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
