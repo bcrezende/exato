@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AcceptInvite from "./pages/AcceptInvite";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
+import MyDayView from "./components/dashboard/MyDayView";
 import Team from "./pages/Team";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
