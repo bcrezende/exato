@@ -138,6 +138,13 @@
   .hover-scale-subtle:hover {
     @apply scale-105;
   }
+
+  .collapse-enter {
+    @apply animate-collapse-in origin-top overflow-hidden;
+  }
+  .collapse-exit {
+    @apply animate-collapse-out origin-top overflow-hidden;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
