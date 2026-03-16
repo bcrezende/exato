@@ -164,6 +164,10 @@ function AdminManagerDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => navigate("/my-day")} className="gap-2">
+            <CalendarIcon className="h-4 w-4" />
+            Meu Dia
+          </Button>
           <Select value={selectedDepartment ?? "all"} onValueChange={(v) => { setSelectedDepartment(v === "all" ? null : v); setSelectedEmployee(null); }}>
             <SelectTrigger className="w-[200px]">
               <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
