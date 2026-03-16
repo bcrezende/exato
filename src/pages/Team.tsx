@@ -28,6 +28,7 @@ const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente",
 export default function Team() {
   const { user, role, profile: currentProfile } = useAuth();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<(Profile & { user_roles?: UserRole[] })[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
