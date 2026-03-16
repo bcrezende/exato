@@ -156,6 +156,8 @@ function AdminManagerDashboard() {
   };
 
 
+  if (loading) return <DashboardSkeleton />;
+
   return (
     <div className="space-y-6">
       {/* Header */}
