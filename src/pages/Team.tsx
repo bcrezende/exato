@@ -64,6 +64,7 @@ export default function Team() {
       }));
       setMembers(merged);
     }
+    setLoading(false);
   };
 
   useEffect(() => { if (user) fetchData(); }, [user, currentProfile?.company_id]);
