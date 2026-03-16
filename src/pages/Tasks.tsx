@@ -118,7 +118,7 @@ export default function Tasks() {
     try {
       const { generatedRecurring } = await updateTaskStatus(taskId, newStatus as any, task);
       if (generatedRecurring) {
-        setFilterDate(undefined);
+        
         toast({ title: "Status atualizado! Próxima recorrência gerada." });
       } else {
         toast({ title: "Status atualizado!" });
