@@ -65,9 +65,21 @@ function AdminManagerDashboard() {
   const todayStr = format(today, "yyyy-MM-dd");
 
   const filteredTasks = useMemo(() => {
-    if (!selectedDepartment) return tasks;
-    return tasks.filter((t) => t.department_id === selectedDepartment);
-  }, [tasks, selectedDepartment]);
+    let result = tasks;
+    if (selectedDepartment) result = result.filter((t) => t.department_id === selectedDepartment);
+    if (selectedEmployee) result = result.filter((t) => t.assigned_to === selectedEmployee);
+    return result;
+  }, [tasks, selectedDepartment, selectedEmployee]);
+
+  const employeeOptions = useMemo(() => {
+    let list = profilesList;
+    if (role === "manager" && profile?.department_id) {
+      list = list.filter(p => p.department_id === profile.department_id);
+    } else if (selectedDepartment) {
+      list = list.filter(p => p.department_id === selectedDepartment);
+    }
+    return list.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
+  }, [profilesList, selectedDepartment, role, profile]);
 
   const { overdueTasks, todayTasks, upcomingDays } = useMemo(() => {
     const overdue: Task[] = [];
