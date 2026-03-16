@@ -55,6 +55,7 @@ function AdminManagerDashboard() {
         const map = new Map<string, string>();
         profilesRes.data.forEach((p: Profile) => map.set(p.id, p.full_name || "Sem nome"));
         setProfiles(map);
+        setProfilesList(profilesRes.data as Profile[]);
       }
     };
     fetchData();
