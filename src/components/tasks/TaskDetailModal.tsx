@@ -184,7 +184,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
           )}
         </div>
 
-        {canManage && (
+        {(canManage || isCreator) && (
           <DialogFooter className="gap-2">
             <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onEdit(localTask); }}>
               <Pencil className="mr-2 h-4 w-4" /> Editar
