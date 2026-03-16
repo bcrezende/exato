@@ -77,10 +77,12 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       ? (form.department_id || null)
       : (currentProfile.department_id || null);
 
+    const assignedTo = isEmployee ? user.id : (form.assigned_to || null);
+
     const payload = {
       title: form.title.trim(),
       description: form.description.trim() || null,
-      assigned_to: form.assigned_to || null,
+      assigned_to: assignedTo,
       status: editing ? form.status as any : "pending" as any,
       priority: "medium" as any,
       start_date: form.start_date ? new Date(form.start_date).toISOString() : null,
