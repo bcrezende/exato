@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ message: "Recurring tasks processed", created: createdCount, overdue: overdueTasks?.length || 0 }),
+      JSON.stringify({ message: "Recurring tasks processed", created: createdCount, overdue: overdueCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
