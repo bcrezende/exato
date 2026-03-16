@@ -277,6 +277,7 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
       due_date: toLocalDatetimeString(task.due_date),
       recurrence_type: task.recurrence_type,
       department_id: task.department_id || "",
+      estimated_minutes: (task as any).estimated_minutes ? String((task as any).estimated_minutes) : "",
     };
   }
   return {
@@ -288,5 +289,6 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
     due_date: "",
     recurrence_type: "none",
     department_id: isAdmin ? "" : (currentProfile?.department_id || ""),
+    estimated_minutes: "",
   };
 }

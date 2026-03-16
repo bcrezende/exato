@@ -51,6 +51,15 @@ Regras:
 
 ${metrics.topSlowTasks?.length > 0 ? `**Top 3 tarefas mais demoradas:**\n${metrics.topSlowTasks.map((t: any, i: number) => `${i + 1}. "${t.title}" — ${t.minutes} min`).join("\n")}` : ""}
 
+${metrics.avgEstimateDeviation !== null ? `**Estimativa vs. Tempo Real:**
+- Desvio médio: ${metrics.avgEstimateDeviation} minutos (positivo = demorou mais que o estimado)
+${metrics.topDeviations?.length > 0 ? `- Maiores desvios:\n${metrics.topDeviations.map((d: any, i: number) => `  ${i + 1}. "${d.title}" — estimado: ${d.estimated}min, real: ${d.actual}min (desvio: ${d.deviation > 0 ? '+' : ''}${d.deviation}min)`).join("\n")}` : ""}` : ""}
+
+${metrics.avgDifficulty ? `**Avaliação de Dificuldade (1-5):**
+- Média de dificuldade: ${metrics.avgDifficulty}/5
+- Distribuição: ${metrics.difficultyDistribution?.map((d: any) => `${d.rating}★=${d.count}`).join(", ")}
+${metrics.hardestTasks?.length > 0 ? `- Tarefas mais difíceis:\n${metrics.hardestTasks.map((t: any, i: number) => `  ${i + 1}. "${t.title}" — dificuldade ${t.difficulty}/5`).join("\n")}` : ""}` : ""}
+
 Gere uma análise completa e detalhada com base nesses dados.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

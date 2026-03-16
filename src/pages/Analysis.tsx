@@ -143,6 +143,32 @@ export default function Analysis() {
       const sectorName = sectorId === "all" ? "Todos os setores" : departments.find((d) => d.id === sectorId)?.name || sectorId;
       const employeeName = employeeId === "all" ? "Todos os funcionários" : profiles.find((p) => p.id === employeeId)?.full_name || employeeId;
 
+      // Estimated vs actual metrics
+      const tasksWithEstimate = taskList.filter((t: any) => t.estimated_minutes && t.estimated_minutes > 0);
+      const estimateDeviations: { title: string; estimated: number; actual: number; deviation: number }[] = [];
+      tasksWithEstimate.forEach((t: any) => {
+        const dur = durations.find(d => d.taskId === t.id);
+        if (dur) {
+          const dev = dur.minutes - t.estimated_minutes;
+          estimateDeviations.push({ title: t.title, estimated: t.estimated_minutes, actual: dur.minutes, deviation: dev });
+        }
+      });
+      const avgEstimateDeviation = estimateDeviations.length > 0
+        ? Math.round(estimateDeviations.reduce((s, d) => s + d.deviation, 0) / estimateDeviations.length)
+        : null;
+      const topDeviations = [...estimateDeviations].sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation)).slice(0, 3);
+
+      // Difficulty metrics
+      const tasksWithDifficulty = taskList.filter((t: any) => t.difficulty_rating && t.difficulty_rating > 0);
+      const avgDifficulty = tasksWithDifficulty.length > 0
+        ? (tasksWithDifficulty.reduce((s: number, t: any) => s + t.difficulty_rating, 0) / tasksWithDifficulty.length).toFixed(1)
+        : null;
+      const difficultyDistribution = [1, 2, 3, 4, 5].map(r => ({
+        rating: r,
+        count: tasksWithDifficulty.filter((t: any) => t.difficulty_rating === r).length,
+      }));
+      const hardestTasks = [...tasksWithDifficulty].sort((a: any, b: any) => b.difficulty_rating - a.difficulty_rating).slice(0, 3);
+
       const { data, error } = await supabase.functions.invoke("generate-analysis", {
         body: {
           metrics: {
@@ -150,6 +176,11 @@ export default function Analysis() {
             completionRate, delayRate, avgExecutionMinutes,
             highPriority, mediumPriority, lowPriority,
             topSlowTasks: topSlowTasks.map((t) => ({ title: t.title, minutes: t.minutes })),
+            avgEstimateDeviation,
+            topDeviations: topDeviations.map(d => ({ title: d.title, estimated: d.estimated, actual: d.actual, deviation: d.deviation })),
+            avgDifficulty,
+            difficultyDistribution,
+            hardestTasks: hardestTasks.map((t: any) => ({ title: t.title, difficulty: t.difficulty_rating })),
           },
           filters: { periodLabel: periodLabels[period], sectorName, employeeName },
         },
