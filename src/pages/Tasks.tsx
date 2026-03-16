@@ -195,6 +195,21 @@ export default function Tasks() {
 
   const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
 
+  const handleDragEnd = useCallback(async (result: DropResult) => {
+    const { destination, draggableId } = result;
+    if (!destination) return;
+    const newStatus = destination.droppableId;
+    if (newStatus === "overdue") return; // coluna calculada, não aceita drop
+    const task = tasks.find((t) => t.id === draggableId);
+    if (!task) return;
+    // Verificar permissão: employee só pode arrastar as próprias
+    if (role === "employee" && task.assigned_to !== user?.id) return;
+    // Determinar status atual real da tarefa
+    const currentEffective = task.status === "pending" && task.due_date && task.due_date < new Date().toISOString() ? "overdue" : task.status;
+    if (newStatus === currentEffective) return; // sem mudança
+    await handleStatusChange(draggableId, newStatus);
+  }, [tasks, role, user?.id, handleStatusChange]);
+
   return (
     <div className="space-y-4">
       {/* Header */}
