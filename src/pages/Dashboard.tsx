@@ -16,7 +16,6 @@ import { format, differenceInDays, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MyDayView from "@/components/dashboard/MyDayView";
 import PerformanceAnalytics from "@/components/dashboard/PerformanceAnalytics";
-import AIAnalysisDialog from "@/components/dashboard/AIAnalysisDialog";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 
 type Task = Tables<"tasks">;
