@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListTodo, Users, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit } from "lucide-react";
 import logoWhite from "@/assets/logo-white.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
