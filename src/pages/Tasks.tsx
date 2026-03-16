@@ -113,10 +113,13 @@ export default function Tasks() {
 
     try {
       const { generatedRecurring } = await updateTaskStatus(taskId, newStatus as any, task);
-      toast({ title: "Status atualizado!" });
-      if (generatedRecurring || newStatus === "completed") {
-        await fetchTasks();
+      if (generatedRecurring) {
+        setFilterDate(undefined);
+        toast({ title: "Status atualizado! Próxima recorrência gerada." });
+      } else {
+        toast({ title: "Status atualizado!" });
       }
+      await fetchTasks();
     } catch {
       setTasks(previousTasks);
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
@@ -303,6 +306,11 @@ export default function Tasks() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
+                <div className="p-2 border-b">
+                  <Button variant="ghost" size="sm" className="w-full justify-start text-sm" onClick={() => setFilterDate(undefined)}>
+                    Todos os dias
+                  </Button>
+                </div>
                 <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
