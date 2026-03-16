@@ -70,6 +70,7 @@ export default function Tasks() {
     if (role === "employee" && user) query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
     const { data } = await query;
     if (data) setTasks(data);
+    setLoading(false);
   };
 
   const fetchMembers = async () => {
