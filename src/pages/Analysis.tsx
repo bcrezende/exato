@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { BrainCircuit, Loader2, RotateCcw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { subWeeks, subMonths, startOfDay } from "date-fns";
+import { AnalysisHistoryTable } from "@/components/analysis/AnalysisHistoryTable";
 
 type Period = "today" | "week" | "month";
 type Profile = { id: string; full_name: string | null; department_id: string | null };
@@ -34,6 +35,21 @@ export default function Analysis() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
+  // History
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const fetchHistory = useCallback(async () => {
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from("analysis_history")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setHistory(data || []);
+    setLoadingHistory(false);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     const fetch = async () => {
@@ -53,7 +69,8 @@ export default function Analysis() {
       setLoadingData(false);
     };
     fetch();
-  }, [user, role, authProfile]);
+    fetchHistory();
+  }, [user, role, authProfile, fetchHistory]);
 
   const employeeOptions = useMemo(() => {
     let list = profiles;
@@ -141,6 +158,19 @@ export default function Analysis() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setResult(data.analysis);
+
+      // Save to history
+      if (data.analysis && authProfile?.company_id) {
+        await supabase.from("analysis_history").insert({
+          user_id: user!.id,
+          company_id: authProfile.company_id,
+          period_label: periodLabels[period],
+          sector_name: sectorName,
+          employee_name: employeeName,
+          content: data.analysis,
+        });
+        fetchHistory();
+      }
     } catch (e: any) {
       console.error(e);
       toast({ title: "Erro", description: e.message || "Falha ao gerar análise.", variant: "destructive" });
@@ -235,6 +265,8 @@ export default function Analysis() {
           </CardContent>
         </Card>
       )}
+
+      <AnalysisHistoryTable history={history} onDeleted={fetchHistory} />
     </div>
   );
 }
