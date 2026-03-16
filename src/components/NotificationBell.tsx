@@ -135,17 +135,30 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h4 className="text-sm font-semibold">Notificações</h4>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto gap-1 px-2 py-1 text-xs text-muted-foreground"
-              onClick={markAllAsRead}
-            >
-              <CheckCheck className="h-3 w-3" />
-              Marcar todas como lidas
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto gap-1 px-2 py-1 text-xs text-muted-foreground"
+                onClick={markAllAsRead}
+              >
+                <CheckCheck className="h-3 w-3" />
+                Marcar como lidas
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto gap-1 px-2 py-1 text-xs text-destructive hover:text-destructive"
+                onClick={clearAll}
+              >
+                <Trash2 className="h-3 w-3" />
+                Limpar
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="max-h-80">
           {notifications.length === 0 ? (
