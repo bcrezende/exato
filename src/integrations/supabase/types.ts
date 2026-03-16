@@ -344,7 +344,9 @@ export type Database = {
           created_by: string
           department_id: string | null
           description: string | null
+          difficulty_rating: number | null
           due_date: string | null
+          estimated_minutes: number | null
           id: string
           priority: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id: string | null
@@ -361,7 +363,9 @@ export type Database = {
           created_by: string
           department_id?: string | null
           description?: string | null
+          difficulty_rating?: number | null
           due_date?: string | null
+          estimated_minutes?: number | null
           id?: string
           priority?: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id?: string | null
@@ -378,7 +382,9 @@ export type Database = {
           created_by?: string
           department_id?: string | null
           description?: string | null
+          difficulty_rating?: number | null
           due_date?: string | null
+          estimated_minutes?: number | null
           id?: string
           priority?: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id?: string | null
