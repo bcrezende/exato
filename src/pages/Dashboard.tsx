@@ -25,8 +25,10 @@ function AdminManagerDashboard() {
   const { user, role, profile } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
+  const [profilesList, setProfilesList] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [timeLogs, setTimeLogs] = useState<{ id: string; task_id: string; user_id: string; action: string; created_at: string }[]>([]);
 
 
