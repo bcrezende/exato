@@ -56,9 +56,9 @@ export async function updateTaskStatus(
       supabase.functions.invoke("generate-recurring-tasks", {
         body: { parentId }
       }).then(({ error: fnError }) => {
-        if (fnError) console.error("Edge function error:", fnError);
-        else generatedRecurring = true;
-      }).catch(err => console.error("Error triggering recurring task generation:", err))
+        if (fnError) throw new Error(`Edge function error: ${fnError.message || fnError}`);
+        generatedRecurring = true;
+      })
     );
   }
 

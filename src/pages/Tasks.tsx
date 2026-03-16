@@ -96,21 +96,29 @@ export default function Tasks() {
   };
 
   const handleStatusChange = useCallback(async (taskId: string, newStatus: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    // Otimista: atualizar UI imediatamente
+    const previousTasks = tasks;
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } as Task : t));
+
+    if (newStatus === "in_progress") {
+      setHighlightedId(taskId);
+      setTimeout(() => setHighlightedId(null), 800);
+    } else if (newStatus === "completed") {
+      setSuccessId(taskId);
+      setTimeout(() => setSuccessId(null), 1000);
+    }
+
     try {
-      const task = tasks.find((t) => t.id === taskId);
-      await updateTaskStatus(taskId, newStatus as any, task);
-      
-      if (newStatus === "in_progress") {
-        setHighlightedId(taskId);
-        setTimeout(() => setHighlightedId(null), 800);
-      } else if (newStatus === "completed") {
-        setSuccessId(taskId);
-        setTimeout(() => setSuccessId(null), 1000);
-      }
-      
+      const { generatedRecurring } = await updateTaskStatus(taskId, newStatus as any, task);
       toast({ title: "Status atualizado!" });
-      await fetchTasks();
+      if (generatedRecurring || newStatus === "completed") {
+        await fetchTasks();
+      }
     } catch {
+      setTasks(previousTasks);
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
     }
   }, [tasks, toast, fetchTasks]);
