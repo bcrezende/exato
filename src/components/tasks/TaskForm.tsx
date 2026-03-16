@@ -43,6 +43,15 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
     }
   }, [editing, open]);
 
+  useEffect(() => {
+    if (form.start_date && form.due_date) {
+      const diff = new Date(form.due_date).getTime() - new Date(form.start_date).getTime();
+      if (diff > 0) {
+        setForm(prev => ({ ...prev, estimated_minutes: String(Math.round(diff / 60000)) }));
+      }
+    }
+  }, [form.start_date, form.due_date]);
+
   const resetForm = (task: Task | null) => {
     setForm(getInitialForm(task, isAdmin, currentProfile));
     setErrors({});
