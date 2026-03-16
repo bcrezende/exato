@@ -16,7 +16,6 @@ import { format, differenceInDays, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MyDayView from "@/components/dashboard/MyDayView";
 import PerformanceAnalytics from "@/components/dashboard/PerformanceAnalytics";
-import AIAnalysisDialog from "@/components/dashboard/AIAnalysisDialog";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 
 type Task = Tables<"tasks">;
@@ -170,7 +169,6 @@ function AdminManagerDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <AIAnalysisDialog departments={departments} profiles={profilesList} />
           <Button variant="outline" onClick={() => navigate("/my-day")} className="gap-2">
             <CalendarIcon className="h-4 w-4" />
             Meu Dia

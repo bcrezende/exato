@@ -16,6 +16,7 @@ import Tasks from "./pages/Tasks";
 import MyDayView from "./components/dashboard/MyDayView";
 import Team from "./pages/Team";
 import Settings from "./pages/Settings";
+import Analysis from "./pages/Analysis";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/my-day" element={<MyDayView />} />
               <Route path="/team" element={<ProtectedRoute allowedRoles={["admin", "manager"]}><Team /></ProtectedRoute>} />
+              <Route path="/analysis" element={<ProtectedRoute allowedRoles={["admin", "manager"]}><Analysis /></ProtectedRoute>} />
               <Route path="/settings" element={<Settings />} />
             </Route>
 
