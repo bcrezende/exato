@@ -38,7 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", userId).single(),
     ]);
     if (profileRes.data) setProfile(profileRes.data);
-    if (roleRes.data) setRole(roleRes.data.role);
+    if (roleRes.data) {
+      const dbRole = roleRes.data.role;
+      // Map legacy 'employee' to 'analyst'
+      const mappedRole = dbRole === 'employee' ? 'analyst' : dbRole;
+      setRole(mappedRole as AppRole);
+    }
   };
 
   useEffect(() => {
