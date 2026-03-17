@@ -67,7 +67,7 @@ export default function RecurrenceSettings() {
         .update({
           name: form.name.trim(),
           interval_value: intervalValue,
-          interval_unit: form.interval_unit,
+          interval_unit: form.interval_unit as any,
           max_span_days: maxSpanDays,
         })
         .eq("id", editing.id);
