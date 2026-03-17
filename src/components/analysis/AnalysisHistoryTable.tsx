@@ -68,7 +68,7 @@ export function AnalysisHistoryTable({ history, onDeleted }: Props) {
                 <TableHead>Data</TableHead>
                 <TableHead>Período</TableHead>
                 <TableHead>Setor</TableHead>
-                <TableHead>Funcionário</TableHead>
+                <TableHead>Analista</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>

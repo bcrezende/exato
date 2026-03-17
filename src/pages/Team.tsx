@@ -23,7 +23,7 @@ type Department = Tables<"departments">;
 type Invitation = Tables<"invitations">;
 type UserRole = Tables<"user_roles">;
 
-const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente", employee: "Funcionário" };
+const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente", coordinator: "Coordenador", analyst: "Analista" };
 
 export default function Team() {
   const { user, role, profile: currentProfile } = useAuth();
@@ -35,7 +35,7 @@ export default function Team() {
   const [deptModal, setDeptModal] = useState(false);
   const [inviteModal, setInviteModal] = useState(false);
   const [deptName, setDeptName] = useState("");
-  const [inviteForm, setInviteForm] = useState({ email: "", role: "employee" as string, department_id: "" });
+  const [inviteForm, setInviteForm] = useState({ email: "", role: "analyst" as string, department_id: "" });
   const [editMember, setEditMember] = useState<(Profile & { user_roles?: UserRole[] }) | null>(null);
   const [editDept, setEditDept] = useState<Department | null>(null);
   const isAdmin = role === "admin";
@@ -48,6 +48,7 @@ export default function Team() {
     if (role === "manager" && currentProfile.department_id) {
       membersQuery = membersQuery.eq("department_id", currentProfile.department_id);
     }
+    // Coordinators will filter after fetching (need coordinator_analysts data)
 
     const [membersRes, deptsRes, invitesRes, rolesRes] = await Promise.all([
       membersQuery,
@@ -55,10 +56,25 @@ export default function Team() {
       supabase.from("invitations").select("*").eq("company_id", currentProfile.company_id).is("accepted_at", null),
       supabase.from("user_roles").select("*"),
     ]);
+
+    // Coordinator needs to know their analysts
+    let coordAnalystIds: Set<string> | null = null;
+    if (role === "coordinator" && user) {
+      const { data } = await supabase.from("coordinator_analysts").select("analyst_id").eq("coordinator_id", user.id);
+      if (data) {
+        coordAnalystIds = new Set(data.map(a => a.analyst_id));
+        coordAnalystIds.add(user.id);
+      }
+    }
+
     if (deptsRes.data) setDepartments(deptsRes.data);
     if (invitesRes.data) setInvitations(invitesRes.data);
     if (membersRes.data && rolesRes.data) {
-      const merged = membersRes.data.map((m) => ({
+      let membersList = membersRes.data;
+      if (coordAnalystIds) {
+        membersList = membersList.filter(m => coordAnalystIds!.has(m.id));
+      }
+      const merged = membersList.map((m) => ({
         ...m,
         user_roles: rolesRes.data.filter((r) => r.user_id === m.id),
       }));
@@ -98,7 +114,7 @@ export default function Team() {
     });
     if (error) { toast({ variant: "destructive", title: "Erro", description: error.message }); return; }
     toast({ title: "Convite enviado!", description: `Link de convite gerado para ${inviteForm.email}` });
-    setInviteForm({ email: "", role: "employee", department_id: "" });
+    setInviteForm({ email: "", role: "analyst", department_id: "" });
     setInviteModal(false);
     fetchData();
   };
@@ -319,7 +335,8 @@ export default function Team() {
                 <SelectContent>
                   {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
                   {isAdmin && <SelectItem value="manager">Gerente</SelectItem>}
-                  <SelectItem value="employee">Funcionário</SelectItem>
+                  {(isAdmin || role === "manager") && <SelectItem value="coordinator">Coordenador</SelectItem>}
+                  <SelectItem value="analyst">Analista</SelectItem>
                 </SelectContent>
               </Select>
             </div>

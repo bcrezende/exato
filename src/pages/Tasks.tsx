@@ -64,11 +64,11 @@ export default function Tasks() {
   const [filterRecurrence, setFilterRecurrence] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
 
-  const canManage = role === "admin" || role === "manager";
+  const canManage = role === "admin" || role === "manager" || role === "coordinator";
 
   const fetchTasks = async () => {
     let query = supabase.from("tasks").select("*").order("created_at", { ascending: false });
-    if (role === "employee" && user) query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
+    if (role === "analyst" && user) query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
     const { data } = await query;
     if (data) setTasks(data);
     setLoading(false);
@@ -217,8 +217,8 @@ export default function Tasks() {
     if (newStatus === "overdue") return; // coluna calculada, não aceita drop
     const task = tasks.find((t) => t.id === draggableId);
     if (!task) return;
-    // Verificar permissão: employee só pode arrastar as próprias
-    if (role === "employee" && task.assigned_to !== user?.id) return;
+    // Verificar permissão: analista só pode arrastar as próprias
+    if (role === "analyst" && task.assigned_to !== user?.id) return;
     // Determinar status atual real da tarefa
     const currentEffective = task.status === "pending" && task.due_date && task.due_date < new Date().toISOString() ? "overdue" : task.status;
     if (newStatus === currentEffective) return; // sem mudança
@@ -361,7 +361,7 @@ export default function Tasks() {
                       >
                         {columnTasks.map((task, index) => {
                           const deptName = getDepartmentName(task.department_id);
-                          const isDragDisabled = role === "employee" && task.assigned_to !== user?.id;
+                          const isDragDisabled = role === "analyst" && task.assigned_to !== user?.id;
                           return (
                             <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={isDragDisabled}>
                               {(dragProvided, dragSnapshot) => {
@@ -412,7 +412,7 @@ export default function Tasks() {
                                         </div>
                                         {/* Quick actions */}
                                         <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
-                                          {role === "employee" && task.assigned_to === user?.id && (
+                                          {role === "analyst" && task.assigned_to === user?.id && (
                                             <>
                                               {task.status === "pending" && (
                                                 <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
@@ -522,7 +522,7 @@ export default function Tasks() {
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
-                        {(role === "employee" && task.assigned_to === user?.id) && (
+                        {(role === "analyst" && task.assigned_to === user?.id) && (
                           <>
                             {task.status === "pending" && (
                               <Button size="sm" variant="outline" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>

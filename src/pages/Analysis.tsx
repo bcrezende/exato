@@ -141,7 +141,7 @@ export default function Analysis() {
       const topSlowTasks = [...durations].sort((a, b) => b.minutes - a.minutes).slice(0, 3);
 
       const sectorName = sectorId === "all" ? "Todos os setores" : departments.find((d) => d.id === sectorId)?.name || sectorId;
-      const employeeName = employeeId === "all" ? "Todos os funcionários" : profiles.find((p) => p.id === employeeId)?.full_name || employeeId;
+      const employeeName = employeeId === "all" ? "Todos os analistas" : profiles.find((p) => p.id === employeeId)?.full_name || employeeId;
 
       // Estimated vs actual metrics
       const tasksWithEstimate = taskList.filter((t: any) => t.estimated_minutes && t.estimated_minutes > 0);
@@ -256,7 +256,7 @@ export default function Analysis() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Funcionário</label>
+              <label className="text-sm font-medium">Analista</label>
               <Select value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>

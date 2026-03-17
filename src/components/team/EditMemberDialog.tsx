@@ -20,7 +20,7 @@ interface EditMemberDialogProps {
   onSaved: () => void;
 }
 
-const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente", employee: "Funcionário" };
+const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente", coordinator: "Coordenador", analyst: "Analista" };
 
 export default function EditMemberDialog({ open, onOpenChange, member, departments, onSaved }: EditMemberDialogProps) {
   const { toast } = useToast();
@@ -34,7 +34,7 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
         position: member.position || "",
         phone: member.phone || "",
         department_id: member.department_id || "",
-        role: member.user_roles?.[0]?.role || "employee",
+        role: member.user_roles?.[0]?.role || "analyst",
       });
     }
   }, [member]);
@@ -113,7 +113,8 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
               <SelectContent>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="manager">Gerente</SelectItem>
-                <SelectItem value="employee">Funcionário</SelectItem>
+                <SelectItem value="coordinator">Coordenador</SelectItem>
+                <SelectItem value="analyst">Analista</SelectItem>
               </SelectContent>
             </Select>
           </div>

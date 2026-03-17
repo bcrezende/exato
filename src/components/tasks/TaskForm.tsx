@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +31,8 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   const { toast } = useToast();
   const isAdmin = role === "admin";
   const isManager = role === "manager";
-  const isEmployee = role === "employee";
+  const isAnalyst = role === "analyst";
+  const isCoordinator = role === "coordinator";
 
   const [form, setForm] = useState(() => getInitialForm(editing, isAdmin, currentProfile));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,14 +58,27 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
     setErrors({});
   };
 
-  const filteredMembers = isManager && currentProfile?.department_id
-    ? members.filter(m => m.department_id === currentProfile.department_id)
-    : members;
+  const [coordinatorAnalystIds, setCoordinatorAnalystIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isCoordinator && user) {
+      supabase.from("coordinator_analysts").select("analyst_id").eq("coordinator_id", user.id)
+        .then(({ data }) => {
+          if (data) setCoordinatorAnalystIds(data.map(d => d.analyst_id));
+        });
+    }
+  }, [isCoordinator, user]);
+
+  const filteredMembers = useMemo(() => {
+    if (isCoordinator) return members.filter(m => coordinatorAnalystIds.includes(m.id));
+    if (isManager && currentProfile?.department_id) return members.filter(m => m.department_id === currentProfile.department_id);
+    return members;
+  }, [members, isCoordinator, isManager, currentProfile, coordinatorAnalystIds]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.title.trim()) newErrors.title = "Título é obrigatório";
-    if (!isEmployee && !form.assigned_to) newErrors.assigned_to = "Responsável é obrigatório";
+    if (!isAnalyst && !form.assigned_to) newErrors.assigned_to = "Responsável é obrigatório";
     if (!form.start_date) newErrors.start_date = "Data de início é obrigatória";
     if (!form.due_date) newErrors.due_date = "Data de término é obrigatória";
     if (isAdmin && !form.department_id) newErrors.department_id = "Setor é obrigatório";
@@ -86,7 +100,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       ? (form.department_id || null)
       : (currentProfile.department_id || null);
 
-    const assignedTo = isEmployee ? user.id : (form.assigned_to || null);
+    const assignedTo = isAnalyst ? user.id : (form.assigned_to || null);
 
     const payload = {
       title: form.title.trim(),
@@ -149,7 +163,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descreva a tarefa..." rows={3} />
           </div>
 
-          {!isEmployee && (
+          {!isAnalyst && (
             <div className="grid grid-cols-2 gap-4">
               {/* Responsável */}
               <div className="space-y-2">
@@ -204,8 +218,8 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
               </div>
             )}
 
-            {/* Recorrência for admin or employee */}
-            {(isAdmin || isEmployee) && (
+            {/* Recorrência for admin, coordinator or analyst */}
+            {(isAdmin || isCoordinator || isAnalyst) && (
               <div className="space-y-2">
                 <Label>Recorrência <span className="text-destructive">*</span></Label>
                 <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
