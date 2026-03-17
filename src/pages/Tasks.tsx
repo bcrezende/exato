@@ -312,7 +312,7 @@ export default function Tasks() {
               <SelectTrigger className="w-[150px]"><SelectValue placeholder="Recorrência" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                {definitions.filter(d => d.key !== "none").map((d) => <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>)}
               </SelectContent>
             </Select>
             <Popover>
