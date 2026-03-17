@@ -28,10 +28,10 @@ function useCurrentTime() {
   return now;
 }
 
-function CurrentTimeLine({ now }: { now: Date }) {
+function CurrentTimeLine({ now, offsetLeft }: { now: Date; offsetLeft?: string }) {
   const top = (now.getHours() + now.getMinutes() / 60) * 56;
   return (
-    <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${top}px` }}>
+    <div className="absolute right-0 z-20 pointer-events-none" style={{ top: `${top}px`, left: offsetLeft || "0px" }}>
       <div className="relative w-full border-t-2 border-red-500">
         <div className="absolute -left-1.5 -top-[5px] h-2.5 w-2.5 rounded-full bg-red-500" />
       </div>
