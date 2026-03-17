@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, RefreshCw } from "lucide-react";
+import { User, Building, RefreshCw, CalendarDays } from "lucide-react";
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
+import HolidaySettings from "@/components/settings/HolidaySettings";
 
 export default function Settings() {
   const { user, role, profile } = useAuth();
@@ -65,6 +66,7 @@ export default function Settings() {
           <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Perfil</TabsTrigger>
           {role === "admin" && <TabsTrigger value="company"><Building className="mr-2 h-4 w-4" /> Empresa</TabsTrigger>}
           {role === "admin" && <TabsTrigger value="recurrences"><RefreshCw className="mr-2 h-4 w-4" /> Recorrências</TabsTrigger>}
+          {role === "admin" && <TabsTrigger value="holidays"><CalendarDays className="mr-2 h-4 w-4" /> Feriados</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile">
@@ -112,6 +114,12 @@ export default function Settings() {
         {role === "admin" && (
           <TabsContent value="recurrences">
             <RecurrenceSettings />
+          </TabsContent>
+        )}
+
+        {role === "admin" && (
+          <TabsContent value="holidays">
+            <HolidaySettings />
           </TabsContent>
         )}
       </Tabs>

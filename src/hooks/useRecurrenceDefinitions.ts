@@ -12,7 +12,12 @@ export interface RecurrenceDefinition {
   max_span_days: number;
   is_system: boolean;
   created_at: string;
+  weekdays: number[] | null;
+  skip_weekends: boolean;
+  skip_holidays: boolean;
 }
+
+const weekdayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export function useRecurrenceDefinitions() {
   const { profile } = useAuth();
@@ -50,5 +55,15 @@ export function useRecurrenceDefinitions() {
     return def?.max_span_days ?? null;
   };
 
-  return { definitions, loading, fetchDefinitions, getLabel, getLabelsMap, getMaxSpanDays };
+  const getWeekdaysLabel = (key: string): string | null => {
+    const def = definitions.find(d => d.key === key);
+    if (!def?.weekdays || def.weekdays.length === 0) return null;
+    return def.weekdays.map(d => weekdayNames[d]).join(", ");
+  };
+
+  const getDefinition = (key: string): RecurrenceDefinition | undefined => {
+    return definitions.find(d => d.key === key);
+  };
+
+  return { definitions, loading, fetchDefinitions, getLabel, getLabelsMap, getMaxSpanDays, getWeekdaysLabel, getDefinition };
 }
