@@ -214,6 +214,57 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
   }, [executionData, filteredTasks]);
 
   const [showBottlenecks, setShowBottlenecks] = useState(false);
+  const [showAvgTime, setShowAvgTime] = useState(false);
+  const [showDelayRate, setShowDelayRate] = useState(false);
+  const [showCompleted7d, setShowCompleted7d] = useState(false);
+
+  // Tasks with execution time for avg time dialog
+  const completedTasksWithTime = useMemo(() => {
+    return executionData
+      .filter((e) => e.duration > 0)
+      .map((e) => {
+        const task = filteredTasks.find((t) => t.id === e.taskId);
+        return {
+          title: task?.title || "—",
+          assignedTo: task?.assigned_to || null,
+          deptId: task?.department_id || null,
+          duration: e.duration,
+        };
+      })
+      .sort((a, b) => b.duration - a.duration);
+  }, [executionData, filteredTasks]);
+
+  // Tasks started late for delay rate dialog
+  const delayedTasks = useMemo(() => {
+    return executionData
+      .filter((e) => e.startedLate)
+      .map((e) => {
+        const task = filteredTasks.find((t) => t.id === e.taskId);
+        return {
+          title: task?.title || "—",
+          assignedTo: task?.assigned_to || null,
+          deptId: task?.department_id || null,
+        };
+      });
+  }, [executionData, filteredTasks]);
+
+  // Tasks completed in the last 7 days
+  const completedLast7dTasks = useMemo(() => {
+    const today = startOfDay(new Date());
+    const sevenDaysAgo = subDays(today, 7);
+    return filteredLogs
+      .filter((l) => l.action === "completed" && new Date(l.created_at) >= sevenDaysAgo)
+      .map((l) => {
+        const task = filteredTasks.find((t) => t.id === l.task_id);
+        return {
+          title: task?.title || "—",
+          assignedTo: task?.assigned_to || null,
+          deptId: task?.department_id || null,
+          completedAt: l.created_at,
+        };
+      })
+      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  }, [filteredLogs, filteredTasks]);
 
   const chartConfigTime = {
     avgMinutes: { label: "Tempo médio (min)", color: "hsl(var(--primary))" },
