@@ -314,6 +314,9 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
   );
 }
 function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks: Task[]; onTaskClick: (t: Task) => void }) {
+  const now = useCurrentTime();
+  const isToday = isSameDay(currentDate, now);
+
   const getTaskDurationHours = (t: Task) => {
     if (!t.start_date || !t.due_date) return 1;
     const diff = (new Date(t.due_date).getTime() - new Date(t.start_date).getTime()) / (1000 * 60 * 60);
@@ -329,7 +332,8 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
   }, [tasks, currentDate.toDateString()]);
 
   return (
-    <div className="overflow-auto max-h-[600px]">
+    <div className="overflow-auto max-h-[600px] relative">
+      {isToday && <CurrentTimeLine now={now} />}
       {HOURS.map(hour => {
         const hourTasks = layouted.filter(lt => Math.floor(lt.startHour) === hour);
         return (
