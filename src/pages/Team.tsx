@@ -98,7 +98,7 @@ export default function Team() {
     });
     if (error) { toast({ variant: "destructive", title: "Erro", description: error.message }); return; }
     toast({ title: "Convite enviado!", description: `Link de convite gerado para ${inviteForm.email}` });
-    setInviteForm({ email: "", role: "employee", department_id: "" });
+    setInviteForm({ email: "", role: "analyst", department_id: "" });
     setInviteModal(false);
     fetchData();
   };
