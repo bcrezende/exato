@@ -116,6 +116,12 @@ export default function Settings() {
             <RecurrenceSettings />
           </TabsContent>
         )}
+
+        {role === "admin" && (
+          <TabsContent value="holidays">
+            <HolidaySettings />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
