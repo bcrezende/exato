@@ -33,6 +33,7 @@ export default function Team() {
   const [members, setMembers] = useState<(Profile & { user_roles?: UserRole[] })[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [coordLinks, setCoordLinks] = useState<{ id: string; coordinator_id: string; analyst_id: string; company_id: string }[]>([]);
   const [deptModal, setDeptModal] = useState(false);
   const [inviteModal, setInviteModal] = useState(false);
   const [deptName, setDeptName] = useState("");
