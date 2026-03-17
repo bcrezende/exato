@@ -151,6 +151,9 @@ export default function Team() {
           <TabsTrigger value="members"><Users className="mr-2 h-4 w-4" /> Membros</TabsTrigger>
           <TabsTrigger value="departments"><Building className="mr-2 h-4 w-4" /> Setores</TabsTrigger>
           <TabsTrigger value="invitations"><Send className="mr-2 h-4 w-4" /> Convites Pendentes</TabsTrigger>
+          {(isAdmin || role === "manager") && (
+            <TabsTrigger value="links"><Link2 className="mr-2 h-4 w-4" /> Vínculos</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="members">
