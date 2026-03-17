@@ -105,7 +105,7 @@ export default function AIAnalysisDialog({ departments, profiles }: Props) {
       const topSlowTasks = [...durations].sort((a, b) => b.minutes - a.minutes).slice(0, 3);
 
       const sectorName = sectorId === "all" ? "Todos os setores" : departments.find((d) => d.id === sectorId)?.name || sectorId;
-      const employeeName = employeeId === "all" ? "Todos os funcionários" : profiles.find((p) => p.id === employeeId)?.full_name || employeeId;
+      const employeeName = employeeId === "all" ? "Todos os analistas" : profiles.find((p) => p.id === employeeId)?.full_name || employeeId;
 
       const { data, error } = await supabase.functions.invoke("generate-analysis", {
         body: {
