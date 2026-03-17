@@ -255,7 +255,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
                 <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
                   <SelectTrigger className={fieldClass("recurrence_type")}><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    {definitions.map((d) => <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 {errors.recurrence_type && <p className="text-xs text-destructive">{errors.recurrence_type}</p>}
