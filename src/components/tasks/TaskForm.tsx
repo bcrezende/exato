@@ -65,7 +65,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.title.trim()) newErrors.title = "Título é obrigatório";
-    if (!isEmployee && !form.assigned_to) newErrors.assigned_to = "Responsável é obrigatório";
+    if (!isAnalyst && !form.assigned_to) newErrors.assigned_to = "Responsável é obrigatório";
     if (!form.start_date) newErrors.start_date = "Data de início é obrigatória";
     if (!form.due_date) newErrors.due_date = "Data de término é obrigatória";
     if (isAdmin && !form.department_id) newErrors.department_id = "Setor é obrigatório";
