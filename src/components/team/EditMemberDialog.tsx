@@ -34,7 +34,7 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
         position: member.position || "",
         phone: member.phone || "",
         department_id: member.department_id || "",
-        role: member.user_roles?.[0]?.role || "employee",
+        role: member.user_roles?.[0]?.role || "analyst",
       });
     }
   }, [member]);
