@@ -274,7 +274,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-[60px_repeat(7,1fr)]">
+      <div className="grid grid-cols-[60px_repeat(7,1fr)] relative">
         {HOURS.map(hour => (
           <div key={hour} className="contents">
             <div className="border-r border-b px-2 py-1 text-right text-xs text-muted-foreground h-14 flex items-start justify-end pt-1">
@@ -284,6 +284,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
               const layouted = (dayLayouts.get(di) || []).filter(lt => Math.floor(lt.startHour) === hour);
               return (
                 <div key={di} className={`border-r border-b h-14 relative ${isSameDay(day, today) ? "bg-primary/5" : ""}`}>
+                  {hour === 0 && isSameDay(day, now) && <CurrentTimeLine now={now} />}
                   {layouted.map(lt => {
                     const c = statusCalendarColors[lt.task.status] || statusCalendarColors.pending;
                     const durationHours = getTaskDurationHours(lt.task);
