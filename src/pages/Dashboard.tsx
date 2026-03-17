@@ -177,7 +177,7 @@ function AdminManagerDashboard() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            {format(today, "EEEE, dd 'de' MMMM", { locale: ptBR })} — {role === "admin" ? "Visão geral da empresa" : "Visão do setor"}
+            {format(today, "EEEE, dd 'de' MMMM", { locale: ptBR })} — {role === "admin" ? "Visão geral da empresa" : role === "coordinator" ? "Visão da coordenação" : "Visão do setor"}
           </p>
         </div>
         <div className="flex items-center gap-3">
