@@ -242,6 +242,7 @@ function MonthView({ currentDate, tasks, onTaskClick, onDayClick }: { currentDat
 function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks: Task[]; onTaskClick: (t: Task) => void }) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const now = useCurrentTime();
   const today = new Date();
 
   const getTaskDurationHours = (t: Task) => {
