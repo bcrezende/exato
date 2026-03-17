@@ -333,7 +333,7 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
 
   return (
     <div className="overflow-auto max-h-[600px] relative">
-      {isToday && <CurrentTimeLine now={now} />}
+      {isToday && <CurrentTimeLine now={now} offsetLeft="60px" />}
       {HOURS.map(hour => {
         const hourTasks = layouted.filter(lt => Math.floor(lt.startHour) === hour);
         return (
