@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   ListTodo, Clock, CheckCircle, AlertTriangle,
-  Calendar as CalendarIcon, ChevronRight, Building2, User
+  Calendar as CalendarIcon, Building2, User
 } from "lucide-react";
+import PodiumCard from "@/components/dashboard/PodiumCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
 import { format, differenceInDays, addDays, startOfDay } from "date-fns";
