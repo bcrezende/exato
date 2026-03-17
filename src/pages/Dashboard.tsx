@@ -188,10 +188,10 @@ function AdminManagerDashboard() {
           <Select value={selectedEmployee ?? "all"} onValueChange={(v) => setSelectedEmployee(v === "all" ? null : v)}>
             <SelectTrigger className="w-[200px]">
               <User className="mr-2 h-4 w-4 text-muted-foreground" />
-              <SelectValue placeholder="Todos os funcionários" />
+              <SelectValue placeholder="Todos os analistas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os funcionários</SelectItem>
+              <SelectItem value="all">Todos os analistas</SelectItem>
               {employeeOptions.map((p) => (
                 <SelectItem key={p.id} value={p.id}>{p.full_name || "Sem nome"}</SelectItem>
               ))}

@@ -256,7 +256,7 @@ export default function Analysis() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Funcionário</label>
+              <label className="text-sm font-medium">Analista</label>
               <Select value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
