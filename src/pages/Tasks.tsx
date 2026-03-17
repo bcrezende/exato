@@ -166,7 +166,7 @@ export default function Tasks() {
       if (filterStatus !== "all" && t.status !== filterStatus) return false;
       if (filterDepartment !== "all" && t.department_id !== filterDepartment) return false;
       if (filterAssignee !== "all" && t.assigned_to !== filterAssignee) return false;
-      if (filterRecurrence !== "all" && t.recurrence_type !== filterRecurrence) return false;
+      if (filterRecurrence !== "all" && getEffectiveRecurrenceType(t) !== filterRecurrence) return false;
       if (filterDate && viewMode !== "calendar") {
         const dayStart = startOfDay(filterDate);
         const dayEnd = endOfDay(filterDate);
