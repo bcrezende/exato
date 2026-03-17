@@ -130,6 +130,15 @@ export default function Tasks() {
     }
   }, [tasks, toast, fetchTasks]);
 
+  const getEffectiveRecurrenceType = (task: Task): string => {
+    if (task.recurrence_type !== "none") return task.recurrence_type;
+    if (task.recurrence_parent_id) {
+      const parent = tasks.find(t => t.id === task.recurrence_parent_id);
+      return parent?.recurrence_type || "none";
+    }
+    return "none";
+  };
+
   const getMemberName = (id: string | null) => {
     if (!id) return "Não atribuída";
     return members.find((m) => m.id === id)?.full_name || "—";
