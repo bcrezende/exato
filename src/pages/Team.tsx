@@ -23,7 +23,7 @@ type Department = Tables<"departments">;
 type Invitation = Tables<"invitations">;
 type UserRole = Tables<"user_roles">;
 
-const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente", employee: "Funcionário" };
+const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente", coordinator: "Coordenador", analyst: "Analista" };
 
 export default function Team() {
   const { user, role, profile: currentProfile } = useAuth();
