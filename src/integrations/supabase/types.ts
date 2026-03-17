@@ -73,6 +73,41 @@ export type Database = {
         }
         Relationships: []
       }
+      company_holidays: {
+        Row: {
+          company_id: string
+          created_at: string
+          holiday_date: string
+          id: string
+          is_recurring: boolean
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          holiday_date: string
+          id?: string
+          is_recurring?: boolean
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          holiday_date?: string
+          id?: string
+          is_recurring?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_holidays_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coordinator_analysts: {
         Row: {
           analyst_id: string
@@ -367,6 +402,9 @@ export type Database = {
           key: string
           max_span_days: number
           name: string
+          skip_holidays: boolean
+          skip_weekends: boolean
+          weekdays: number[] | null
         }
         Insert: {
           company_id: string
@@ -378,6 +416,9 @@ export type Database = {
           key: string
           max_span_days?: number
           name: string
+          skip_holidays?: boolean
+          skip_weekends?: boolean
+          weekdays?: number[] | null
         }
         Update: {
           company_id?: string
@@ -389,6 +430,9 @@ export type Database = {
           key?: string
           max_span_days?: number
           name?: string
+          skip_holidays?: boolean
+          skip_weekends?: boolean
+          weekdays?: number[] | null
         }
         Relationships: [
           {
