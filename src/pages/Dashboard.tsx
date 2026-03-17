@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   ListTodo, Clock, CheckCircle, AlertTriangle,
-  Calendar as CalendarIcon, ChevronRight, Building2, User
+  Calendar as CalendarIcon, Building2, User
 } from "lucide-react";
+import PodiumCard from "@/components/dashboard/PodiumCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Tables } from "@/integrations/supabase/types";
 import { format, differenceInDays, addDays, startOfDay } from "date-fns";
@@ -342,43 +343,14 @@ function AdminManagerDashboard() {
             </CardContent>
           </Card>
 
-          {/* 📅 Upcoming Days */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-lg">Próximos Dias</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 md:grid-cols-3">
-                {upcomingDays.map((day) => (
-                  <div key={day.label} className="rounded-lg border p-4">
-                    <h4 className="text-sm font-semibold capitalize">{day.label}</h4>
-                    <div className="mt-2 text-2xl font-bold">{day.tasks.length}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {day.tasks.length === 0
-                        ? "Nenhuma tarefa"
-                        : `${day.tasks.length} tarefas`}
-                    </p>
-                    {day.tasks.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {day.tasks.slice(0, 3).map((t) => (
-                          <div key={t.id} className="flex items-center gap-2 text-xs">
-                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                            <span className="truncate">{t.title}</span>
-                          </div>
-                        ))}
-                        {day.tasks.length > 3 && (
-                          <span className="text-xs text-muted-foreground">+{day.tasks.length - 3} mais</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-           </Card>
+          {/* 🏆 Podium */}
+          <PodiumCard
+            tasks={tasks}
+            timeLogs={timeLogs}
+            profiles={profilesList}
+            departments={departments}
+            selectedDepartment={selectedDepartment}
+          />
 
       {/* Performance Analytics */}
       <PerformanceAnalytics
