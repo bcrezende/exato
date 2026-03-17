@@ -412,7 +412,7 @@ export default function Tasks() {
                                         </div>
                                         {/* Quick actions */}
                                         <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
-                                          {role === "employee" && task.assigned_to === user?.id && (
+                                          {role === "analyst" && task.assigned_to === user?.id && (
                                             <>
                                               {task.status === "pending" && (
                                                 <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
