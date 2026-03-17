@@ -2,12 +2,9 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer } from "recharts";
-import { Timer, TrendingDown, CheckCircle, AlertTriangle, Sparkles, Loader2 } from "lucide-react";
+import { Timer, TrendingDown, CheckCircle, AlertTriangle } from "lucide-react";
 import { format, subDays, startOfDay, differenceInMilliseconds } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -30,9 +27,6 @@ function formatDuration(ms: number): string {
 }
 
 export default function PerformanceAnalytics({ tasks, timeLogs, departments, selectedDepartment }: PerformanceAnalyticsProps) {
-  const [aiInsights, setAiInsights] = useState<string | null>(null);
-  const [loadingInsights, setLoadingInsights] = useState(false);
-  const { toast } = useToast();
 
   const filteredTasks = useMemo(() => {
     if (!selectedDepartment) return tasks;
@@ -348,75 +342,6 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
         </Card>
       </div>
 
-      {/* AI Insights */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            Insights da IA
-          </CardTitle>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={loadingInsights}
-            onClick={async () => {
-              setLoadingInsights(true);
-              setAiInsights(null);
-              try {
-                const metrics = {
-                  avgExecution: formatDuration(summary.avgExecution),
-                  delayRate: summary.delayRate,
-                  completedLast7: summary.completedLast7,
-                  worstTask: summary.worstTask?.title || null,
-                  timeByDept: avgTimeByDept.map(d => ({ department: d.department, avgMinutes: d.avgMinutes })),
-                  delayByDept: delayRateByDept.map(d => ({ department: d.department, rate: d.rate })),
-                  completionTrend: completedPerDay.map(d => ({ label: d.label, count: d.count })),
-                };
-                const { data, error } = await supabase.functions.invoke("generate-insights", {
-                  body: { metrics },
-                });
-                if (error) throw error;
-                if (data?.error) {
-                  toast({ title: "Erro", description: data.error, variant: "destructive" });
-                } else {
-                  setAiInsights(data.insights);
-                }
-              } catch (e: any) {
-                toast({ title: "Erro ao gerar insights", description: e.message, variant: "destructive" });
-              } finally {
-                setLoadingInsights(false);
-              }
-            }}
-          >
-            {loadingInsights ? (
-              <>
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Analisando...
-              </>
-            ) : (
-              "Gerar Insights"
-            )}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {loadingInsights && (
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              A IA está analisando os indicadores...
-            </div>
-          )}
-          {aiInsights && !loadingInsights && (
-            <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap">
-              {aiInsights}
-            </div>
-          )}
-          {!aiInsights && !loadingInsights && (
-            <p className="text-sm text-muted-foreground">
-              Clique em "Gerar Insights" para que a IA analise os indicadores e sugira melhorias.
-            </p>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
