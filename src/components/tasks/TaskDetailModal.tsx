@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star } from "lucide-react";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
@@ -16,7 +17,6 @@ type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
-const recurrenceLabels: Record<string, string> = { none: "Nenhuma", daily: "Diária", weekly: "Semanal", monthly: "Mensal", yearly: "Anual" };
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
