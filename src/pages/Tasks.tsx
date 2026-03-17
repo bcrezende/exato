@@ -217,7 +217,7 @@ export default function Tasks() {
     if (newStatus === "overdue") return; // coluna calculada, não aceita drop
     const task = tasks.find((t) => t.id === draggableId);
     if (!task) return;
-    // Verificar permissão: employee só pode arrastar as próprias
+    // Verificar permissão: analista só pode arrastar as próprias
     if (role === "analyst" && task.assigned_to !== user?.id) return;
     // Determinar status atual real da tarefa
     const currentEffective = task.status === "pending" && task.due_date && task.due_date < new Date().toISOString() ? "overdue" : task.status;
