@@ -214,6 +214,57 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
   }, [executionData, filteredTasks]);
 
   const [showBottlenecks, setShowBottlenecks] = useState(false);
+  const [showAvgTime, setShowAvgTime] = useState(false);
+  const [showDelayRate, setShowDelayRate] = useState(false);
+  const [showCompleted7d, setShowCompleted7d] = useState(false);
+
+  // Tasks with execution time for avg time dialog
+  const completedTasksWithTime = useMemo(() => {
+    return executionData
+      .filter((e) => e.duration > 0)
+      .map((e) => {
+        const task = filteredTasks.find((t) => t.id === e.taskId);
+        return {
+          title: task?.title || "—",
+          assignedTo: task?.assigned_to || null,
+          deptId: task?.department_id || null,
+          duration: e.duration,
+        };
+      })
+      .sort((a, b) => b.duration - a.duration);
+  }, [executionData, filteredTasks]);
+
+  // Tasks started late for delay rate dialog
+  const delayedTasks = useMemo(() => {
+    return executionData
+      .filter((e) => e.startedLate)
+      .map((e) => {
+        const task = filteredTasks.find((t) => t.id === e.taskId);
+        return {
+          title: task?.title || "—",
+          assignedTo: task?.assigned_to || null,
+          deptId: task?.department_id || null,
+        };
+      });
+  }, [executionData, filteredTasks]);
+
+  // Tasks completed in the last 7 days
+  const completedLast7dTasks = useMemo(() => {
+    const today = startOfDay(new Date());
+    const sevenDaysAgo = subDays(today, 7);
+    return filteredLogs
+      .filter((l) => l.action === "completed" && new Date(l.created_at) >= sevenDaysAgo)
+      .map((l) => {
+        const task = filteredTasks.find((t) => t.id === l.task_id);
+        return {
+          title: task?.title || "—",
+          assignedTo: task?.assigned_to || null,
+          deptId: task?.department_id || null,
+          completedAt: l.created_at,
+        };
+      })
+      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  }, [filteredLogs, filteredTasks]);
 
   const chartConfigTime = {
     avgMinutes: { label: "Tempo médio (min)", color: "hsl(var(--primary))" },
@@ -248,7 +299,10 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Index cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card
+          className={completedTasksWithTime.length > 0 ? "cursor-pointer hover:shadow-md transition-shadow" : ""}
+          onClick={completedTasksWithTime.length > 0 ? () => setShowAvgTime(true) : undefined}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
             <Timer className="h-4 w-4 text-muted-foreground" />
@@ -256,9 +310,15 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
           <CardContent>
             <div className="text-2xl font-bold">{formatDuration(summary.avgExecution)}</div>
             <p className="text-xs text-muted-foreground">por tarefa concluída</p>
+            {completedTasksWithTime.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Clique para ver {completedTasksWithTime.length} tarefas →</p>
+            )}
           </CardContent>
         </Card>
-        <Card className={summary.delayRate > 30 ? "border-destructive/50 bg-destructive/5" : ""}>
+        <Card
+          className={`${summary.delayRate > 30 ? "border-destructive/50 bg-destructive/5" : ""} ${delayedTasks.length > 0 ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+          onClick={delayedTasks.length > 0 ? () => setShowDelayRate(true) : undefined}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Taxa de Atraso</CardTitle>
             <TrendingDown className={`h-4 w-4 ${summary.delayRate > 30 ? "text-destructive" : "text-muted-foreground"}`} />
@@ -266,9 +326,15 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
           <CardContent>
             <div className={`text-2xl font-bold ${summary.delayRate > 30 ? "text-destructive" : ""}`}>{summary.delayRate}%</div>
             <p className="text-xs text-muted-foreground">tarefas iniciadas com atraso</p>
+            {delayedTasks.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Clique para ver {delayedTasks.length} tarefas →</p>
+            )}
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={completedLast7dTasks.length > 0 ? "cursor-pointer hover:shadow-md transition-shadow" : ""}
+          onClick={completedLast7dTasks.length > 0 ? () => setShowCompleted7d(true) : undefined}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Concluídas (7d)</CardTitle>
             <CheckCircle className="h-4 w-4 text-success" />
@@ -276,6 +342,9 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
           <CardContent>
             <div className="text-2xl font-bold">{summary.completedLast7}</div>
             <p className="text-xs text-muted-foreground">últimos 7 dias</p>
+            {completedLast7dTasks.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Clique para ver detalhes →</p>
+            )}
           </CardContent>
         </Card>
         <Card
@@ -406,6 +475,91 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
                   <TableCell className="text-right">{formatDuration(bt.duration)}</TableCell>
                   <TableCell className="text-right">{formatDuration(bt.plannedDuration)}</TableCell>
                   <TableCell className="text-right text-destructive font-medium">+{formatDuration(bt.overflow)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      {/* Avg time dialog */}
+      <Dialog open={showAvgTime} onOpenChange={setShowAvgTime}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tarefas Concluídas — Tempo de Execução</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Setor</TableHead>
+                <TableHead className="text-right">Tempo de Execução</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {completedTasksWithTime.map((t, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{t.title}</TableCell>
+                  <TableCell>{t.assignedTo ? profileNameMap.get(t.assignedTo) || "—" : "Não atribuída"}</TableCell>
+                  <TableCell>{t.deptId ? deptNameMap.get(t.deptId) || "—" : "Sem setor"}</TableCell>
+                  <TableCell className="text-right">{formatDuration(t.duration)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delay rate dialog */}
+      <Dialog open={showDelayRate} onOpenChange={setShowDelayRate}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tarefas Iniciadas com Atraso</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Setor</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {delayedTasks.map((t, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{t.title}</TableCell>
+                  <TableCell>{t.assignedTo ? profileNameMap.get(t.assignedTo) || "—" : "Não atribuída"}</TableCell>
+                  <TableCell>{t.deptId ? deptNameMap.get(t.deptId) || "—" : "Sem setor"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      {/* Completed last 7 days dialog */}
+      <Dialog open={showCompleted7d} onOpenChange={setShowCompleted7d}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tarefas Concluídas — Últimos 7 Dias</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Setor</TableHead>
+                <TableHead className="text-right">Data de Conclusão</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {completedLast7dTasks.map((t, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{t.title}</TableCell>
+                  <TableCell>{t.assignedTo ? profileNameMap.get(t.assignedTo) || "—" : "Não atribuída"}</TableCell>
+                  <TableCell>{t.deptId ? deptNameMap.get(t.deptId) || "—" : "Sem setor"}</TableCell>
+                  <TableCell className="text-right">{format(new Date(t.completedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
