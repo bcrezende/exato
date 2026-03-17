@@ -53,6 +53,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const isAssigned = localTask?.assigned_to === user?.id;
   const [executionTime, setExecutionTime] = useState<string | null>(null);
   const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
+  const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalTask(task);
@@ -83,11 +84,21 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
     fetchLogs();
   }, [localTask?.id, open, localTask?.status]);
 
+  useEffect(() => {
+    if (localTask?.recurrence_type === "none" && localTask?.recurrence_parent_id && open) {
+      supabase.from("tasks").select("recurrence_type").eq("id", localTask.recurrence_parent_id).single()
+        .then(({ data }) => setParentRecurrenceType(data?.recurrence_type || null));
+    } else {
+      setParentRecurrenceType(null);
+    }
+  }, [localTask?.id, open]);
+
   if (!localTask) return null;
 
   const extTask = localTask as any;
   const assignedName = members.find(m => m.id === localTask.assigned_to)?.full_name || null;
   const deptName = departments.find(d => d.id === localTask.department_id)?.name || null;
+  const effectiveRecurrenceType = localTask.recurrence_type !== "none" ? localTask.recurrence_type : (parentRecurrenceType || "none");
 
   const handleStatusChange = async (newStatus: string, difficultyRating?: number) => {
     const previousTask = localTask;
@@ -129,7 +140,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Badge className={statusColors[localTask.status]}>{statusLabels[localTask.status]}</Badge>
-            {localTask.recurrence_type !== "none" && <Badge variant="outline">{recurrenceLabels[localTask.recurrence_type]}</Badge>}
+            {effectiveRecurrenceType !== "none" && <Badge variant="outline">{recurrenceLabels[effectiveRecurrenceType]}</Badge>}
             {extTask.difficulty_rating && (
               <Badge variant="outline" className="gap-1">
                 <Star className="h-3 w-3" /> Dificuldade: {extTask.difficulty_rating}/5

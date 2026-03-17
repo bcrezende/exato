@@ -130,6 +130,15 @@ export default function Tasks() {
     }
   }, [tasks, toast, fetchTasks]);
 
+  const getEffectiveRecurrenceType = (task: Task): string => {
+    if (task.recurrence_type !== "none") return task.recurrence_type;
+    if (task.recurrence_parent_id) {
+      const parent = tasks.find(t => t.id === task.recurrence_parent_id);
+      return parent?.recurrence_type || "none";
+    }
+    return "none";
+  };
+
   const getMemberName = (id: string | null) => {
     if (!id) return "Não atribuída";
     return members.find((m) => m.id === id)?.full_name || "—";
@@ -157,7 +166,7 @@ export default function Tasks() {
       if (filterStatus !== "all" && t.status !== filterStatus) return false;
       if (filterDepartment !== "all" && t.department_id !== filterDepartment) return false;
       if (filterAssignee !== "all" && t.assigned_to !== filterAssignee) return false;
-      if (filterRecurrence !== "all" && t.recurrence_type !== filterRecurrence) return false;
+      if (filterRecurrence !== "all" && getEffectiveRecurrenceType(t) !== filterRecurrence) return false;
       if (filterDate && viewMode !== "calendar") {
         const dayStart = startOfDay(filterDate);
         const dayEnd = endOfDay(filterDate);
@@ -392,9 +401,9 @@ export default function Tasks() {
                                               <Building2 className="mr-1 h-3 w-3" />{deptName}
                                             </Badge>
                                           )}
-                                          {task.recurrence_type !== "none" && (
+                                          {getEffectiveRecurrenceType(task) !== "none" && (
                                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                              {recurrenceLabels[task.recurrence_type]}
+                                              {recurrenceLabels[getEffectiveRecurrenceType(task)]}
                                             </Badge>
                                           )}
                                         </div>
@@ -509,7 +518,7 @@ export default function Tasks() {
                       {deptName ? <Badge variant="outline" className="text-xs">{deptName}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
                     </TableCell>
                     <TableCell className="text-xs">
-                      {recurrenceLabels[task.recurrence_type]}
+                      {recurrenceLabels[getEffectiveRecurrenceType(task)]}
                     </TableCell>
                     <TableCell className="text-sm">
                       {getMemberName(task.assigned_to)}
