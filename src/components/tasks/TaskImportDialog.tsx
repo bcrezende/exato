@@ -265,7 +265,13 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
         if (mapped) {
           recurrenceType = mapped;
         } else {
-          errors.push(`Recorrência "${recorrencia}" inválida`);
+          // Also check dynamic definitions by normalized name
+          const dynDef = definitions.find(d => normalize(d.name) === normalize(recorrencia));
+          if (dynDef) {
+            recurrenceType = dynDef.key;
+          } else {
+            errors.push(`Recorrência "${recorrencia}" inválida`);
+          }
         }
       }
 
