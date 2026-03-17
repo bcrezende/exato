@@ -64,7 +64,7 @@ export default function Tasks() {
   const [filterRecurrence, setFilterRecurrence] = useState<string>("all");
   const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
 
-  const canManage = role === "admin" || role === "manager";
+  const canManage = role === "admin" || role === "manager" || role === "coordinator";
 
   const fetchTasks = async () => {
     let query = supabase.from("tasks").select("*").order("created_at", { ascending: false });
