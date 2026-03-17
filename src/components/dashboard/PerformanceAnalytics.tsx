@@ -12,12 +12,14 @@ import type { Tables } from "@/integrations/supabase/types";
 type Task = Tables<"tasks">;
 type TimeLog = { id: string; task_id: string; user_id: string; action: string; created_at: string };
 type Department = { id: string; name: string };
+type Profile = { id: string; full_name: string | null; department_id: string | null };
 
 interface PerformanceAnalyticsProps {
   tasks: Task[];
   timeLogs: TimeLog[];
   departments: Department[];
   selectedDepartment: string | null;
+  profiles?: Profile[];
 }
 
 function formatDuration(ms: number): string {
