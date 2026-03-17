@@ -372,6 +372,34 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
         </Card>
       </div>
 
+      {/* Bottleneck tasks dialog */}
+      <Dialog open={showBottlenecks} onOpenChange={setShowBottlenecks}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tarefas com Gargalo</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarefa</TableHead>
+                <TableHead className="text-right">Tempo Real</TableHead>
+                <TableHead className="text-right">Tempo Previsto</TableHead>
+                <TableHead className="text-right">Excesso</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bottleneckTasks.map((bt, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{bt.title}</TableCell>
+                  <TableCell className="text-right">{formatDuration(bt.duration)}</TableCell>
+                  <TableCell className="text-right">{formatDuration(bt.plannedDuration)}</TableCell>
+                  <TableCell className="text-right text-destructive font-medium">+{formatDuration(bt.overflow)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
