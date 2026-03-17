@@ -69,7 +69,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {(role === "admin" || role === "manager") && (
+        {(role === "admin" || role === "manager" || role === "coordinator") && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-sidebar-foreground/50">Gestão</SidebarGroupLabel>
             <SidebarGroupContent>
