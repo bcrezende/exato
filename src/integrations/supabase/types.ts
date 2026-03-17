@@ -73,6 +73,38 @@ export type Database = {
         }
         Relationships: []
       }
+      coordinator_analysts: {
+        Row: {
+          analyst_id: string
+          company_id: string
+          coordinator_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          analyst_id: string
+          company_id: string
+          coordinator_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          analyst_id?: string
+          company_id?: string
+          coordinator_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coordinator_analysts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           company_id: string
@@ -441,6 +473,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_coordinator_analyst_ids: {
+        Args: { _coordinator_id: string }
+        Returns: string[]
+      }
       get_task_import_assignees: {
         Args: never
         Returns: {
@@ -465,6 +501,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_coordinator_of: {
+        Args: { _analyst_id: string; _coordinator_id: string }
         Returns: boolean
       }
       to_date_immutable: { Args: { ts: string }; Returns: string }
