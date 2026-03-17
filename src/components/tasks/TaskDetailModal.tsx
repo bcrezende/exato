@@ -141,7 +141,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Badge className={statusColors[localTask.status]}>{statusLabels[localTask.status]}</Badge>
-            {effectiveRecurrenceType !== "none" && <Badge variant="outline">{recurrenceLabels[effectiveRecurrenceType]}</Badge>}
+            {effectiveRecurrenceType !== "none" && <Badge variant="outline">{getLabel(effectiveRecurrenceType)}</Badge>}
             {extTask.difficulty_rating && (
               <Badge variant="outline" className="gap-1">
                 <Star className="h-3 w-3" /> Dificuldade: {extTask.difficulty_rating}/5
