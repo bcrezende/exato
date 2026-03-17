@@ -150,7 +150,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descreva a tarefa..." rows={3} />
           </div>
 
-          {!isEmployee && (
+          {!isAnalyst && (
             <div className="grid grid-cols-2 gap-4">
               {/* Responsável */}
               <div className="space-y-2">
