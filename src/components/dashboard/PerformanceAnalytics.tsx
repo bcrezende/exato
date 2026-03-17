@@ -481,6 +481,91 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
           </Table>
         </DialogContent>
       </Dialog>
+
+      {/* Avg time dialog */}
+      <Dialog open={showAvgTime} onOpenChange={setShowAvgTime}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tarefas Concluídas — Tempo de Execução</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Setor</TableHead>
+                <TableHead className="text-right">Tempo de Execução</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {completedTasksWithTime.map((t, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{t.title}</TableCell>
+                  <TableCell>{t.assignedTo ? profileNameMap.get(t.assignedTo) || "—" : "Não atribuída"}</TableCell>
+                  <TableCell>{t.deptId ? deptNameMap.get(t.deptId) || "—" : "Sem setor"}</TableCell>
+                  <TableCell className="text-right">{formatDuration(t.duration)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delay rate dialog */}
+      <Dialog open={showDelayRate} onOpenChange={setShowDelayRate}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tarefas Iniciadas com Atraso</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Setor</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {delayedTasks.map((t, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{t.title}</TableCell>
+                  <TableCell>{t.assignedTo ? profileNameMap.get(t.assignedTo) || "—" : "Não atribuída"}</TableCell>
+                  <TableCell>{t.deptId ? deptNameMap.get(t.deptId) || "—" : "Sem setor"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      {/* Completed last 7 days dialog */}
+      <Dialog open={showCompleted7d} onOpenChange={setShowCompleted7d}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tarefas Concluídas — Últimos 7 Dias</DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Setor</TableHead>
+                <TableHead className="text-right">Data de Conclusão</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {completedLast7dTasks.map((t, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{t.title}</TableCell>
+                  <TableCell>{t.assignedTo ? profileNameMap.get(t.assignedTo) || "—" : "Não atribuída"}</TableCell>
+                  <TableCell>{t.deptId ? deptNameMap.get(t.deptId) || "—" : "Sem setor"}</TableCell>
+                  <TableCell className="text-right">{format(new Date(t.completedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
