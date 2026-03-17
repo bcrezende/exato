@@ -82,7 +82,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   }, [isCoordinator, user]);
 
   const filteredMembers = useMemo(() => {
-    if (isCoordinator) return members.filter(m => coordinatorAnalystIds.includes(m.id));
+    if (isCoordinator) return members.filter(m => coordinatorAnalystIds.includes(m.id) || m.id === user?.id);
     if (isManager && currentProfile?.department_id) return members.filter(m => m.department_id === currentProfile.department_id);
     return members;
   }, [members, isCoordinator, isManager, currentProfile, coordinatorAnalystIds]);
