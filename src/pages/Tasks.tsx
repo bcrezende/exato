@@ -405,7 +405,7 @@ export default function Tasks() {
                                           )}
                                           {getEffectiveRecurrenceType(task) !== "none" && (
                                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                              {recurrenceLabels[getEffectiveRecurrenceType(task)]}
+                                              {getLabel(getEffectiveRecurrenceType(task))}
                                             </Badge>
                                           )}
                                         </div>
