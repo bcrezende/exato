@@ -520,7 +520,7 @@ export default function Tasks() {
                       {deptName ? <Badge variant="outline" className="text-xs">{deptName}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
                     </TableCell>
                     <TableCell className="text-xs">
-                      {recurrenceLabels[getEffectiveRecurrenceType(task)]}
+                      {getLabel(getEffectiveRecurrenceType(task))}
                     </TableCell>
                     <TableCell className="text-sm">
                       {getMemberName(task.assigned_to)}
