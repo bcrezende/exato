@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -18,6 +18,26 @@ const statusCalendarColors: Record<string, { bg: string; border: string; text: s
 };
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+function useCurrentTime() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function CurrentTimeLine({ now, offsetLeft }: { now: Date; offsetLeft?: string }) {
+  const top = (now.getHours() + now.getMinutes() / 60) * 56;
+  return (
+    <div className="absolute right-0 z-20 pointer-events-none" style={{ top: `${top}px`, left: offsetLeft || "0px" }}>
+      <div className="relative w-full border-t-2 border-red-500">
+        <div className="absolute -left-1.5 -top-[5px] h-2.5 w-2.5 rounded-full bg-red-500" />
+      </div>
+    </div>
+  );
+}
 
 /* ──── Overlap layout helper ──── */
 interface LayoutedTask {
@@ -222,6 +242,7 @@ function MonthView({ currentDate, tasks, onTaskClick, onDayClick }: { currentDat
 function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks: Task[]; onTaskClick: (t: Task) => void }) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const now = useCurrentTime();
   const today = new Date();
 
   const getTaskDurationHours = (t: Task) => {
@@ -253,7 +274,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-[60px_repeat(7,1fr)]">
+      <div className="grid grid-cols-[60px_repeat(7,1fr)] relative">
         {HOURS.map(hour => (
           <div key={hour} className="contents">
             <div className="border-r border-b px-2 py-1 text-right text-xs text-muted-foreground h-14 flex items-start justify-end pt-1">
@@ -263,6 +284,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
               const layouted = (dayLayouts.get(di) || []).filter(lt => Math.floor(lt.startHour) === hour);
               return (
                 <div key={di} className={`border-r border-b h-14 relative ${isSameDay(day, today) ? "bg-primary/5" : ""}`}>
+                  {hour === 0 && isSameDay(day, now) && <CurrentTimeLine now={now} />}
                   {layouted.map(lt => {
                     const c = statusCalendarColors[lt.task.status] || statusCalendarColors.pending;
                     const durationHours = getTaskDurationHours(lt.task);
@@ -292,6 +314,9 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
   );
 }
 function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks: Task[]; onTaskClick: (t: Task) => void }) {
+  const now = useCurrentTime();
+  const isToday = isSameDay(currentDate, now);
+
   const getTaskDurationHours = (t: Task) => {
     if (!t.start_date || !t.due_date) return 1;
     const diff = (new Date(t.due_date).getTime() - new Date(t.start_date).getTime()) / (1000 * 60 * 60);
@@ -307,7 +332,8 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
   }, [tasks, currentDate.toDateString()]);
 
   return (
-    <div className="overflow-auto max-h-[600px]">
+    <div className="overflow-auto max-h-[600px] relative">
+      {isToday && <CurrentTimeLine now={now} offsetLeft="60px" />}
       {HOURS.map(hour => {
         const hourTasks = layouted.filter(lt => Math.floor(lt.startHour) === hour);
         return (
