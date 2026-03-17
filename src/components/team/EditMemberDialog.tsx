@@ -113,7 +113,8 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
               <SelectContent>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="manager">Gerente</SelectItem>
-                <SelectItem value="employee">Funcionário</SelectItem>
+                <SelectItem value="coordinator">Coordenador</SelectItem>
+                <SelectItem value="analyst">Analista</SelectItem>
               </SelectContent>
             </Select>
           </div>

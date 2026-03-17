@@ -115,7 +115,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex flex-1 flex-col overflow-hidden">
               <span className="truncate text-sm font-medium text-sidebar-foreground">{profile?.full_name || "Usuário"}</span>
-              <span className="truncate text-xs text-sidebar-foreground/60 capitalize">{role === "admin" ? "Administrador" : role === "manager" ? "Gerente" : role === "employee" ? "Funcionário" : ""}</span>
+              <span className="truncate text-xs text-sidebar-foreground/60 capitalize">{role === "admin" ? "Administrador" : role === "manager" ? "Gerente" : role === "coordinator" ? "Coordenador" : role === "analyst" ? "Analista" : ""}</span>
             </div>
           )}
           {!collapsed && (

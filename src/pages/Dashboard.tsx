@@ -391,7 +391,7 @@ function TaskMiniCard({ task, getName }: { task: Task; getName: (id: string | nu
 export default function Dashboard() {
   const { role } = useAuth();
 
-  if (role === "employee") {
+  if (role === "analyst") {
     return <MyDayView />;
   }
 

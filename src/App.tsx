@@ -40,8 +40,8 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/my-day" element={<MyDayView />} />
-              <Route path="/team" element={<ProtectedRoute allowedRoles={["admin", "manager"]}><Team /></ProtectedRoute>} />
-              <Route path="/analysis" element={<ProtectedRoute allowedRoles={["admin", "manager"]}><Analysis /></ProtectedRoute>} />
+              <Route path="/team" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Team /></ProtectedRoute>} />
+              <Route path="/analysis" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Analysis /></ProtectedRoute>} />
               <Route path="/settings" element={<Settings />} />
             </Route>
 
