@@ -12,12 +12,14 @@ import type { Tables } from "@/integrations/supabase/types";
 type Task = Tables<"tasks">;
 type TimeLog = { id: string; task_id: string; user_id: string; action: string; created_at: string };
 type Department = { id: string; name: string };
+type Profile = { id: string; full_name: string | null; department_id: string | null };
 
 interface PerformanceAnalyticsProps {
   tasks: Task[];
   timeLogs: TimeLog[];
   departments: Department[];
   selectedDepartment: string | null;
+  profiles?: Profile[];
 }
 
 function formatDuration(ms: number): string {
@@ -28,7 +30,13 @@ function formatDuration(ms: number): string {
   return `${minutes}min`;
 }
 
-export default function PerformanceAnalytics({ tasks, timeLogs, departments, selectedDepartment }: PerformanceAnalyticsProps) {
+export default function PerformanceAnalytics({ tasks, timeLogs, departments, selectedDepartment, profiles = [] }: PerformanceAnalyticsProps) {
+
+  const profileNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    profiles.forEach((p) => map.set(p.id, p.full_name || "Sem nome"));
+    return map;
+  }, [profiles]);
 
   const filteredTasks = useMemo(() => {
     if (!selectedDepartment) return tasks;
@@ -189,7 +197,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
   // All bottleneck tasks (overflow > 0)
   const bottleneckTasks = useMemo(() => {
-    const results: { title: string; duration: number; plannedDuration: number; overflow: number }[] = [];
+    const results: { title: string; duration: number; plannedDuration: number; overflow: number; assignedTo: string | null; deptId: string | null }[] = [];
     executionData.filter((e) => e.duration > 0).forEach((e) => {
       const task = filteredTasks.find((t) => t.id === e.taskId);
       if (task?.start_date && task?.due_date) {
@@ -197,7 +205,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
         if (plannedDuration > 0) {
           const overflow = e.duration - plannedDuration;
           if (overflow > 0) {
-            results.push({ title: task.title, duration: e.duration, plannedDuration, overflow });
+            results.push({ title: task.title, duration: e.duration, plannedDuration, overflow, assignedTo: task.assigned_to, deptId: task.department_id });
           }
         }
       }
@@ -382,6 +390,8 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <TableHeader>
               <TableRow>
                 <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Setor</TableHead>
                 <TableHead className="text-right">Tempo Real</TableHead>
                 <TableHead className="text-right">Tempo Previsto</TableHead>
                 <TableHead className="text-right">Excesso</TableHead>
@@ -391,6 +401,8 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
               {bottleneckTasks.map((bt, i) => (
                 <TableRow key={i}>
                   <TableCell className="font-medium">{bt.title}</TableCell>
+                  <TableCell>{bt.assignedTo ? profileNameMap.get(bt.assignedTo) || "—" : "Não atribuída"}</TableCell>
+                  <TableCell>{bt.deptId ? deptNameMap.get(bt.deptId) || "—" : "Sem setor"}</TableCell>
                   <TableCell className="text-right">{formatDuration(bt.duration)}</TableCell>
                   <TableCell className="text-right">{formatDuration(bt.plannedDuration)}</TableCell>
                   <TableCell className="text-right text-destructive font-medium">+{formatDuration(bt.overflow)}</TableCell>

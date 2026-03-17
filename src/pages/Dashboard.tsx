@@ -386,6 +386,7 @@ function AdminManagerDashboard() {
         timeLogs={timeLogs}
         departments={departments}
         selectedDepartment={selectedDepartment}
+        profiles={profilesList}
       />
     </div>
   );
