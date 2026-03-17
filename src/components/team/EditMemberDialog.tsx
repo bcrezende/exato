@@ -20,7 +20,7 @@ interface EditMemberDialogProps {
   onSaved: () => void;
 }
 
-const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente", employee: "Funcionário" };
+const roleLabels: Record<string, string> = { admin: "Admin", manager: "Gerente", coordinator: "Coordenador", analyst: "Analista" };
 
 export default function EditMemberDialog({ open, onOpenChange, member, departments, onSaved }: EditMemberDialogProps) {
   const { toast } = useToast();
