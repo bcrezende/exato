@@ -72,6 +72,7 @@ export default function Team() {
 
     if (deptsRes.data) setDepartments(deptsRes.data);
     if (invitesRes.data) setInvitations(invitesRes.data);
+    if (linksRes.data) setCoordLinks(linksRes.data);
     if (membersRes.data && rolesRes.data) {
       let membersList = membersRes.data;
       if (coordAnalystIds) {
