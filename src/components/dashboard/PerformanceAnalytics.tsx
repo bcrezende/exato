@@ -315,7 +315,10 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             )}
           </CardContent>
         </Card>
-        <Card className={summary.delayRate > 30 ? "border-destructive/50 bg-destructive/5" : ""}>
+        <Card
+          className={`${summary.delayRate > 30 ? "border-destructive/50 bg-destructive/5" : ""} ${delayedTasks.length > 0 ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+          onClick={delayedTasks.length > 0 ? () => setShowDelayRate(true) : undefined}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Taxa de Atraso</CardTitle>
             <TrendingDown className={`h-4 w-4 ${summary.delayRate > 30 ? "text-destructive" : "text-muted-foreground"}`} />
@@ -323,6 +326,9 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
           <CardContent>
             <div className={`text-2xl font-bold ${summary.delayRate > 30 ? "text-destructive" : ""}`}>{summary.delayRate}%</div>
             <p className="text-xs text-muted-foreground">tarefas iniciadas com atraso</p>
+            {delayedTasks.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Clique para ver {delayedTasks.length} tarefas →</p>
+            )}
           </CardContent>
         </Card>
         <Card>
