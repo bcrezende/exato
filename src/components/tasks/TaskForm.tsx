@@ -87,7 +87,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       ? (form.department_id || null)
       : (currentProfile.department_id || null);
 
-    const assignedTo = isEmployee ? user.id : (form.assigned_to || null);
+    const assignedTo = isAnalyst ? user.id : (form.assigned_to || null);
 
     const payload = {
       title: form.title.trim(),
