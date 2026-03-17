@@ -187,6 +187,26 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
     return { avgExecution, delayRate, completedLast7, worstTask };
   }, [executionData, completedPerDay, filteredTasks]);
 
+  // All bottleneck tasks (overflow > 0)
+  const bottleneckTasks = useMemo(() => {
+    const results: { title: string; duration: number; plannedDuration: number; overflow: number }[] = [];
+    executionData.filter((e) => e.duration > 0).forEach((e) => {
+      const task = filteredTasks.find((t) => t.id === e.taskId);
+      if (task?.start_date && task?.due_date) {
+        const plannedDuration = differenceInMilliseconds(new Date(task.due_date), new Date(task.start_date));
+        if (plannedDuration > 0) {
+          const overflow = e.duration - plannedDuration;
+          if (overflow > 0) {
+            results.push({ title: task.title, duration: e.duration, plannedDuration, overflow });
+          }
+        }
+      }
+    });
+    return results.sort((a, b) => b.overflow - a.overflow);
+  }, [executionData, filteredTasks]);
+
+  const [showBottlenecks, setShowBottlenecks] = useState(false);
+
   const chartConfigTime = {
     avgMinutes: { label: "Tempo médio (min)", color: "hsl(var(--primary))" },
   };
