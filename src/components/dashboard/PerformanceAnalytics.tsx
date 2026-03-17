@@ -30,7 +30,13 @@ function formatDuration(ms: number): string {
   return `${minutes}min`;
 }
 
-export default function PerformanceAnalytics({ tasks, timeLogs, departments, selectedDepartment }: PerformanceAnalyticsProps) {
+export default function PerformanceAnalytics({ tasks, timeLogs, departments, selectedDepartment, profiles = [] }: PerformanceAnalyticsProps) {
+
+  const profileNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    profiles.forEach((p) => map.set(p.id, p.full_name || "Sem nome"));
+    return map;
+  }, [profiles]);
 
   const filteredTasks = useMemo(() => {
     if (!selectedDepartment) return tasks;
