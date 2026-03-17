@@ -46,6 +46,7 @@ interface TaskDetailModalProps {
 export default function TaskDetailModal({ task, open, onOpenChange, members, departments, onEdit, onRefresh }: TaskDetailModalProps) {
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const { getLabel } = useRecurrenceDefinitions();
   const [localTask, setLocalTask] = useState<Task | null>(task);
   const [statusLoading, setStatusLoading] = useState(false);
   const canManage = role === "admin" || role === "manager" || role === "coordinator";
