@@ -11,11 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Send, Trash2, Users, Building, Pencil } from "lucide-react";
+import { Plus, Send, Trash2, Users, Building, Pencil, Link2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Tables } from "@/integrations/supabase/types";
 import EditMemberDialog from "@/components/team/EditMemberDialog";
 import EditDepartmentDialog from "@/components/team/EditDepartmentDialog";
+import CoordinatorLinksTab from "@/components/team/CoordinatorLinksTab";
 import { TeamSkeleton } from "@/components/skeletons/TeamSkeleton";
 
 type Profile = Tables<"profiles">;
@@ -32,6 +33,7 @@ export default function Team() {
   const [members, setMembers] = useState<(Profile & { user_roles?: UserRole[] })[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [coordLinks, setCoordLinks] = useState<{ id: string; coordinator_id: string; analyst_id: string; company_id: string }[]>([]);
   const [deptModal, setDeptModal] = useState(false);
   const [inviteModal, setInviteModal] = useState(false);
   const [deptName, setDeptName] = useState("");
@@ -50,11 +52,12 @@ export default function Team() {
     }
     // Coordinators will filter after fetching (need coordinator_analysts data)
 
-    const [membersRes, deptsRes, invitesRes, rolesRes] = await Promise.all([
+    const [membersRes, deptsRes, invitesRes, rolesRes, linksRes] = await Promise.all([
       membersQuery,
       supabase.from("departments").select("*").eq("company_id", currentProfile.company_id),
       supabase.from("invitations").select("*").eq("company_id", currentProfile.company_id).is("accepted_at", null),
       supabase.from("user_roles").select("*"),
+      supabase.from("coordinator_analysts").select("*").eq("company_id", currentProfile.company_id),
     ]);
 
     // Coordinator needs to know their analysts
@@ -69,6 +72,7 @@ export default function Team() {
 
     if (deptsRes.data) setDepartments(deptsRes.data);
     if (invitesRes.data) setInvitations(invitesRes.data);
+    if (linksRes.data) setCoordLinks(linksRes.data);
     if (membersRes.data && rolesRes.data) {
       let membersList = membersRes.data;
       if (coordAnalystIds) {
@@ -147,6 +151,9 @@ export default function Team() {
           <TabsTrigger value="members"><Users className="mr-2 h-4 w-4" /> Membros</TabsTrigger>
           <TabsTrigger value="departments"><Building className="mr-2 h-4 w-4" /> Setores</TabsTrigger>
           <TabsTrigger value="invitations"><Send className="mr-2 h-4 w-4" /> Convites Pendentes</TabsTrigger>
+          {(isAdmin || role === "manager") && (
+            <TabsTrigger value="links"><Link2 className="mr-2 h-4 w-4" /> Vínculos</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="members">
@@ -300,6 +307,17 @@ export default function Team() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {(isAdmin || role === "manager") && currentProfile?.company_id && (
+          <TabsContent value="links">
+            <CoordinatorLinksTab
+              members={members}
+              links={coordLinks}
+              companyId={currentProfile.company_id}
+              onRefresh={fetchData}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Department Modal */}
