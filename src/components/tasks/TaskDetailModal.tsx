@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star } from "lucide-react";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
@@ -16,7 +17,6 @@ type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
-const recurrenceLabels: Record<string, string> = { none: "Nenhuma", daily: "Diária", weekly: "Semanal", monthly: "Mensal", yearly: "Anual" };
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -46,6 +46,7 @@ interface TaskDetailModalProps {
 export default function TaskDetailModal({ task, open, onOpenChange, members, departments, onEdit, onRefresh }: TaskDetailModalProps) {
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const { getLabel } = useRecurrenceDefinitions();
   const [localTask, setLocalTask] = useState<Task | null>(task);
   const [statusLoading, setStatusLoading] = useState(false);
   const canManage = role === "admin" || role === "manager" || role === "coordinator";
@@ -140,7 +141,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Badge className={statusColors[localTask.status]}>{statusLabels[localTask.status]}</Badge>
-            {effectiveRecurrenceType !== "none" && <Badge variant="outline">{recurrenceLabels[effectiveRecurrenceType]}</Badge>}
+            {effectiveRecurrenceType !== "none" && <Badge variant="outline">{getLabel(effectiveRecurrenceType)}</Badge>}
             {extTask.difficulty_rating && (
               <Badge variant="outline" className="gap-1">
                 <Star className="h-3 w-3" /> Dificuldade: {extTask.difficulty_rating}/5

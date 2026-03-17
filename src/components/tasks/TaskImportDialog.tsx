@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +106,7 @@ function resolveDate(rawValue: any, stringValue: string): string | undefined {
 export default function TaskImportDialog({ open, onOpenChange, members, departments, onImported }: TaskImportDialogProps) {
   const { user, profile, role } = useAuth();
   const { toast } = useToast();
+  const { definitions } = useRecurrenceDefinitions();
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
@@ -263,7 +265,13 @@ export default function TaskImportDialog({ open, onOpenChange, members, departme
         if (mapped) {
           recurrenceType = mapped;
         } else {
-          errors.push(`Recorrência "${recorrencia}" inválida`);
+          // Also check dynamic definitions by normalized name
+          const dynDef = definitions.find(d => normalize(d.name) === normalize(recorrencia));
+          if (dynDef) {
+            recurrenceType = dynDef.key;
+          } else {
+            errors.push(`Recorrência "${recorrencia}" inválida`);
+          }
         }
       }
 

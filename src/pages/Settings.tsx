@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building } from "lucide-react";
+import { User, Building, RefreshCw } from "lucide-react";
+import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
 
 export default function Settings() {
   const { user, role, profile } = useAuth();
@@ -63,6 +64,7 @@ export default function Settings() {
         <TabsList>
           <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Perfil</TabsTrigger>
           {role === "admin" && <TabsTrigger value="company"><Building className="mr-2 h-4 w-4" /> Empresa</TabsTrigger>}
+          {role === "admin" && <TabsTrigger value="recurrences"><RefreshCw className="mr-2 h-4 w-4" /> Recorrências</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile">
@@ -104,6 +106,12 @@ export default function Settings() {
                 <Button onClick={saveCompany} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
               </CardContent>
             </Card>
+          </TabsContent>
+        )}
+
+        {role === "admin" && (
+          <TabsContent value="recurrences">
+            <RecurrenceSettings />
           </TabsContent>
         )}
       </Tabs>

@@ -356,6 +356,50 @@ export type Database = {
           },
         ]
       }
+      recurrence_definitions: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          interval_unit: Database["public"]["Enums"]["interval_unit"]
+          interval_value: number
+          is_system: boolean
+          key: string
+          max_span_days: number
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          interval_unit?: Database["public"]["Enums"]["interval_unit"]
+          interval_value?: number
+          is_system?: boolean
+          key: string
+          max_span_days?: number
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          interval_unit?: Database["public"]["Enums"]["interval_unit"]
+          interval_value?: number
+          is_system?: boolean
+          key?: string
+          max_span_days?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurrence_definitions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -493,7 +537,7 @@ export type Database = {
           id: string
           priority: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id: string | null
-          recurrence_type: Database["public"]["Enums"]["recurrence_type"]
+          recurrence_type: string
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"]
           title: string
@@ -512,7 +556,7 @@ export type Database = {
           id?: string
           priority?: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id?: string | null
-          recurrence_type?: Database["public"]["Enums"]["recurrence_type"]
+          recurrence_type?: string
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title: string
@@ -531,7 +575,7 @@ export type Database = {
           id?: string
           priority?: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id?: string | null
-          recurrence_type?: Database["public"]["Enums"]["recurrence_type"]
+          recurrence_type?: string
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
@@ -647,7 +691,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "employee" | "coordinator" | "analyst"
-      recurrence_type: "none" | "daily" | "weekly" | "monthly" | "yearly"
+      interval_unit: "day" | "week" | "month" | "year"
       task_priority: "low" | "medium" | "high"
       task_status: "pending" | "in_progress" | "completed" | "overdue"
     }
@@ -778,7 +822,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "employee", "coordinator", "analyst"],
-      recurrence_type: ["none", "daily", "weekly", "monthly", "yearly"],
+      interval_unit: ["day", "week", "month", "year"],
       task_priority: ["low", "medium", "high"],
       task_status: ["pending", "in_progress", "completed", "overdue"],
     },

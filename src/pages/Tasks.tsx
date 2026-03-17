@@ -17,6 +17,7 @@ import { startOfDay, endOfDay, isWithinInterval, parseISO } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 import TaskCalendar from "@/components/tasks/TaskCalendar";
@@ -36,11 +37,12 @@ const statusColors: Record<string, string> = {
   completed: "bg-success/10 text-success",
   overdue: "bg-destructive/10 text-destructive",
 };
-const recurrenceLabels: Record<string, string> = { none: "Nenhuma", daily: "Diária", weekly: "Semanal", monthly: "Mensal", yearly: "Anual" };
 
 export default function Tasks() {
   const { user, role, profile: currentProfile } = useAuth();
   const { toast } = useToast();
+  const { definitions, getLabelsMap, getLabel } = useRecurrenceDefinitions();
+  const recurrenceLabels = getLabelsMap();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -310,7 +312,7 @@ export default function Tasks() {
               <SelectTrigger className="w-[150px]"><SelectValue placeholder="Recorrência" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                {definitions.filter(d => d.key !== "none").map((d) => <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>)}
               </SelectContent>
             </Select>
             <Popover>
@@ -403,7 +405,7 @@ export default function Tasks() {
                                           )}
                                           {getEffectiveRecurrenceType(task) !== "none" && (
                                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                              {recurrenceLabels[getEffectiveRecurrenceType(task)]}
+                                              {getLabel(getEffectiveRecurrenceType(task))}
                                             </Badge>
                                           )}
                                         </div>
@@ -518,7 +520,7 @@ export default function Tasks() {
                       {deptName ? <Badge variant="outline" className="text-xs">{deptName}</Badge> : <span className="text-muted-foreground text-xs">—</span>}
                     </TableCell>
                     <TableCell className="text-xs">
-                      {recurrenceLabels[getEffectiveRecurrenceType(task)]}
+                      {getLabel(getEffectiveRecurrenceType(task))}
                     </TableCell>
                     <TableCell className="text-sm">
                       {getMemberName(task.assigned_to)}

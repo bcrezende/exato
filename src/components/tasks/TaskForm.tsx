@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -15,7 +16,6 @@ type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
-const recurrenceLabels: Record<string, string> = { none: "Nenhuma", daily: "Diária", weekly: "Semanal", monthly: "Mensal", yearly: "Anual" };
 
 interface TaskFormProps {
   open: boolean;
@@ -29,6 +29,8 @@ interface TaskFormProps {
 export default function TaskForm({ open, onOpenChange, editing, members, departments, onSaved }: TaskFormProps) {
   const { user, role, profile: currentProfile } = useAuth();
   const { toast } = useToast();
+  const { definitions, getLabelsMap, getMaxSpanDays } = useRecurrenceDefinitions();
+  const recurrenceLabels = getLabelsMap();
   const isAdmin = role === "admin";
   const isManager = role === "manager";
   const isAnalyst = role === "analyst";
@@ -106,15 +108,12 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
         const diffDays = Math.round((due.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
         const startDay = form.start_date.split("T")[0];
         const dueDay = form.due_date.split("T")[0];
+        const maxSpan = getMaxSpanDays(form.recurrence_type);
 
         if (form.recurrence_type === "daily" && startDay !== dueDay) {
           newErrors.due_date = "Tarefas diárias devem iniciar e terminar no mesmo dia";
-        } else if (form.recurrence_type === "weekly" && diffDays > 7) {
-          newErrors.due_date = "Tarefas semanais devem ter no máximo 7 dias de intervalo";
-        } else if (form.recurrence_type === "monthly" && diffDays > 30) {
-          newErrors.due_date = "Tarefas mensais devem ter no máximo 30 dias de intervalo";
-        } else if (form.recurrence_type === "yearly" && diffDays > 365) {
-          newErrors.due_date = "Tarefas anuais devem ter no máximo 365 dias de intervalo";
+        } else if (maxSpan && maxSpan > 0 && diffDays > maxSpan) {
+          newErrors.due_date = `Tarefas com recorrência "${recurrenceLabels[form.recurrence_type] || form.recurrence_type}" devem ter no máximo ${maxSpan} dias de intervalo`;
         }
       }
     }
@@ -226,7 +225,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
                   <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
                     <SelectTrigger className={fieldClass("recurrence_type")}><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      {definitions.map((d) => <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   {errors.recurrence_type && <p className="text-xs text-destructive">{errors.recurrence_type}</p>}
@@ -256,7 +255,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
                 <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
                   <SelectTrigger className={fieldClass("recurrence_type")}><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(recurrenceLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    {definitions.map((d) => <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 {errors.recurrence_type && <p className="text-xs text-destructive">{errors.recurrence_type}</p>}

@@ -74,6 +74,16 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fetch all recurrence definitions for lookup
+    const { data: allDefs } = await supabase.from("recurrence_definitions").select("*");
+    const defsMap = new Map<string, { interval_value: number; interval_unit: string }>();
+    if (allDefs) {
+      for (const def of allDefs) {
+        // Key by company_id + key for multi-tenant safety
+        defsMap.set(`${def.company_id}:${def.key}`, { interval_value: def.interval_value, interval_unit: def.interval_unit });
+      }
+    }
+
     let createdCount = 0;
 
     for (const parent of parentTasks) {
@@ -104,29 +114,51 @@ Deno.serve(async (req) => {
 
       let newStart: Date;
 
-      switch (parent.recurrence_type) {
-        case "daily":
-          newStart = new Date(refStart);
-          newStart.setDate(newStart.getDate() + 1);
-          break;
-        case "weekly":
-          newStart = new Date(refStart);
-          newStart.setDate(newStart.getDate() + 7);
-          break;
-        case "monthly":
-          newStart = new Date(refStart);
-          newStart.setMonth(newStart.getMonth() + 1);
-          break;
-        case "yearly":
-          newStart = new Date(refStart);
-          newStart.setFullYear(newStart.getFullYear() + 1);
-          break;
-        default:
-          continue;
-      }
+      // Look up recurrence definition dynamically
+      const defKey = `${parent.company_id}:${parent.recurrence_type}`;
+      const def = defsMap.get(defKey);
 
-      // Removed the restriction `if (newStart > now) continue`
-      // Now generates even for future dates (next occurrence)
+      if (def && def.interval_value > 0) {
+        newStart = new Date(refStart);
+        switch (def.interval_unit) {
+          case "day":
+            newStart.setDate(newStart.getDate() + def.interval_value);
+            break;
+          case "week":
+            newStart.setDate(newStart.getDate() + (def.interval_value * 7));
+            break;
+          case "month":
+            newStart.setMonth(newStart.getMonth() + def.interval_value);
+            break;
+          case "year":
+            newStart.setFullYear(newStart.getFullYear() + def.interval_value);
+            break;
+          default:
+            continue;
+        }
+      } else {
+        // Fallback to legacy hardcoded logic
+        switch (parent.recurrence_type) {
+          case "daily":
+            newStart = new Date(refStart);
+            newStart.setDate(newStart.getDate() + 1);
+            break;
+          case "weekly":
+            newStart = new Date(refStart);
+            newStart.setDate(newStart.getDate() + 7);
+            break;
+          case "monthly":
+            newStart = new Date(refStart);
+            newStart.setMonth(newStart.getMonth() + 1);
+            break;
+          case "yearly":
+            newStart = new Date(refStart);
+            newStart.setFullYear(newStart.getFullYear() + 1);
+            break;
+          default:
+            continue;
+        }
+      }
 
       const newEnd = new Date(newStart.getTime() + duration);
 
