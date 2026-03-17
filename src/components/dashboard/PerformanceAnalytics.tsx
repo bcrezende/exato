@@ -270,7 +270,10 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <p className="text-xs text-muted-foreground">últimos 7 dias</p>
           </CardContent>
         </Card>
-        <Card className={summary.worstTask ? "border-warning/50 bg-warning/5" : ""}>
+        <Card
+          className={`${summary.worstTask ? "border-warning/50 bg-warning/5" : ""} ${bottleneckTasks.length > 0 ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+          onClick={bottleneckTasks.length > 0 ? () => setShowBottlenecks(true) : undefined}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Maior Gargalo</CardTitle>
             <AlertTriangle className={`h-4 w-4 ${summary.worstTask ? "text-warning" : "text-muted-foreground"}`} />
@@ -285,6 +288,11 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
                 <p className="text-xs text-destructive font-medium">
                   +{formatDuration(summary.worstTask.overflow)} além do previsto
                 </p>
+                {bottleneckTasks.length > 1 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Clique para ver {bottleneckTasks.length} tarefas →
+                  </p>
+                )}
               </>
             ) : (
               <>
