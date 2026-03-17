@@ -106,6 +106,7 @@ function resolveDate(rawValue: any, stringValue: string): string | undefined {
 export default function TaskImportDialog({ open, onOpenChange, members, departments, onImported }: TaskImportDialogProps) {
   const { user, profile, role } = useAuth();
   const { toast } = useToast();
+  const { definitions } = useRecurrenceDefinitions();
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
