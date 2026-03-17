@@ -58,9 +58,22 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
     setErrors({});
   };
 
-  const filteredMembers = isManager && currentProfile?.department_id
-    ? members.filter(m => m.department_id === currentProfile.department_id)
-    : members;
+  const [coordinatorAnalystIds, setCoordinatorAnalystIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isCoordinator && user) {
+      supabase.from("coordinator_analysts").select("analyst_id").eq("coordinator_id", user.id)
+        .then(({ data }) => {
+          if (data) setCoordinatorAnalystIds(data.map(d => d.analyst_id));
+        });
+    }
+  }, [isCoordinator, user]);
+
+  const filteredMembers = useMemo(() => {
+    if (isCoordinator) return members.filter(m => coordinatorAnalystIds.includes(m.id));
+    if (isManager && currentProfile?.department_id) return members.filter(m => m.department_id === currentProfile.department_id);
+    return members;
+  }, [members, isCoordinator, isManager, currentProfile, coordinatorAnalystIds]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};

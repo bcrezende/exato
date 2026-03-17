@@ -48,6 +48,7 @@ export default function Team() {
     if (role === "manager" && currentProfile.department_id) {
       membersQuery = membersQuery.eq("department_id", currentProfile.department_id);
     }
+    // Coordinators will filter after fetching (need coordinator_analysts data)
 
     const [membersRes, deptsRes, invitesRes, rolesRes] = await Promise.all([
       membersQuery,
