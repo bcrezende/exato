@@ -10,10 +10,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 
 const unitLabels: Record<string, string> = { day: "Dia(s)", week: "Semana(s)", month: "Mês(es)", year: "Ano(s)" };
+const weekdayLabels = [
+  { value: 0, label: "Dom" },
+  { value: 1, label: "Seg" },
+  { value: 2, label: "Ter" },
+  { value: 3, label: "Qua" },
+  { value: 4, label: "Qui" },
+  { value: 5, label: "Sex" },
+  { value: 6, label: "Sáb" },
+];
 
 function generateKey(name: string): string {
   return name
@@ -30,12 +41,20 @@ export default function RecurrenceSettings() {
   const { definitions, fetchDefinitions } = useRecurrenceDefinitions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<RecurrenceDefinition | null>(null);
-  const [form, setForm] = useState({ name: "", interval_value: "1", interval_unit: "day", max_span_days: "1" });
+  const [form, setForm] = useState({
+    name: "",
+    interval_value: "1",
+    interval_unit: "day",
+    max_span_days: "1",
+    weekdays: [] as number[],
+    skip_weekends: false,
+    skip_holidays: false,
+  });
   const [saving, setSaving] = useState(false);
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: "", interval_value: "1", interval_unit: "day", max_span_days: "1" });
+    setForm({ name: "", interval_value: "1", interval_unit: "day", max_span_days: "1", weekdays: [], skip_weekends: false, skip_holidays: false });
     setDialogOpen(true);
   };
 
@@ -46,8 +65,20 @@ export default function RecurrenceSettings() {
       interval_value: String(def.interval_value),
       interval_unit: def.interval_unit,
       max_span_days: String(def.max_span_days),
+      weekdays: def.weekdays || [],
+      skip_weekends: def.skip_weekends || false,
+      skip_holidays: def.skip_holidays || false,
     });
     setDialogOpen(true);
+  };
+
+  const toggleWeekday = (day: number) => {
+    setForm(prev => ({
+      ...prev,
+      weekdays: prev.weekdays.includes(day)
+        ? prev.weekdays.filter(d => d !== day)
+        : [...prev.weekdays, day].sort(),
+    }));
   };
 
   const handleSave = async () => {
@@ -60,31 +91,27 @@ export default function RecurrenceSettings() {
 
     setSaving(true);
     const key = editing ? editing.key : generateKey(form.name);
+    const payload = {
+      name: form.name.trim(),
+      interval_value: intervalValue,
+      interval_unit: form.interval_unit as any,
+      max_span_days: maxSpanDays,
+      weekdays: form.weekdays.length > 0 ? form.weekdays : null,
+      skip_weekends: form.skip_weekends,
+      skip_holidays: form.skip_holidays,
+    };
 
     if (editing) {
       const { error } = await supabase
         .from("recurrence_definitions")
-        .update({
-          name: form.name.trim(),
-          interval_value: intervalValue,
-          interval_unit: form.interval_unit as any,
-          max_span_days: maxSpanDays,
-        })
+        .update(payload)
         .eq("id", editing.id);
       if (error) { toast({ variant: "destructive", title: "Erro", description: error.message }); setSaving(false); return; }
       toast({ title: "Recorrência atualizada!" });
     } else {
       const { error } = await supabase
         .from("recurrence_definitions")
-        .insert([{
-          company_id: profile.company_id,
-          name: form.name.trim(),
-          key,
-          interval_value: intervalValue,
-          interval_unit: form.interval_unit as any,
-          max_span_days: maxSpanDays,
-          is_system: false,
-        }]);
+        .insert([{ ...payload, company_id: profile.company_id, key, is_system: false }]);
       if (error) {
         if (error.code === "23505") {
           toast({ variant: "destructive", title: "Já existe uma recorrência com essa chave" });
@@ -102,7 +129,6 @@ export default function RecurrenceSettings() {
   };
 
   const handleDelete = async (def: RecurrenceDefinition) => {
-    // Check if in use
     const { count } = await supabase
       .from("tasks")
       .select("id", { count: "exact", head: true })
@@ -119,8 +145,8 @@ export default function RecurrenceSettings() {
     fetchDefinitions();
   };
 
-  // Filter out 'none' from display
   const displayDefs = definitions.filter(d => d.key !== "none");
+  const showWeekdays = form.interval_unit === "day" || form.interval_unit === "week";
 
   return (
     <Card>
@@ -141,7 +167,8 @@ export default function RecurrenceSettings() {
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Intervalo</TableHead>
-              <TableHead>Limite (dias)</TableHead>
+              <TableHead>Dias da semana</TableHead>
+              <TableHead>Opções</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead className="w-[100px]">Ações</TableHead>
             </TableRow>
@@ -151,7 +178,19 @@ export default function RecurrenceSettings() {
               <TableRow key={def.id}>
                 <TableCell className="font-medium">{def.name}</TableCell>
                 <TableCell>{def.interval_value} {unitLabels[def.interval_unit] || def.interval_unit}</TableCell>
-                <TableCell>{def.max_span_days}</TableCell>
+                <TableCell>
+                  {def.weekdays && def.weekdays.length > 0
+                    ? def.weekdays.map(d => weekdayLabels[d]?.label).join(", ")
+                    : <span className="text-muted-foreground text-sm">Todos</span>
+                  }
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1 flex-wrap">
+                    {def.skip_weekends && <Badge variant="outline" className="text-xs">Pula fins de semana</Badge>}
+                    {def.skip_holidays && <Badge variant="outline" className="text-xs">Pula feriados</Badge>}
+                    {!def.skip_weekends && !def.skip_holidays && <span className="text-muted-foreground text-sm">—</span>}
+                  </div>
+                </TableCell>
                 <TableCell>
                   {def.is_system ? (
                     <Badge variant="secondary">Sistema</Badge>
@@ -175,7 +214,7 @@ export default function RecurrenceSettings() {
             ))}
             {displayDefs.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   Nenhuma recorrência cadastrada
                 </TableCell>
               </TableRow>
@@ -185,7 +224,7 @@ export default function RecurrenceSettings() {
       </CardContent>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar Recorrência" : "Nova Recorrência"}</DialogTitle>
             <DialogDescription>{editing ? "Atualize os dados da recorrência" : "Defina um novo tipo de recorrência para tarefas"}</DialogDescription>
@@ -193,7 +232,7 @@ export default function RecurrenceSettings() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Nome <span className="text-destructive">*</span></Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Quinzenal" />
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Dias úteis" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -212,6 +251,54 @@ export default function RecurrenceSettings() {
                 </Select>
               </div>
             </div>
+
+            {/* Weekday selection */}
+            {showWeekdays && (
+              <div className="space-y-2">
+                <Label>Dias da semana (opcional)</Label>
+                <p className="text-xs text-muted-foreground">Selecione em quais dias a tarefa deve ser executada. Deixe vazio para todos.</p>
+                <div className="flex gap-2 flex-wrap">
+                  {weekdayLabels.map(wd => (
+                    <label
+                      key={wd.value}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border cursor-pointer transition-colors text-sm ${
+                        form.weekdays.includes(wd.value)
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background border-border hover:bg-muted"
+                      }`}
+                    >
+                      <Checkbox
+                        checked={form.weekdays.includes(wd.value)}
+                        onCheckedChange={() => toggleWeekday(wd.value)}
+                        className="sr-only"
+                      />
+                      {wd.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Skip weekends */}
+            {form.interval_unit === "day" && (
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <Label className="text-sm font-medium">Pular fins de semana</Label>
+                  <p className="text-xs text-muted-foreground">Não gerar tarefas aos sábados e domingos</p>
+                </div>
+                <Switch checked={form.skip_weekends} onCheckedChange={(v) => setForm({ ...form, skip_weekends: v })} />
+              </div>
+            )}
+
+            {/* Skip holidays */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label className="text-sm font-medium">Pular feriados</Label>
+                <p className="text-xs text-muted-foreground">Não gerar tarefas em feriados cadastrados</p>
+              </div>
+              <Switch checked={form.skip_holidays} onCheckedChange={(v) => setForm({ ...form, skip_holidays: v })} />
+            </div>
+
             <div className="space-y-2">
               <Label>Limite máximo de dias (para validação)</Label>
               <Input type="number" min={0} value={form.max_span_days} onChange={(e) => setForm({ ...form, max_span_days: e.target.value })} />

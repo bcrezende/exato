@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, RefreshCw } from "lucide-react";
+import { User, Building, RefreshCw, CalendarDays } from "lucide-react";
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
+import HolidaySettings from "@/components/settings/HolidaySettings";
 
 export default function Settings() {
   const { user, role, profile } = useAuth();
