@@ -19,6 +19,26 @@ const statusCalendarColors: Record<string, { bg: string; border: string; text: s
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
+function useCurrentTime() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function CurrentTimeLine({ now }: { now: Date }) {
+  const top = (now.getHours() + now.getMinutes() / 60) * 56;
+  return (
+    <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${top}px` }}>
+      <div className="relative w-full border-t-2 border-red-500">
+        <div className="absolute -left-1.5 -top-[5px] h-2.5 w-2.5 rounded-full bg-red-500" />
+      </div>
+    </div>
+  );
+}
+
 /* ──── Overlap layout helper ──── */
 interface LayoutedTask {
   task: Task;
