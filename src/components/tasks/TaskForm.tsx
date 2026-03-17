@@ -229,6 +229,15 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
                     </SelectContent>
                   </Select>
                   {errors.recurrence_type && <p className="text-xs text-destructive">{errors.recurrence_type}</p>}
+                  {form.recurrence_type && getWeekdaysLabel(form.recurrence_type) && (
+                    <p className="text-xs text-muted-foreground">Dias: {getWeekdaysLabel(form.recurrence_type)}</p>
+                  )}
+                  {form.recurrence_type && getDefinition(form.recurrence_type)?.skip_weekends && (
+                    <p className="text-xs text-muted-foreground">Pula fins de semana</p>
+                  )}
+                  {form.recurrence_type && getDefinition(form.recurrence_type)?.skip_holidays && (
+                    <p className="text-xs text-muted-foreground">Pula feriados</p>
+                  )}
                 </div>
               )}
             </div>
