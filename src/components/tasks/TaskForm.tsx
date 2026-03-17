@@ -96,8 +96,27 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
     if (isAdmin && !form.department_id) newErrors.department_id = "Setor é obrigatório";
     if (!form.recurrence_type) newErrors.recurrence_type = "Recorrência é obrigatória";
 
-    if (form.start_date && form.due_date && new Date(form.start_date) >= new Date(form.due_date)) {
-      newErrors.due_date = "Data de término deve ser após o início";
+    if (form.start_date && form.due_date) {
+      const start = new Date(form.start_date);
+      const due = new Date(form.due_date);
+
+      if (start >= due) {
+        newErrors.due_date = "Data de término deve ser após o início";
+      } else {
+        const diffDays = Math.round((due.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        const startDay = form.start_date.split("T")[0];
+        const dueDay = form.due_date.split("T")[0];
+
+        if (form.recurrence_type === "daily" && startDay !== dueDay) {
+          newErrors.due_date = "Tarefas diárias devem iniciar e terminar no mesmo dia";
+        } else if (form.recurrence_type === "weekly" && diffDays > 7) {
+          newErrors.due_date = "Tarefas semanais devem ter no máximo 7 dias de intervalo";
+        } else if (form.recurrence_type === "monthly" && diffDays > 30) {
+          newErrors.due_date = "Tarefas mensais devem ter no máximo 30 dias de intervalo";
+        } else if (form.recurrence_type === "yearly" && diffDays > 365) {
+          newErrors.due_date = "Tarefas anuais devem ter no máximo 365 dias de intervalo";
+        }
+      }
     }
 
     setErrors(newErrors);
