@@ -89,6 +89,18 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const assignedName = members.find(m => m.id === localTask.assigned_to)?.full_name || null;
   const deptName = departments.find(d => d.id === localTask.department_id)?.name || null;
 
+  // Resolve effective recurrence type from parent if needed
+  const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
+  useEffect(() => {
+    if (localTask?.recurrence_type === "none" && localTask?.recurrence_parent_id && open) {
+      supabase.from("tasks").select("recurrence_type").eq("id", localTask.recurrence_parent_id).single()
+        .then(({ data }) => setParentRecurrenceType(data?.recurrence_type || null));
+    } else {
+      setParentRecurrenceType(null);
+    }
+  }, [localTask?.id, open]);
+  const effectiveRecurrenceType = localTask.recurrence_type !== "none" ? localTask.recurrence_type : (parentRecurrenceType || "none");
+
   const handleStatusChange = async (newStatus: string, difficultyRating?: number) => {
     const previousTask = localTask;
     setLocalTask({ ...localTask, status: newStatus as any });
