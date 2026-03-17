@@ -47,11 +47,20 @@ function AdminManagerDashboard() {
       ]);
       if (tasksRes.data) setTasks(tasksRes.data);
       if (depsRes.data) {
-        if (role === "manager" && profile?.department_id) {
+        if ((role === "manager" || role === "coordinator") && profile?.department_id) {
           setDepartments(depsRes.data.filter(d => d.id === profile.department_id));
           setSelectedDepartment(profile.department_id);
         } else {
           setDepartments(depsRes.data);
+        }
+      }
+      if (role === "coordinator" && user) {
+        const { data: links } = await supabase
+          .from("coordinator_analysts")
+          .select("analyst_id")
+          .eq("coordinator_id", user.id);
+        if (links) {
+          setCoordinatorAnalystIds(links.map(l => l.analyst_id));
         }
       }
       if (logsRes.data) setTimeLogs(logsRes.data);
