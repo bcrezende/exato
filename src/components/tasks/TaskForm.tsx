@@ -108,15 +108,12 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
         const diffDays = Math.round((due.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
         const startDay = form.start_date.split("T")[0];
         const dueDay = form.due_date.split("T")[0];
+        const maxSpan = getMaxSpanDays(form.recurrence_type);
 
         if (form.recurrence_type === "daily" && startDay !== dueDay) {
           newErrors.due_date = "Tarefas diárias devem iniciar e terminar no mesmo dia";
-        } else if (form.recurrence_type === "weekly" && diffDays > 7) {
-          newErrors.due_date = "Tarefas semanais devem ter no máximo 7 dias de intervalo";
-        } else if (form.recurrence_type === "monthly" && diffDays > 30) {
-          newErrors.due_date = "Tarefas mensais devem ter no máximo 30 dias de intervalo";
-        } else if (form.recurrence_type === "yearly" && diffDays > 365) {
-          newErrors.due_date = "Tarefas anuais devem ter no máximo 365 dias de intervalo";
+        } else if (maxSpan && maxSpan > 0 && diffDays > maxSpan) {
+          newErrors.due_date = `Tarefas com recorrência "${recurrenceLabels[form.recurrence_type] || form.recurrence_type}" devem ter no máximo ${maxSpan} dias de intervalo`;
         }
       }
     }
