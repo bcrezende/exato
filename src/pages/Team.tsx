@@ -52,11 +52,12 @@ export default function Team() {
     }
     // Coordinators will filter after fetching (need coordinator_analysts data)
 
-    const [membersRes, deptsRes, invitesRes, rolesRes] = await Promise.all([
+    const [membersRes, deptsRes, invitesRes, rolesRes, linksRes] = await Promise.all([
       membersQuery,
       supabase.from("departments").select("*").eq("company_id", currentProfile.company_id),
       supabase.from("invitations").select("*").eq("company_id", currentProfile.company_id).is("accepted_at", null),
       supabase.from("user_roles").select("*"),
+      supabase.from("coordinator_analysts").select("*").eq("company_id", currentProfile.company_id),
     ]);
 
     // Coordinator needs to know their analysts
