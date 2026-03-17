@@ -41,6 +41,8 @@ const statusColors: Record<string, string> = {
 export default function Tasks() {
   const { user, role, profile: currentProfile } = useAuth();
   const { toast } = useToast();
+  const { definitions, getLabelsMap, getLabel } = useRecurrenceDefinitions();
+  const recurrenceLabels = getLabelsMap();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
