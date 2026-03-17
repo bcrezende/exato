@@ -307,6 +307,17 @@ export default function Team() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {(isAdmin || role === "manager") && currentProfile?.company_id && (
+          <TabsContent value="links">
+            <CoordinatorLinksTab
+              members={members}
+              links={coordLinks}
+              companyId={currentProfile.company_id}
+              onRefresh={fetchData}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Department Modal */}
