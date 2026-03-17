@@ -76,15 +76,15 @@ export default function RecurrenceSettings() {
     } else {
       const { error } = await supabase
         .from("recurrence_definitions")
-        .insert({
+        .insert([{
           company_id: profile.company_id,
           name: form.name.trim(),
           key,
           interval_value: intervalValue,
-          interval_unit: form.interval_unit,
+          interval_unit: form.interval_unit as any,
           max_span_days: maxSpanDays,
           is_system: false,
-        });
+        }]);
       if (error) {
         if (error.code === "23505") {
           toast({ variant: "destructive", title: "Já existe uma recorrência com essa chave" });
