@@ -522,7 +522,7 @@ export default function Tasks() {
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
-                        {(role === "employee" && task.assigned_to === user?.id) && (
+                        {(role === "analyst" && task.assigned_to === user?.id) && (
                           <>
                             {task.status === "pending" && (
                               <Button size="sm" variant="outline" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>

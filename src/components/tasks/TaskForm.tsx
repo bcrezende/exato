@@ -205,8 +205,8 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
               </div>
             )}
 
-            {/* Recorrência for admin or employee */}
-            {(isAdmin || isEmployee) && (
+            {/* Recorrência for admin, coordinator or analyst */}
+            {(isAdmin || isCoordinator || isAnalyst) && (
               <div className="space-y-2">
                 <Label>Recorrência <span className="text-destructive">*</span></Label>
                 <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
