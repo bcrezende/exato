@@ -33,6 +33,7 @@ function AdminManagerDashboard() {
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [timeLogs, setTimeLogs] = useState<{ id: string; task_id: string; user_id: string; action: string; created_at: string }[]>([]);
+  const [coordinatorAnalystIds, setCoordinatorAnalystIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,11 +47,20 @@ function AdminManagerDashboard() {
       ]);
       if (tasksRes.data) setTasks(tasksRes.data);
       if (depsRes.data) {
-        if (role === "manager" && profile?.department_id) {
+        if ((role === "manager" || role === "coordinator") && profile?.department_id) {
           setDepartments(depsRes.data.filter(d => d.id === profile.department_id));
           setSelectedDepartment(profile.department_id);
         } else {
           setDepartments(depsRes.data);
+        }
+      }
+      if (role === "coordinator" && user) {
+        const { data: links } = await supabase
+          .from("coordinator_analysts")
+          .select("analyst_id")
+          .eq("coordinator_id", user.id);
+        if (links) {
+          setCoordinatorAnalystIds(links.map(l => l.analyst_id));
         }
       }
       if (logsRes.data) setTimeLogs(logsRes.data);
@@ -77,13 +87,15 @@ function AdminManagerDashboard() {
 
   const employeeOptions = useMemo(() => {
     let list = profilesList;
-    if (role === "manager" && profile?.department_id) {
+    if (role === "coordinator") {
+      list = list.filter(p => coordinatorAnalystIds.includes(p.id));
+    } else if (role === "manager" && profile?.department_id) {
       list = list.filter(p => p.department_id === profile.department_id);
     } else if (selectedDepartment) {
       list = list.filter(p => p.department_id === selectedDepartment);
     }
     return list.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
-  }, [profilesList, selectedDepartment, role, profile]);
+  }, [profilesList, selectedDepartment, role, profile, coordinatorAnalystIds]);
 
   const { overdueTasks, todayTasks, upcomingDays } = useMemo(() => {
     const overdue: Task[] = [];
@@ -165,7 +177,7 @@ function AdminManagerDashboard() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            {format(today, "EEEE, dd 'de' MMMM", { locale: ptBR })} — {role === "admin" ? "Visão geral da empresa" : "Visão do setor"}
+            {format(today, "EEEE, dd 'de' MMMM", { locale: ptBR })} — {role === "admin" ? "Visão geral da empresa" : role === "coordinator" ? "Visão da coordenação" : "Visão do setor"}
           </p>
         </div>
         <div className="flex items-center gap-3">
