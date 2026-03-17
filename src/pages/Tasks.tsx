@@ -17,6 +17,7 @@ import { startOfDay, endOfDay, isWithinInterval, parseISO } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 import TaskCalendar from "@/components/tasks/TaskCalendar";
@@ -36,7 +37,6 @@ const statusColors: Record<string, string> = {
   completed: "bg-success/10 text-success",
   overdue: "bg-destructive/10 text-destructive",
 };
-const recurrenceLabels: Record<string, string> = { none: "Nenhuma", daily: "Diária", weekly: "Semanal", monthly: "Mensal", yearly: "Anual" };
 
 export default function Tasks() {
   const { user, role, profile: currentProfile } = useAuth();
