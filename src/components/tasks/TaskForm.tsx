@@ -29,6 +29,8 @@ interface TaskFormProps {
 export default function TaskForm({ open, onOpenChange, editing, members, departments, onSaved }: TaskFormProps) {
   const { user, role, profile: currentProfile } = useAuth();
   const { toast } = useToast();
+  const { definitions, getLabelsMap, getMaxSpanDays } = useRecurrenceDefinitions();
+  const recurrenceLabels = getLabelsMap();
   const isAdmin = role === "admin";
   const isManager = role === "manager";
   const isAnalyst = role === "analyst";
