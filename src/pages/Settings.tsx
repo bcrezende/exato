@@ -66,6 +66,7 @@ export default function Settings() {
           <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Perfil</TabsTrigger>
           {role === "admin" && <TabsTrigger value="company"><Building className="mr-2 h-4 w-4" /> Empresa</TabsTrigger>}
           {role === "admin" && <TabsTrigger value="recurrences"><RefreshCw className="mr-2 h-4 w-4" /> Recorrências</TabsTrigger>}
+          {role === "admin" && <TabsTrigger value="holidays"><CalendarDays className="mr-2 h-4 w-4" /> Feriados</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile">
