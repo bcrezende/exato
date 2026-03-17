@@ -50,34 +50,33 @@ export default function Team() {
     }
     // Coordinators will filter after fetching (need coordinator_analysts data)
 
-    const fetchPromises: Promise<any>[] = [
+    const [membersRes, deptsRes, invitesRes, rolesRes] = await Promise.all([
       membersQuery,
       supabase.from("departments").select("*").eq("company_id", currentProfile.company_id),
       supabase.from("invitations").select("*").eq("company_id", currentProfile.company_id).is("accepted_at", null),
       supabase.from("user_roles").select("*"),
-    ];
-    // Coordinator needs to know their analysts
-    if (role === "coordinator" && user) {
-      fetchPromises.push(supabase.from("coordinator_analysts").select("analyst_id").eq("coordinator_id", user.id));
-    }
+    ]);
 
-    const results = await Promise.all(fetchPromises);
-    const [membersRes, deptsRes, invitesRes, rolesRes] = results;
-    const coordAnalystsRes = role === "coordinator" ? results[4] : null;
+    // Coordinator needs to know their analysts
+    let coordAnalystIds: Set<string> | null = null;
+    if (role === "coordinator" && user) {
+      const { data } = await supabase.from("coordinator_analysts").select("analyst_id").eq("coordinator_id", user.id);
+      if (data) {
+        coordAnalystIds = new Set(data.map(a => a.analyst_id));
+        coordAnalystIds.add(user.id);
+      }
+    }
 
     if (deptsRes.data) setDepartments(deptsRes.data);
     if (invitesRes.data) setInvitations(invitesRes.data);
     if (membersRes.data && rolesRes.data) {
       let membersList = membersRes.data;
-      // Coordinator only sees their own analysts + themselves
-      if (role === "coordinator" && coordAnalystsRes?.data) {
-        const analystIds = new Set(coordAnalystsRes.data.map((a: any) => a.analyst_id));
-        analystIds.add(user!.id);
-        membersList = membersList.filter((m: any) => analystIds.has(m.id));
+      if (coordAnalystIds) {
+        membersList = membersList.filter(m => coordAnalystIds!.has(m.id));
       }
-      const merged = membersList.map((m: any) => ({
+      const merged = membersList.map((m) => ({
         ...m,
-        user_roles: rolesRes.data.filter((r: any) => r.user_id === m.id),
+        user_roles: rolesRes.data.filter((r) => r.user_id === m.id),
       }));
       setMembers(merged);
     }
