@@ -35,7 +35,7 @@ export default function Team() {
   const [deptModal, setDeptModal] = useState(false);
   const [inviteModal, setInviteModal] = useState(false);
   const [deptName, setDeptName] = useState("");
-  const [inviteForm, setInviteForm] = useState({ email: "", role: "employee" as string, department_id: "" });
+  const [inviteForm, setInviteForm] = useState({ email: "", role: "analyst" as string, department_id: "" });
   const [editMember, setEditMember] = useState<(Profile & { user_roles?: UserRole[] }) | null>(null);
   const [editDept, setEditDept] = useState<Department | null>(null);
   const isAdmin = role === "admin";
