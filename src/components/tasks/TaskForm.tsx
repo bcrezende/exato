@@ -277,6 +277,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
                 {form.recurrence_type && getDefinition(form.recurrence_type)?.skip_holidays && (
                   <p className="text-xs text-muted-foreground">Pula feriados</p>
                 )}
+              </div>
             )}
           </div>
 
