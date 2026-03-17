@@ -361,7 +361,7 @@ export default function Tasks() {
                       >
                         {columnTasks.map((task, index) => {
                           const deptName = getDepartmentName(task.department_id);
-                          const isDragDisabled = role === "employee" && task.assigned_to !== user?.id;
+                          const isDragDisabled = role === "analyst" && task.assigned_to !== user?.id;
                           return (
                             <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={isDragDisabled}>
                               {(dragProvided, dragSnapshot) => {
