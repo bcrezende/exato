@@ -53,6 +53,18 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
     }
   }, [form.start_date, form.due_date]);
 
+  // Auto-adjust due_date when recurrence_type changes to daily
+  useEffect(() => {
+    if (form.recurrence_type === "daily" && form.start_date && form.due_date) {
+      const startDate = form.start_date.split("T")[0];
+      const dueDate = form.due_date.split("T")[0];
+      if (startDate !== dueDate) {
+        const dueTime = form.due_date.split("T")[1] || "23:59";
+        setForm(prev => ({ ...prev, due_date: `${startDate}T${dueTime}` }));
+      }
+    }
+  }, [form.recurrence_type, form.start_date]);
+
   const resetForm = (task: Task | null) => {
     setForm(getInitialForm(task, isAdmin, currentProfile));
     setErrors({});
