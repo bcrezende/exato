@@ -470,7 +470,7 @@ export type Database = {
       to_date_immutable: { Args: { ts: string }; Returns: string }
     }
     Enums: {
-      app_role: "admin" | "manager" | "employee"
+      app_role: "admin" | "manager" | "employee" | "coordinator" | "analyst"
       recurrence_type: "none" | "daily" | "weekly" | "monthly" | "yearly"
       task_priority: "low" | "medium" | "high"
       task_status: "pending" | "in_progress" | "completed" | "overdue"
@@ -601,7 +601,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "employee"],
+      app_role: ["admin", "manager", "employee", "coordinator", "analyst"],
       recurrence_type: ["none", "daily", "weekly", "monthly", "yearly"],
       task_priority: ["low", "medium", "high"],
       task_status: ["pending", "in_progress", "completed", "overdue"],
