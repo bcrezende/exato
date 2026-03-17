@@ -401,9 +401,9 @@ export default function Tasks() {
                                               <Building2 className="mr-1 h-3 w-3" />{deptName}
                                             </Badge>
                                           )}
-                                          {task.recurrence_type !== "none" && (
+                                          {getEffectiveRecurrenceType(task) !== "none" && (
                                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                              {recurrenceLabels[task.recurrence_type]}
+                                              {recurrenceLabels[getEffectiveRecurrenceType(task)]}
                                             </Badge>
                                           )}
                                         </div>
