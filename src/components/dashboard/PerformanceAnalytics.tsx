@@ -299,7 +299,10 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Index cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card
+          className={completedTasksWithTime.length > 0 ? "cursor-pointer hover:shadow-md transition-shadow" : ""}
+          onClick={completedTasksWithTime.length > 0 ? () => setShowAvgTime(true) : undefined}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
             <Timer className="h-4 w-4 text-muted-foreground" />
@@ -307,6 +310,9 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
           <CardContent>
             <div className="text-2xl font-bold">{formatDuration(summary.avgExecution)}</div>
             <p className="text-xs text-muted-foreground">por tarefa concluída</p>
+            {completedTasksWithTime.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Clique para ver {completedTasksWithTime.length} tarefas →</p>
+            )}
           </CardContent>
         </Card>
         <Card className={summary.delayRate > 30 ? "border-destructive/50 bg-destructive/5" : ""}>
