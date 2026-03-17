@@ -331,7 +331,10 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={completedLast7dTasks.length > 0 ? "cursor-pointer hover:shadow-md transition-shadow" : ""}
+          onClick={completedLast7dTasks.length > 0 ? () => setShowCompleted7d(true) : undefined}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Concluídas (7d)</CardTitle>
             <CheckCircle className="h-4 w-4 text-success" />
@@ -339,6 +342,9 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
           <CardContent>
             <div className="text-2xl font-bold">{summary.completedLast7}</div>
             <p className="text-xs text-muted-foreground">últimos 7 dias</p>
+            {completedLast7dTasks.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Clique para ver detalhes →</p>
+            )}
           </CardContent>
         </Card>
         <Card
