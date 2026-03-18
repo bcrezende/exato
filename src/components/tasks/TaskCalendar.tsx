@@ -184,8 +184,8 @@ function MonthView({ currentDate, tasks, onTaskClick, onDayClick }: { currentDat
 
   const getTasksForDay = (day: Date) =>
     tasks.filter(t => {
-      const start = t.start_date ? new Date(t.start_date) : null;
-      const end = t.due_date ? new Date(t.due_date) : null;
+      const start = toDisplayDate(t.start_date);
+      const end = toDisplayDate(t.due_date);
       if (start && end) return day >= new Date(start.toDateString()) && day <= new Date(end.toDateString());
       if (end) return isSameDay(day, end);
       if (start) return isSameDay(day, start);
