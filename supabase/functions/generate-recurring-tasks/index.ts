@@ -311,7 +311,7 @@ Deno.serve(async (req) => {
       // Standard interval-based logic
       const { data: latestInstances } = await supabase
         .from("tasks")
-        .select("start_date, due_date, status")
+        .select("start_date, due_date, status, title, description, priority, assigned_to, department_id")
         .eq("recurrence_parent_id", parent.id)
         .order("start_date", { ascending: false })
         .limit(1);
