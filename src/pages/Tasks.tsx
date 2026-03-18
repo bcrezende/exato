@@ -8,12 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Clock, Building2, CalendarIcon, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Building2, CalendarIcon, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Filter } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { startOfDay, endOfDay, isWithinInterval, parseISO } from "date-fns";
+import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { toDisplayDate, formatStoredDate, getTodayRange, nowAsFakeUTC } from "@/lib/date-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,7 @@ import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import TaskForm from "@/components/tasks/TaskForm";
 import TaskImportDialog from "@/components/tasks/TaskImportDialog";
 import { TasksSkeleton } from "@/components/skeletons/TasksSkeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
@@ -69,6 +70,17 @@ export default function Tasks() {
 
   const canManage = role === "admin" || role === "manager" || role === "coordinator";
 
+  // Count active filters (excluding search and today's date)
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filterStatus !== "all") count++;
+    if (filterDepartment !== "all") count++;
+    if (filterAssignee !== "all") count++;
+    if (filterRecurrence !== "all") count++;
+    if (filterDate !== undefined && startOfDay(filterDate).getTime() !== startOfDay(new Date()).getTime()) count++;
+    return count;
+  }, [filterStatus, filterDepartment, filterAssignee, filterRecurrence, filterDate]);
+
   const fetchTasks = async () => {
     let query = supabase.from("tasks").select("*").order("created_at", { ascending: false });
     if (role === "analyst" && user) query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
@@ -106,7 +118,6 @@ export default function Tasks() {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    // Otimista: atualizar UI imediatamente
     const previousTasks = tasks;
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } as Task : t));
 
@@ -121,7 +132,6 @@ export default function Tasks() {
     try {
       const { generatedRecurring } = await updateTaskStatus(taskId, newStatus as any, task);
       if (generatedRecurring) {
-        
         toast({ title: "Status atualizado! Próxima recorrência gerada." });
       } else {
         toast({ title: "Status atualizado!" });
@@ -152,7 +162,7 @@ export default function Tasks() {
     return departments.find((d) => d.id === departmentId)?.name || null;
   };
 
-  const hasActiveFilters = search || filterStatus !== "all" || filterDepartment !== "all" || filterAssignee !== "all" || filterRecurrence !== "all" || (filterDate !== undefined && startOfDay(filterDate).getTime() !== startOfDay(new Date()).getTime());
+  const hasActiveFilters = search || activeFilterCount > 0;
 
   const clearFilters = () => {
     setSearch("");
@@ -226,14 +236,12 @@ export default function Tasks() {
     const { destination, draggableId } = result;
     if (!destination) return;
     const newStatus = destination.droppableId;
-    if (newStatus === "overdue") return; // coluna calculada, não aceita drop
+    if (newStatus === "overdue") return;
     const task = tasks.find((t) => t.id === draggableId);
     if (!task) return;
-    // Verificar permissão: analista só pode arrastar as próprias
     if (role === "analyst" && task.assigned_to !== user?.id) return;
-    // Determinar status atual real da tarefa
     const currentEffective = task.status === "pending" && task.due_date && task.due_date < nowAsFakeUTC() ? "overdue" : task.status;
-    if (newStatus === currentEffective) return; // sem mudança
+    if (newStatus === currentEffective) return;
     await handleStatusChange(draggableId, newStatus);
   }, [tasks, role, user?.id, handleStatusChange]);
 
@@ -241,110 +249,134 @@ export default function Tasks() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tarefas</h1>
-          <p className="text-muted-foreground">Gerencie as tarefas da sua equipe</p>
-        </div>
+      {/* Header Compacto */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight">Tarefas</h1>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border">
-            <Button variant={viewMode === "kanban" ? "default" : "ghost"} size="sm" className="rounded-none rounded-l-lg" onClick={() => setViewMode("kanban")}>
-              <LayoutGrid className="mr-1.5 h-4 w-4" /> Kanban
-            </Button>
-            <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" className="rounded-none" onClick={() => setViewMode("list")}>
-              <List className="mr-1.5 h-4 w-4" /> Lista
-            </Button>
-            <Button variant={viewMode === "calendar" ? "default" : "ghost"} size="sm" className="rounded-none rounded-r-lg" onClick={() => setViewMode("calendar")}>
-              <CalendarDays className="mr-1.5 h-4 w-4" /> Calendário
-            </Button>
-          </div>
+          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as any)} className="border rounded-lg">
+            <ToggleGroupItem value="kanban" aria-label="Kanban" className="h-8 w-8 p-0">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="Lista" className="h-8 w-8 p-0">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="calendar" aria-label="Calendário" className="h-8 w-8 p-0">
+              <CalendarDays className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
           {canManage && (
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar Excel
+            <Button variant="ghost" size="sm" onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet className="mr-1.5 h-4 w-4" /> Importar
             </Button>
           )}
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" /> Nova Tarefa
+          <Button size="sm" onClick={openCreate}>
+            <Plus className="mr-1.5 h-4 w-4" /> Nova Tarefa
           </Button>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <Card>
-        <CardContent className="p-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar tarefas..." className="pl-10" value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {canManage && (
-              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-                <SelectTrigger className="w-[160px]">
-                  <Building2 className="mr-1.5 h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="Setor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os setores</SelectItem>
-                  {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-            {canManage && (
-              <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-                <SelectTrigger className="w-[170px]">
-                  <User className="mr-1.5 h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="Responsável" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-            <Select value={filterRecurrence} onValueChange={setFilterRecurrence}>
-              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Recorrência" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {definitions.filter(d => d.key !== "none").map((d) => <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("w-[160px] justify-start text-left font-normal", !filterDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-1.5 h-4 w-4" />
-                  {filterDate ? format(filterDate, "dd/MM/yyyy") : "Filtrar data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <div className="p-2 border-b">
-                  <Button variant="ghost" size="sm" className="w-full justify-start text-sm" onClick={() => setFilterDate(undefined)}>
-                    Todos os dias
-                  </Button>
+      {/* Search + Filter Button */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar tarefas..." className="pl-10" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="relative">
+              <Filter className="mr-1.5 h-4 w-4" />
+              Filtros
+              {activeFilterCount > 0 && (
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[360px] p-4" align="end">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {Object.entries(statusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {canManage && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Setor</label>
+                  <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Setor" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus className={cn("p-3 pointer-events-auto")} />
-              </PopoverContent>
-            </Popover>
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-                <X className="mr-1 h-4 w-4" /> Limpar
+              )}
+              {canManage && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Responsável</label>
+                  <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Responsável" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name || m.id}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Recorrência</label>
+                <Select value={filterRecurrence} onValueChange={setFilterRecurrence}>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Recorrência" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {definitions.filter(d => d.key !== "none").map((d) => <SelectItem key={d.key} value={d.key}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("w-full justify-start text-left font-normal", !filterDate && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-1.5 h-4 w-4" />
+                      {filterDate ? format(filterDate, "dd/MM/yyyy") : "Todos os dias"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <div className="p-2 border-b">
+                      <Button variant="ghost" size="sm" className="w-full justify-start text-sm" onClick={() => setFilterDate(undefined)}>
+                        Todos os dias
+                      </Button>
+                    </div>
+                    <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            {activeFilterCount > 0 && (
+              <Button variant="ghost" size="sm" className="w-full mt-3 text-muted-foreground" onClick={clearFilters}>
+                <X className="mr-1 h-4 w-4" /> Limpar filtros
               </Button>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </PopoverContent>
+        </Popover>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={clearFilters} title="Limpar todos os filtros">
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
       {/* Kanban View */}
       {viewMode === "kanban" && (
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
             {kanbanColumns.map((status) => {
               const columnTasks = filtered.filter((t) => {
                 if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending");
@@ -355,9 +387,9 @@ export default function Tasks() {
               const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : "bg-destructive";
               const isOverdueColumn = status === "overdue";
               return (
-                <div key={status} className="space-y-3">
-                  <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3">
-                    <div className={`h-2.5 w-2.5 rounded-full ${dotColor}`} />
+                <div key={status} className="space-y-2">
+                  <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2">
+                    <div className={`h-2 w-2 rounded-full ${dotColor}`} />
                     <h3 className="text-sm font-semibold">{statusLabels[status]}</h3>
                     <Badge variant="secondary" className="ml-auto text-xs">{columnTasks.length}</Badge>
                   </div>
@@ -367,12 +399,11 @@ export default function Tasks() {
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                         className={cn(
-                          "space-y-2 min-h-[100px] rounded-lg transition-all duration-300",
+                          "space-y-2 min-h-[80px] rounded-lg transition-all duration-300",
                           snapshot.isDraggingOver && !isOverdueColumn && "bg-primary/5 ring-2 ring-primary/20 animate-ring-pulse scale-[1.01]"
                         )}
                       >
                         {columnTasks.map((task, index) => {
-                          const deptName = getDepartmentName(task.department_id);
                           const isDragDisabled = role === "analyst" && task.assigned_to !== user?.id;
                           return (
                             <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={isDragDisabled}>
@@ -393,51 +424,33 @@ export default function Tasks() {
                                       )}
                                       onClick={() => !dragSnapshot.isDragging && openDetail(task)}
                                     >
-                                      <CardContent className="p-4 space-y-3">
+                                      <CardContent className="p-3 space-y-2">
                                         <h4 className="font-medium leading-tight text-sm">{task.title}</h4>
-                                        {task.description && (
-                                          <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
-                                        )}
-                                        <div className="flex flex-wrap items-center gap-1.5">
-                                          {deptName && (
-                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                              <Building2 className="mr-1 h-3 w-3" />{deptName}
-                                            </Badge>
-                                          )}
-                                          {getEffectiveRecurrenceType(task) !== "none" && (
-                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                              {getLabel(getEffectiveRecurrenceType(task))}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                          <div className="flex items-center gap-1">
+                                        <div className="flex items-center justify-between">
+                                          <Badge className={`${statusColors[task.status]} text-[10px] px-1.5 py-0`} variant="secondary">
+                                            {statusLabels[task.status]}
+                                          </Badge>
+                                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                             <User className="h-3 w-3" />
-                                            <span className="truncate max-w-[100px]">{getMemberName(task.assigned_to)}</span>
+                                            <span className="truncate max-w-[80px]">{getMemberName(task.assigned_to)}</span>
                                           </div>
-                                          {task.due_date && (
-                                            <div className="flex items-center gap-1">
-                                              <Clock className="h-3 w-3" />
-                                              <span>{formatStoredDate(task.due_date, "short-date")}</span>
-                                            </div>
-                                          )}
                                         </div>
                                         {/* Quick actions */}
                                         <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
                                           {role === "analyst" && task.assigned_to === user?.id && (
                                             <>
                                               {task.status === "pending" && (
-                                                <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
+                                                <Button size="sm" variant="ghost" className="h-6 text-[11px] flex-1" onClick={() => handleStatusChange(task.id, "in_progress")}>Iniciar</Button>
                                               )}
                                               {task.status === "in_progress" && (
-                                                <Button size="sm" variant="ghost" className="h-7 text-xs flex-1 text-success" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
+                                                <Button size="sm" variant="ghost" className="h-6 text-[11px] flex-1 text-success" onClick={() => handleStatusChange(task.id, "completed")}>Concluir</Button>
                                               )}
                                             </>
                                           )}
                                           {canManage && (
                                             <>
-                                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(task)}><Pencil className="h-3.5 w-3.5" /></Button>
-                                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(task.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(task)}><Pencil className="h-3 w-3" /></Button>
+                                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDelete(task.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                                             </>
                                           )}
                                         </div>
@@ -454,7 +467,7 @@ export default function Tasks() {
                         })}
                         {provided.placeholder}
                         {columnTasks.length === 0 && (
-                          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                          <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
                             Nenhuma tarefa
                           </div>
                         )}
