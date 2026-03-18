@@ -109,6 +109,11 @@ export default function Team() {
   const sendInvite = async () => {
     if (!inviteForm.email.trim() || !currentProfile?.company_id || !user) return;
     const departmentId = role === "manager" ? currentProfile.department_id : (inviteForm.department_id || null);
+    // Setor obrigatório para roles não-admin (exceto manager que herda)
+    if (inviteForm.role !== "admin" && role !== "manager" && !departmentId) {
+      toast({ variant: "destructive", title: "Erro", description: "Selecione um setor para este convite." });
+      return;
+    }
     const { data: inserted, error } = await supabase.from("invitations").insert({
       email: inviteForm.email.trim(),
       role: inviteForm.role as any,
@@ -368,7 +373,9 @@ export default function Team() {
             </div>
             {role !== "manager" && (
               <div className="space-y-2">
-                <Label>Setor</Label>
+                <Label>
+                  Setor{inviteForm.role !== "admin" && <span className="text-destructive ml-1">*</span>}
+                </Label>
                 <Select value={inviteForm.department_id} onValueChange={(v) => setInviteForm({ ...inviteForm, department_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
                   <SelectContent>
