@@ -373,7 +373,9 @@ export default function Team() {
             </div>
             {role !== "manager" && (
               <div className="space-y-2">
-                <Label>Setor</Label>
+                <Label>
+                  Setor{inviteForm.role !== "admin" && <span className="text-destructive ml-1">*</span>}
+                </Label>
                 <Select value={inviteForm.department_id} onValueChange={(v) => setInviteForm({ ...inviteForm, department_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Selecionar setor" /></SelectTrigger>
                   <SelectContent>
