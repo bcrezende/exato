@@ -513,7 +513,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Delay rate dialog */}
       <Dialog open={showDelayRate} onOpenChange={setShowDelayRate}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tarefas Iniciadas com Atraso</DialogTitle>
           </DialogHeader>
