@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
+import { localInputToISO, isoToLocalInput } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
