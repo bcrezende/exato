@@ -484,7 +484,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Avg time dialog */}
       <Dialog open={showAvgTime} onOpenChange={setShowAvgTime}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tarefas Concluídas — Tempo de Execução</DialogTitle>
           </DialogHeader>
