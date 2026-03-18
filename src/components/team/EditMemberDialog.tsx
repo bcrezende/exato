@@ -82,7 +82,7 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Editar Membro</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
