@@ -86,3 +86,18 @@ export function getTodayRange(): { start: string; end: string } {
     end: `${y}-${m}-${d}T23:59:59.999+00:00`,
   };
 }
+
+/**
+ * Get current local time as a fake-UTC ISO string for comparisons
+ * against stored dates.
+ */
+export function nowAsFakeUTC(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const h = String(now.getHours()).padStart(2, "0");
+  const mi = String(now.getMinutes()).padStart(2, "0");
+  const s = String(now.getSeconds()).padStart(2, "0");
+  return `${y}-${mo}-${d}T${h}:${mi}:${s}+00:00`;
+}
