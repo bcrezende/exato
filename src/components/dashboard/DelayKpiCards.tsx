@@ -151,6 +151,19 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
         </Tabs>
       </div>
 
+      <Card>
+        <CardContent className="pt-4 pb-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Resumo do período ({periodLabel})</span>
+            <span className={`text-sm font-bold ${
+              overduePct > 20 ? "text-destructive" : overduePct >= 10 ? "text-yellow-500" : "text-green-500"
+            }`}>
+              {overdueNow} atrasadas / {periodTaskCount} total = {overduePct.toFixed(1)}%
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
