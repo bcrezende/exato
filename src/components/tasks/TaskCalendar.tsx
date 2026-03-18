@@ -300,7 +300,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
                       >
                         <div className="truncate">{lt.task.title}</div>
                         {durationHours > 1 && lt.task.start_date && (
-                          <div className="text-[10px] opacity-70">{format(new Date(lt.task.start_date), "HH:mm")} - {lt.task.due_date ? format(new Date(lt.task.due_date), "HH:mm") : ""}</div>
+                          <div className="text-[10px] opacity-70">{formatStoredDate(lt.task.start_date, "time")} - {lt.task.due_date ? formatStoredDate(lt.task.due_date, "time") : ""}</div>
                         )}
                       </div>
                     );
