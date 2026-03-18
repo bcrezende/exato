@@ -23,6 +23,7 @@ export default function CriticalTasksList({
   upcomingTasks,
   getName,
   today,
+  onTaskClick,
 }: CriticalTasksListProps) {
   // Pick top 3 most critical: overdue first, then today pending/in_progress, then upcoming
   const candidates: (Task & { urgencyLabel: string })[] = [];
