@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { User, Building, RefreshCw, CalendarDays } from "lucide-react";
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
@@ -16,6 +17,7 @@ export default function Settings() {
   const { toast } = useToast();
   const [profileForm, setProfileForm] = useState({ full_name: "", phone: "", position: "" });
   const [companyName, setCompanyName] = useState("");
+  const [companyTimezone, setCompanyTimezone] = useState("America/Sao_Paulo");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -26,8 +28,11 @@ export default function Settings() {
 
   useEffect(() => {
     if (role === "admin" && profile?.company_id) {
-      supabase.from("companies").select("name").eq("id", profile.company_id).single().then(({ data }) => {
-        if (data) setCompanyName(data.name);
+      supabase.from("companies").select("name, timezone").eq("id", profile.company_id).single().then(({ data }) => {
+        if (data) {
+          setCompanyName(data.name);
+          setCompanyTimezone(data.timezone || "America/Sao_Paulo");
+        }
       });
     }
   }, [role, profile?.company_id]);
@@ -48,7 +53,7 @@ export default function Settings() {
   const saveCompany = async () => {
     if (!profile?.company_id) return;
     setSaving(true);
-    const { error } = await supabase.from("companies").update({ name: companyName.trim() }).eq("id", profile.company_id);
+    const { error } = await supabase.from("companies").update({ name: companyName.trim(), timezone: companyTimezone }).eq("id", profile.company_id);
     if (error) toast({ variant: "destructive", title: "Erro", description: error.message });
     else toast({ title: "Empresa atualizada!" });
     setSaving(false);
@@ -104,6 +109,22 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label>Nome da Empresa</Label>
                   <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Fuso Horário</Label>
+                  <Select value={companyTimezone} onValueChange={setCompanyTimezone}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="America/Sao_Paulo">Brasília (UTC-3)</SelectItem>
+                      <SelectItem value="America/Manaus">Manaus (UTC-4)</SelectItem>
+                      <SelectItem value="America/Rio_Branco">Rio Branco (UTC-5)</SelectItem>
+                      <SelectItem value="America/Noronha">Fernando de Noronha (UTC-2)</SelectItem>
+                      <SelectItem value="America/Fortaleza">Fortaleza (UTC-3)</SelectItem>
+                      <SelectItem value="America/Cuiaba">Cuiabá (UTC-4)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <Button onClick={saveCompany} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
               </CardContent>
