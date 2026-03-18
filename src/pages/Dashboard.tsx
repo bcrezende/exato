@@ -11,6 +11,7 @@ import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardFilters from "@/components/dashboard/DashboardFilters";
 import KpiCards from "@/components/dashboard/KpiCards";
+import DelayKpiCards from "@/components/dashboard/DelayKpiCards";
 import TodayProgress from "@/components/dashboard/TodayProgress";
 import OverdueSection from "@/components/dashboard/OverdueSection";
 import CriticalTasksList from "@/components/dashboard/CriticalTasksList";
@@ -191,6 +192,12 @@ function AdminManagerDashboard() {
         overdueTasks={overdueTasks}
         getName={getName}
         onTaskClick={handleTaskClick}
+      />
+
+      <DelayKpiCards
+        tasks={filteredTasks}
+        selectedDepartment={selectedDepartment}
+        selectedEmployee={selectedEmployee}
       />
 
       <div className="grid gap-5 lg:grid-cols-2">

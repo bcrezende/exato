@@ -538,6 +538,47 @@ export type Database = {
           },
         ]
       }
+      task_delays: {
+        Row: {
+          actual_time: string
+          created_at: string
+          delay_minutes: number
+          id: string
+          log_type: Database["public"]["Enums"]["delay_log_type"]
+          scheduled_time: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          actual_time?: string
+          created_at?: string
+          delay_minutes?: number
+          id?: string
+          log_type: Database["public"]["Enums"]["delay_log_type"]
+          scheduled_time: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          actual_time?: string
+          created_at?: string
+          delay_minutes?: number
+          id?: string
+          log_type?: Database["public"]["Enums"]["delay_log_type"]
+          scheduled_time?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_delays_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_time_logs: {
         Row: {
           action: string
@@ -738,6 +779,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "employee" | "coordinator" | "analyst"
+      delay_log_type: "inicio_atrasado" | "conclusao_atrasada"
       interval_unit: "day" | "week" | "month" | "year"
       task_priority: "low" | "medium" | "high"
       task_status: "pending" | "in_progress" | "completed" | "overdue"
@@ -869,6 +911,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "employee", "coordinator", "analyst"],
+      delay_log_type: ["inicio_atrasado", "conclusao_atrasada"],
       interval_unit: ["day", "week", "month", "year"],
       task_priority: ["low", "medium", "high"],
       task_status: ["pending", "in_progress", "completed", "overdue"],

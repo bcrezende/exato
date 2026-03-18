@@ -1,0 +1,207 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertTriangle, Clock, TrendingUp } from "lucide-react";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { format, subDays, startOfDay, endOfDay, startOfWeek, startOfMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface DelayRecord {
+  id: string;
+  task_id: string;
+  user_id: string;
+  log_type: string;
+  scheduled_time: string;
+  actual_time: string;
+  delay_minutes: number;
+  created_at: string;
+}
+
+interface DelayKpiCardsProps {
+  tasks: { id: string; status: string; start_date: string | null; due_date: string | null; department_id: string | null; assigned_to: string | null }[];
+  selectedDepartment: string | null;
+  selectedEmployee: string | null;
+}
+
+type Period = "hoje" | "semana" | "mes";
+
+export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmployee }: DelayKpiCardsProps) {
+  const [delays, setDelays] = useState<DelayRecord[]>([]);
+  const [period, setPeriod] = useState<Period>("semana");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data } = await supabase
+        .from("task_delays")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (data) setDelays(data as unknown as DelayRecord[]);
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  const periodStart = useMemo(() => {
+    const now = new Date();
+    if (period === "hoje") return startOfDay(now);
+    if (period === "semana") return startOfWeek(now, { weekStartsOn: 1 });
+    return startOfMonth(now);
+  }, [period]);
+
+  const filteredTaskIds = useMemo(() => {
+    let t = tasks;
+    if (selectedDepartment) t = t.filter(x => x.department_id === selectedDepartment);
+    if (selectedEmployee) t = t.filter(x => x.assigned_to === selectedEmployee);
+    return new Set(t.map(x => x.id));
+  }, [tasks, selectedDepartment, selectedEmployee]);
+
+  const periodDelays = useMemo(() => {
+    const startStr = periodStart.toISOString();
+    return delays.filter(d =>
+      d.created_at >= startStr && filteredTaskIds.has(d.task_id)
+    );
+  }, [delays, periodStart, filteredTaskIds]);
+
+  const { startDelayPct, completionDelayPct, lateStartCount, lateCompletionCount } = useMemo(() => {
+    let filteredTasks = tasks;
+    if (selectedDepartment) filteredTasks = filteredTasks.filter(t => t.department_id === selectedDepartment);
+    if (selectedEmployee) filteredTasks = filteredTasks.filter(t => t.assigned_to === selectedEmployee);
+
+    const startedOrDone = filteredTasks.filter(t => t.status === "in_progress" || t.status === "completed").length;
+    const completed = filteredTasks.filter(t => t.status === "completed").length;
+
+    const lateStarts = periodDelays.filter(d => d.log_type === "inicio_atrasado");
+    const lateCompletions = periodDelays.filter(d => d.log_type === "conclusao_atrasada");
+
+    return {
+      startDelayPct: startedOrDone > 0 ? Math.round((lateStarts.length / startedOrDone) * 100) : 0,
+      completionDelayPct: completed > 0 ? Math.round((lateCompletions.length / completed) * 100) : 0,
+      lateStartCount: lateStarts.length,
+      lateCompletionCount: lateCompletions.length,
+    };
+  }, [tasks, periodDelays, selectedDepartment, selectedEmployee]);
+
+  // Trend data: last 30 days
+  const trendData = useMemo(() => {
+    const now = new Date();
+    const days: { date: string; label: string; inicio: number; conclusao: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const day = subDays(now, i);
+      const dayStr = format(day, "yyyy-MM-dd");
+      const label = format(day, "dd/MM", { locale: ptBR });
+      const dayDelays = delays.filter(d =>
+        d.created_at.startsWith(dayStr) && filteredTaskIds.has(d.task_id)
+      );
+      days.push({
+        date: dayStr,
+        label,
+        inicio: dayDelays.filter(d => d.log_type === "inicio_atrasado").length,
+        conclusao: dayDelays.filter(d => d.log_type === "conclusao_atrasada").length,
+      });
+    }
+    return days;
+  }, [delays, filteredTaskIds]);
+
+  if (loading) return null;
+
+  const periodLabel = period === "hoje" ? "hoje" : period === "semana" ? "esta semana" : "este mês";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+          <AlertTriangle className="h-4 w-4" />
+          Monitoramento de Atrasos
+        </h3>
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
+          <TabsList className="h-7">
+            <TabsTrigger value="hoje" className="text-xs px-2 h-6">Hoje</TabsTrigger>
+            <TabsTrigger value="semana" className="text-xs px-2 h-6">Semana</TabsTrigger>
+            <TabsTrigger value="mes" className="text-xs px-2 h-6">Mês</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4 text-orange-500" />
+              Início Atrasado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{startDelayPct}%</div>
+            <p className="text-xs text-muted-foreground">
+              {lateStartCount} tarefa{lateStartCount !== 1 ? "s" : ""} {periodLabel}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Conclusão Atrasada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completionDelayPct}%</div>
+            <p className="text-xs text-muted-foreground">
+              {lateCompletionCount} tarefa{lateCompletionCount !== 1 ? "s" : ""} {periodLabel}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Tendência de Atrasos (30 dias)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer
+            config={{
+              inicio: { label: "Início atrasado", color: "hsl(var(--chart-4))" },
+              conclusao: { label: "Conclusão atrasada", color: "hsl(var(--chart-1))" },
+            }}
+            className="h-[200px] w-full"
+          >
+            <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+              <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area
+                type="monotone"
+                dataKey="inicio"
+                stackId="1"
+                stroke="var(--color-inicio)"
+                fill="var(--color-inicio)"
+                fillOpacity={0.3}
+              />
+              <Area
+                type="monotone"
+                dataKey="conclusao"
+                stackId="1"
+                stroke="var(--color-conclusao)"
+                fill="var(--color-conclusao)"
+                fillOpacity={0.3}
+              />
+            </AreaChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
