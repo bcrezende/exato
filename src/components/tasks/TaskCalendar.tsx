@@ -326,7 +326,7 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
 
   const layouted = useMemo(() => {
     const dayTasks = tasks.filter(t => {
-      const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
+      const start = toDisplayDate(t.start_date) || toDisplayDate(t.due_date);
       return start && isSameDay(start, currentDate);
     });
     return layoutOverlappingTasks(dayTasks);
