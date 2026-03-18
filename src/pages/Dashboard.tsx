@@ -3,27 +3,21 @@ import { nowAsFakeUTC } from "@/lib/date-utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import {
-  ListTodo, Clock, CheckCircle, AlertTriangle,
-  Calendar as CalendarIcon, Building2, User
-} from "lucide-react";
-import PodiumCard from "@/components/dashboard/PodiumCard";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Tables } from "@/integrations/supabase/types";
-import { format, differenceInDays, addDays, startOfDay } from "date-fns";
+import { format, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { Tables } from "@/integrations/supabase/types";
 import MyDayView from "@/components/dashboard/MyDayView";
-import PerformanceAnalytics from "@/components/dashboard/PerformanceAnalytics";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import DashboardFilters from "@/components/dashboard/DashboardFilters";
+import KpiCards from "@/components/dashboard/KpiCards";
+import TodayProgress from "@/components/dashboard/TodayProgress";
+import OverdueSection from "@/components/dashboard/OverdueSection";
+import CriticalTasksList from "@/components/dashboard/CriticalTasksList";
+import PerformanceTabs from "@/components/dashboard/PerformanceTabs";
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null; department_id: string | null };
-
-const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
 
 function AdminManagerDashboard() {
   const { user, role, profile } = useAuth();
@@ -37,6 +31,7 @@ function AdminManagerDashboard() {
   const [timeLogs, setTimeLogs] = useState<{ id: string; task_id: string; user_id: string; action: string; created_at: string }[]>([]);
   const [coordinatorAnalystIds, setCoordinatorAnalystIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -61,9 +56,7 @@ function AdminManagerDashboard() {
           .from("coordinator_analysts")
           .select("analyst_id")
           .eq("coordinator_id", user.id);
-        if (links) {
-          setCoordinatorAnalystIds(links.map(l => l.analyst_id));
-        }
+        if (links) setCoordinatorAnalystIds(links.map(l => l.analyst_id));
       }
       if (logsRes.data) setTimeLogs(logsRes.data);
       if (profilesRes.data) {
@@ -99,287 +92,113 @@ function AdminManagerDashboard() {
     return list.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
   }, [profilesList, selectedDepartment, role, profile, coordinatorAnalystIds]);
 
-  const { overdueTasks, todayTasks, upcomingDays } = useMemo(() => {
+  const { overdueTasks, todayTasks, upcomingTasks } = useMemo(() => {
     const overdue: Task[] = [];
     const todayList: Task[] = [];
-    const upcoming: { date: Date; label: string; tasks: Task[] }[] = [];
-
-    for (let i = 1; i <= 3; i++) {
-      const d = addDays(today, i);
-      upcoming.push({
-        date: d,
-        label: format(d, "EEEE, dd/MM", { locale: ptBR }),
-        tasks: [],
-      });
-    }
+    const upcoming: Task[] = [];
 
     filteredTasks.forEach((t) => {
       const isCompleted = t.status === "completed";
       const isInProgress = t.status === "in_progress";
       const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowAsFakeUTC()));
 
-      if (isOverdue && !isCompleted) {
-        overdue.push(t);
-        return;
-      }
-
-      if (isInProgress) {
-        todayList.push(t);
-        return;
-      }
+      if (isOverdue && !isCompleted) { overdue.push(t); return; }
+      if (isInProgress) { todayList.push(t); return; }
 
       const dueDay = t.due_date?.split("T")[0];
       const startDay = t.start_date?.split("T")[0];
 
-      if (dueDay === todayStr || startDay === todayStr) {
-        todayList.push(t);
-        return;
-      }
+      if (dueDay === todayStr || startDay === todayStr) { todayList.push(t); return; }
 
-      upcoming.forEach((u) => {
-        const uStr = format(u.date, "yyyy-MM-dd");
-        if (dueDay === uStr || startDay === uStr) {
-          u.tasks.push(t);
-        }
-      });
+      // Upcoming: next 3 days
+      for (let i = 1; i <= 3; i++) {
+        const uStr = format(addDays(today, i), "yyyy-MM-dd");
+        if (dueDay === uStr || startDay === uStr) { upcoming.push(t); break; }
+      }
     });
 
-    // Sort overdue: most days delayed first
     overdue.sort((a, b) => {
       const da = a.due_date ? new Date(a.due_date).getTime() : 0;
       const db = b.due_date ? new Date(b.due_date).getTime() : 0;
       return da - db;
     });
 
-    return { overdueTasks: overdue, todayTasks: todayList, upcomingDays: upcoming };
-  }, [filteredTasks, todayStr]);
+    return { overdueTasks: overdue, todayTasks: todayList, upcomingTasks: upcoming };
+  }, [filteredTasks, todayStr, today]);
 
   const todayCompleted = todayTasks.filter((t) => t.status === "completed").length;
   const todayTotal = todayTasks.length;
   const todayProgress = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
 
-  const todayPending = todayTasks.filter((t) => t.status === "pending");
-  const todayInProgress = todayTasks.filter((t) => t.status === "in_progress");
-  const todayDone = todayTasks.filter((t) => t.status === "completed");
-
   const getName = (id: string | null) => (id ? profiles.get(id) || "—" : "Não atribuída");
 
-  const getDaysLate = (dueDate: string | null) => {
-    if (!dueDate) return 0;
-    return Math.max(0, differenceInDays(today, new Date(dueDate)));
-  };
-
+  const roleLabel = role === "admin" ? "Visão geral da empresa" : role === "coordinator" ? "Visão da coordenação" : "Visão do setor";
+  const hasActiveFilters = !!selectedEmployee || (role === "admin" && !!selectedDepartment);
 
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            {format(today, "EEEE, dd 'de' MMMM", { locale: ptBR })} — {role === "admin" ? "Visão geral da empresa" : role === "coordinator" ? "Visão da coordenação" : "Visão do setor"}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => navigate("/my-day")} className="gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            Meu Dia
-          </Button>
-          <Select value={selectedDepartment ?? "all"} onValueChange={(v) => { setSelectedDepartment(v === "all" ? null : v); setSelectedEmployee(null); }}>
-            <SelectTrigger className="w-[200px]" disabled={role === "manager" || role === "coordinator"}>
-              <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
-              <SelectValue placeholder="Todos os setores" />
-            </SelectTrigger>
-            <SelectContent>
-              {role === "admin" && <SelectItem value="all">Todos os setores</SelectItem>}
-              {departments.map((d) => (
-                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectedEmployee ?? "all"} onValueChange={(v) => setSelectedEmployee(v === "all" ? null : v)}>
-            <SelectTrigger className="w-[200px]">
-              <User className="mr-2 h-4 w-4 text-muted-foreground" />
-              <SelectValue placeholder="Todos os analistas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os analistas</SelectItem>
-              {employeeOptions.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.full_name || "Sem nome"}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="space-y-5">
+      <DashboardHeader
+        today={today}
+        roleLabel={roleLabel}
+        onOpenFilters={() => setFiltersOpen(true)}
+        onNavigateMyDay={() => navigate("/my-day")}
+        hasActiveFilters={hasActiveFilters}
+      />
+
+      <DashboardFilters
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        departments={departments}
+        employeeOptions={employeeOptions}
+        selectedDepartment={selectedDepartment}
+        selectedEmployee={selectedEmployee}
+        onDepartmentChange={setSelectedDepartment}
+        onEmployeeChange={setSelectedEmployee}
+        role={role}
+      />
+
+      <KpiCards
+        todayTotal={todayTotal}
+        todayInProgress={todayTasks.filter(t => t.status === "in_progress").length}
+        todayCompleted={todayCompleted}
+        overdueCount={overdueTasks.length}
+        todayProgress={todayProgress}
+      />
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <TodayProgress
+          tasks={todayTasks}
+          todayCompleted={todayCompleted}
+          todayTotal={todayTotal}
+          todayProgress={todayProgress}
+          getName={getName}
+        />
+        <CriticalTasksList
+          overdueTasks={overdueTasks}
+          todayTasks={todayTasks}
+          upcomingTasks={upcomingTasks}
+          getName={getName}
+          today={today}
+        />
       </div>
 
-      {/* Stats Cards - Today focused */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tarefas Hoje</CardTitle>
-            <ListTodo className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todayTotal}</div>
-            <p className="text-xs text-muted-foreground">{todayProgress}% concluídas</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
-            <Clock className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todayInProgress.length}</div>
-            <p className="text-xs text-muted-foreground">sendo executadas agora</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Concluídas Hoje</CardTitle>
-            <CheckCircle className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todayCompleted}</div>
-            <p className="text-xs text-muted-foreground">de {todayTotal} do dia</p>
-          </CardContent>
-        </Card>
-        <Card className={overdueTasks.length > 0 ? "border-destructive/50 bg-destructive/5" : ""}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Atrasadas</CardTitle>
-            <AlertTriangle className={`h-4 w-4 ${overdueTasks.length > 0 ? "text-destructive" : "text-muted-foreground"}`} />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${overdueTasks.length > 0 ? "text-destructive" : ""}`}>{overdueTasks.length}</div>
-            <p className="text-xs text-muted-foreground">requerem atenção</p>
-          </CardContent>
-        </Card>
-      </div>
+      <OverdueSection overdueTasks={overdueTasks} getName={getName} today={today} />
 
-      {/* Monitoring sections */}
-      {/* 🔴 Overdue Section */}
-          {overdueTasks.length > 0 && (
-            <Card className="border-destructive/30">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                  <CardTitle className="text-lg">Atenção Imediata</CardTitle>
-                  <Badge variant="destructive" className="ml-auto">{overdueTasks.length}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {overdueTasks.map((task) => {
-                    const daysLate = getDaysLate(task.due_date);
-                    return (
-                      <div key={task.id} className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium truncate">{task.title}</h4>
-                          <p className="text-sm text-muted-foreground">{getName(task.assigned_to)}</p>
-                        </div>
-                        <Badge variant="destructive">
-                          {daysLate === 0 ? "Vence hoje" : `${daysLate}d atraso`}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* 📋 Today Section */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Tarefas de Hoje</CardTitle>
-                </div>
-                <span className="text-sm text-muted-foreground">{todayCompleted}/{todayTotal} concluídas</span>
-              </div>
-              {todayTotal > 0 && <Progress value={todayProgress} className="mt-2 h-2" />}
-            </CardHeader>
-            <CardContent>
-              {todayTotal === 0 ? (
-                <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-                  Nenhuma tarefa agendada para hoje
-                </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-3">
-                  {/* Pending */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-                      Pendentes ({todayPending.length})
-                    </div>
-                    {todayPending.map((t) => (
-                      <TaskMiniCard key={t.id} task={t} getName={getName} />
-                    ))}
-                  </div>
-                  {/* In Progress */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                      Em Andamento ({todayInProgress.length})
-                    </div>
-                    {todayInProgress.map((t) => (
-                      <TaskMiniCard key={t.id} task={t} getName={getName} />
-                    ))}
-                  </div>
-                  {/* Completed */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-success">
-                      <div className="h-2 w-2 rounded-full bg-success" />
-                      Concluídas ({todayDone.length})
-                    </div>
-                    {todayDone.map((t) => (
-                      <TaskMiniCard key={t.id} task={t} getName={getName} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 🏆 Podium */}
-          <PodiumCard
-            tasks={tasks}
-            timeLogs={timeLogs}
-            profiles={profilesList}
-            departments={departments}
-            selectedDepartment={selectedDepartment}
-          />
-
-      {/* Performance Analytics */}
-      <PerformanceAnalytics
+      <PerformanceTabs
         tasks={tasks}
         timeLogs={timeLogs}
+        profiles={profilesList}
         departments={departments}
         selectedDepartment={selectedDepartment}
-        profiles={profilesList}
       />
-    </div>
-  );
-}
-
-function TaskMiniCard({ task, getName }: { task: Task; getName: (id: string | null) => string }) {
-  return (
-    <div className="rounded-lg border p-3">
-      <h5 className="text-sm font-medium truncate">{task.title}</h5>
-      <span className="text-xs text-muted-foreground">{getName(task.assigned_to)}</span>
     </div>
   );
 }
 
 export default function Dashboard() {
   const { role } = useAuth();
-
-  if (role === "analyst") {
-    return <MyDayView />;
-  }
-
+  if (role === "analyst") return <MyDayView />;
   return <AdminManagerDashboard />;
 }
