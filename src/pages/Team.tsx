@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Send, Trash2, Users, Building, Pencil, Link2 } from "lucide-react";
+import { Send, Trash2, Building, Pencil, Search } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Tables } from "@/integrations/supabase/types";
 import EditMemberDialog from "@/components/team/EditMemberDialog";
@@ -40,17 +40,18 @@ export default function Team() {
   const [inviteForm, setInviteForm] = useState({ email: "", role: "analyst" as string, department_id: "" });
   const [editMember, setEditMember] = useState<(Profile & { user_roles?: UserRole[] }) | null>(null);
   const [editDept, setEditDept] = useState<Department | null>(null);
+  const [searchMembers, setSearchMembers] = useState("");
+  const [filterDept, setFilterDept] = useState("all");
+  const [filterRole, setFilterRole] = useState("all");
   const isAdmin = role === "admin";
 
   const fetchData = async () => {
     if (!currentProfile?.company_id) return;
 
     let membersQuery = supabase.from("profiles").select("*").eq("company_id", currentProfile.company_id);
-    // Managers should only see members from their own department
     if (role === "manager" && currentProfile.department_id) {
       membersQuery = membersQuery.eq("department_id", currentProfile.department_id);
     }
-    // Coordinators will filter after fetching (need coordinator_analysts data)
 
     const [membersRes, deptsRes, invitesRes, rolesRes, linksRes] = await Promise.all([
       membersQuery,
@@ -60,7 +61,6 @@ export default function Team() {
       supabase.from("coordinator_analysts").select("*").eq("company_id", currentProfile.company_id),
     ]);
 
-    // Coordinator needs to know their analysts
     let coordAnalystIds: Set<string> | null = null;
     if (role === "coordinator" && user) {
       const { data } = await supabase.from("coordinator_analysts").select("analyst_id").eq("coordinator_id", user.id);
@@ -109,7 +109,6 @@ export default function Team() {
   const sendInvite = async () => {
     if (!inviteForm.email.trim() || !currentProfile?.company_id || !user) return;
     const departmentId = (role === "manager" || role === "coordinator") ? currentProfile.department_id : (inviteForm.department_id || null);
-    // Setor obrigatório para roles não-admin (exceto manager que herda)
     if (inviteForm.role !== "admin" && role !== "manager" && role !== "coordinator" && !departmentId) {
       toast({ variant: "destructive", title: "Erro", description: "Selecione um setor para este convite." });
       return;
@@ -123,7 +122,6 @@ export default function Team() {
     }).select("id").single();
     if (error) { toast({ variant: "destructive", title: "Erro", description: error.message }); return; }
 
-    // Send invite email
     const { error: emailError } = await supabase.functions.invoke("send-invite-email", {
       body: { invitation_id: inserted.id },
     });
@@ -138,15 +136,21 @@ export default function Team() {
 
   const getInviteLink = (token: string) => `${window.location.origin}/accept-invite?token=${token}`;
 
+  // Filtered members
+  const filteredMembers = members.filter((m) => {
+    const matchesSearch = !searchMembers || m.full_name?.toLowerCase().includes(searchMembers.toLowerCase());
+    const matchesDept = filterDept === "all" || m.department_id === filterDept;
+    const memberRole = m.user_roles?.[0]?.role;
+    const matchesRole = filterRole === "all" || memberRole === filterRole;
+    return matchesSearch && matchesDept && matchesRole;
+  });
+
   if (loading) return <TeamSkeleton />;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Equipe & Setores</h1>
-          <p className="text-muted-foreground">Gerencie membros e setores da empresa</p>
-        </div>
+        <h1 className="text-3xl font-bold tracking-tight">Equipe</h1>
         <div className="flex gap-2">
           {isAdmin && (
             <Button variant="outline" onClick={() => setDeptModal(true)}>
@@ -163,29 +167,57 @@ export default function Team() {
 
       <Tabs defaultValue="members">
         <TabsList>
-          <TabsTrigger value="members"><Users className="mr-2 h-4 w-4" /> Membros</TabsTrigger>
-          <TabsTrigger value="departments"><Building className="mr-2 h-4 w-4" /> Setores</TabsTrigger>
-          <TabsTrigger value="invitations"><Send className="mr-2 h-4 w-4" /> Convites Pendentes</TabsTrigger>
+          <TabsTrigger value="members">Membros</TabsTrigger>
+          <TabsTrigger value="departments">Setores</TabsTrigger>
+          <TabsTrigger value="invitations">Convites</TabsTrigger>
           {(isAdmin || role === "manager") && (
-            <TabsTrigger value="links"><Link2 className="mr-2 h-4 w-4" /> Vínculos</TabsTrigger>
+            <TabsTrigger value="links">Vínculos</TabsTrigger>
           )}
         </TabsList>
 
         <TabsContent value="members">
           <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-4 space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome..."
+                    value={searchMembers}
+                    onChange={(e) => setSearchMembers(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={filterDept} onValueChange={setFilterDept}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Setor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os setores</SelectItem>
+                    {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={filterRole} onValueChange={setFilterRole}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Papel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os papéis</SelectItem>
+                    {Object.entries(roleLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
-                     <TableHead>Nome</TableHead>
-                     <TableHead>Cargo</TableHead>
-                     <TableHead>Papel</TableHead>
-                     <TableHead>Setor</TableHead>
-                     {isAdmin && <TableHead />}
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Papel</TableHead>
+                    <TableHead>Setor</TableHead>
+                    {isAdmin && <TableHead />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {members.map((m) => {
+                  {filteredMembers.map((m) => {
                     const dept = departments.find((d) => d.id === m.department_id);
                     const userRole = m.user_roles?.[0]?.role;
                     const initials = m.full_name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "U";
@@ -196,13 +228,9 @@ export default function Team() {
                             <Avatar className="h-8 w-8">
                               <AvatarFallback className="text-xs">{initials}</AvatarFallback>
                             </Avatar>
-                            <div>
-                              <p className="font-medium">{m.full_name || "Sem nome"}</p>
-                              <p className="text-xs text-muted-foreground">{m.phone || ""}</p>
-                            </div>
+                            <p className="font-medium">{m.full_name || "Sem nome"}</p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{m.position || "—"}</TableCell>
                         <TableCell>
                           {userRole && <Badge variant="secondary">{roleLabels[userRole]}</Badge>}
                         </TableCell>
@@ -217,6 +245,13 @@ export default function Team() {
                       </TableRow>
                     );
                   })}
+                  {filteredMembers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin ? 4 : 3} className="text-center text-muted-foreground py-8">
+                        Nenhum membro encontrado
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -229,32 +264,26 @@ export default function Team() {
               const deptMembers = members.filter((m) => m.department_id === dept.id);
               return (
                 <Card key={dept.id}>
-                  <CardHeader className="flex flex-row items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{dept.name}</CardTitle>
-                      <CardDescription>{deptMembers.length} membro(s)</CardDescription>
-                    </div>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg">
+                      {dept.name} <span className="text-sm font-normal text-muted-foreground ml-2">{deptMembers.length}</span>
+                    </CardTitle>
                     {isAdmin && (
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setEditDept(dept)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteDepartment(dept.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => setEditDept(dept)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     )}
                   </CardHeader>
                   <CardContent>
                     <div className="flex -space-x-2">
-                      {deptMembers.slice(0, 5).map((m) => (
+                      {deptMembers.slice(0, 3).map((m) => (
                         <Avatar key={m.id} className="h-8 w-8 border-2 border-card">
                           <AvatarFallback className="text-xs">{m.full_name?.[0] || "U"}</AvatarFallback>
                         </Avatar>
                       ))}
-                      {deptMembers.length > 5 && (
+                      {deptMembers.length > 3 && (
                         <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-muted text-xs">
-                          +{deptMembers.length - 5}
+                          +{deptMembers.length - 3}
                         </div>
                       )}
                     </div>
