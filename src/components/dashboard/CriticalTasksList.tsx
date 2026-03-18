@@ -12,6 +12,7 @@ interface CriticalTasksListProps {
   upcomingTasks: Task[];
   getName: (id: string | null) => string;
   today: Date;
+  onTaskClick?: (task: Task) => void;
 }
 
 const priorityLabels: Record<string, string> = { high: "Alta", medium: "Média", low: "Baixa" };
