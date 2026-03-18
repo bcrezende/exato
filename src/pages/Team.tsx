@@ -109,15 +109,23 @@ export default function Team() {
   const sendInvite = async () => {
     if (!inviteForm.email.trim() || !currentProfile?.company_id || !user) return;
     const departmentId = role === "manager" ? currentProfile.department_id : (inviteForm.department_id || null);
-    const { error } = await supabase.from("invitations").insert({
+    const { data: inserted, error } = await supabase.from("invitations").insert({
       email: inviteForm.email.trim(),
       role: inviteForm.role as any,
       department_id: departmentId,
       company_id: currentProfile.company_id,
       invited_by: user.id,
-    });
+    }).select("id").single();
     if (error) { toast({ variant: "destructive", title: "Erro", description: error.message }); return; }
-    toast({ title: "Convite enviado!", description: `Link de convite gerado para ${inviteForm.email}` });
+
+    // Send invite email
+    const { error: emailError } = await supabase.functions.invoke("send-invite-email", {
+      body: { invitation_id: inserted.id },
+    });
+    if (emailError) {
+      console.error("Failed to send invite email:", emailError);
+    }
+    toast({ title: "Convite enviado!", description: `Email de convite enviado para ${inviteForm.email}` });
     setInviteForm({ email: "", role: "analyst", department_id: "" });
     setInviteModal(false);
     fetchData();
