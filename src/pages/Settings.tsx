@@ -27,8 +27,11 @@ export default function Settings() {
 
   useEffect(() => {
     if (role === "admin" && profile?.company_id) {
-      supabase.from("companies").select("name").eq("id", profile.company_id).single().then(({ data }) => {
-        if (data) setCompanyName(data.name);
+      supabase.from("companies").select("name, timezone").eq("id", profile.company_id).single().then(({ data }) => {
+        if (data) {
+          setCompanyName(data.name);
+          setCompanyTimezone(data.timezone || "America/Sao_Paulo");
+        }
       });
     }
   }, [role, profile?.company_id]);
