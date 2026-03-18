@@ -389,13 +389,15 @@ Deno.serve(async (req) => {
 
       const newEnd = new Date(newStart.getTime() + durationMs);
 
+      const source = latestInstance || parent;
+
       const { error: insertError } = await supabase.from("tasks").insert({
-        title: parent.title,
-        description: parent.description,
-        priority: parent.priority,
+        title: source.title || parent.title,
+        description: source.description ?? parent.description,
+        priority: source.priority || parent.priority,
         status: "pending",
-        assigned_to: parent.assigned_to,
-        department_id: parent.department_id,
+        assigned_to: source.assigned_to || parent.assigned_to,
+        department_id: source.department_id || parent.department_id,
         company_id: parent.company_id,
         created_by: parent.created_by,
         recurrence_type: "none",
