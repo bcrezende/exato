@@ -55,7 +55,11 @@ export default function TodayProgress({
             {sorted.map((task) => {
               const cfg = statusConfig[task.status] || statusConfig.pending;
               return (
-                <div key={task.id} className="flex items-center gap-2.5 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors">
+                <div
+                  key={task.id}
+                  className="flex items-center gap-2.5 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => onTaskClick?.(task)}
+                >
                   <div className={`h-2 w-2 rounded-full shrink-0 ${cfg.color}`} />
                   <span className="text-sm font-medium truncate flex-1">{task.title}</span>
                   <span className="text-[11px] text-muted-foreground shrink-0">{getName(task.assigned_to)}</span>

@@ -210,6 +210,16 @@ function AdminManagerDashboard() {
         departments={departments}
         selectedDepartment={selectedDepartment}
       />
+
+      <TaskDetailModal
+        task={selectedTask}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        members={profilesList as any}
+        departments={departments as any}
+        onEdit={() => {}}
+        onRefresh={handleRefresh}
+      />
     </div>
   );
 }

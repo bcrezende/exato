@@ -42,7 +42,11 @@ export default function OverdueSection({ overdueTasks, getName, today, onTaskCli
             {overdueTasks.map((task) => {
               const daysLate = getDaysLate(task.due_date);
               return (
-                <div key={task.id} className="flex items-center gap-2.5 rounded-md border border-destructive/20 bg-destructive/5 p-2.5">
+                <div
+                  key={task.id}
+                  className="flex items-center gap-2.5 rounded-md border border-destructive/20 bg-destructive/5 p-2.5 cursor-pointer hover:bg-destructive/10 transition-colors"
+                  onClick={() => onTaskClick?.(task)}
+                >
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium truncate">{task.title}</h4>
                     <p className="text-[11px] text-muted-foreground">{getName(task.assigned_to)}</p>
