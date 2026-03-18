@@ -11,6 +11,7 @@ interface TodayProgressProps {
   todayTotal: number;
   todayProgress: number;
   getName: (id: string | null) => string;
+  onTaskClick?: (task: Task) => void;
 }
 
 const statusConfig: Record<string, { color: string; label: string }> = {
