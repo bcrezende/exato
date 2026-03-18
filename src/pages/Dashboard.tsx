@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { lazy, Suspense, useEffect, useState, useMemo } from "react";
 import { nowAsFakeUTC } from "@/lib/date-utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,8 +14,13 @@ import KpiCards from "@/components/dashboard/KpiCards";
 import TodayProgress from "@/components/dashboard/TodayProgress";
 import OverdueSection from "@/components/dashboard/OverdueSection";
 import CriticalTasksList from "@/components/dashboard/CriticalTasksList";
-import PerformanceTabs from "@/components/dashboard/PerformanceTabs";
+import PodiumCard from "@/components/dashboard/PodiumCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+
+const LazyPerformanceAnalytics = lazy(() => import("./dashboard/PerformanceAnalytics"));
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null; department_id: string | null };
