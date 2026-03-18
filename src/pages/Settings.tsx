@@ -110,6 +110,22 @@ export default function Settings() {
                   <Label>Nome da Empresa</Label>
                   <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
                 </div>
+                <div className="space-y-2">
+                  <Label>Fuso Horário</Label>
+                  <Select value={companyTimezone} onValueChange={setCompanyTimezone}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="America/Sao_Paulo">Brasília (UTC-3)</SelectItem>
+                      <SelectItem value="America/Manaus">Manaus (UTC-4)</SelectItem>
+                      <SelectItem value="America/Rio_Branco">Rio Branco (UTC-5)</SelectItem>
+                      <SelectItem value="America/Noronha">Fernando de Noronha (UTC-2)</SelectItem>
+                      <SelectItem value="America/Fortaleza">Fortaleza (UTC-3)</SelectItem>
+                      <SelectItem value="America/Cuiaba">Cuiabá (UTC-4)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button onClick={saveCompany} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
               </CardContent>
             </Card>
