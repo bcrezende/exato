@@ -13,7 +13,7 @@ interface OverdueSectionProps {
   onTaskClick?: (task: Task) => void;
 }
 
-export default function OverdueSection({ overdueTasks, getName, today }: OverdueSectionProps) {
+export default function OverdueSection({ overdueTasks, getName, today, onTaskClick }: OverdueSectionProps) {
   const getDaysLate = (dueDate: string | null) => {
     if (!dueDate) return 0;
     return Math.max(0, differenceInDays(today, new Date(dueDate)));
