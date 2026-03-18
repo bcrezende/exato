@@ -1,0 +1,1 @@
+ALTER TABLE public.companies ADD COLUMN timezone text NOT NULL DEFAULT 'America/Sao_Paulo';
