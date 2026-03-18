@@ -180,6 +180,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
           <div className="space-y-2">
             <Label>Título <span className="text-destructive">*</span></Label>
             <Input
+              autoFocus
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Título da tarefa"

@@ -46,7 +46,7 @@ export default function EditDepartmentDialog({ open, onOpenChange, department, o
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Nome do Setor</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} />
           </div>
         </div>
         <DialogFooter>

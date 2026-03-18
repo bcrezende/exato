@@ -179,7 +179,7 @@ export default function HolidaySettings() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Nome <span className="text-destructive">*</span></Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Natal" />
+              <Input autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Natal" />
             </div>
             <div className="space-y-2">
               <Label>Data <span className="text-destructive">*</span></Label>

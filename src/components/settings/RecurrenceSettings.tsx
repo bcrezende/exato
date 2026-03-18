@@ -232,7 +232,7 @@ export default function RecurrenceSettings() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Nome <span className="text-destructive">*</span></Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Dias úteis" />
+              <Input autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Dias úteis" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

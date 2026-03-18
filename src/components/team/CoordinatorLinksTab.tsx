@@ -137,7 +137,7 @@ export default function CoordinatorLinksTab({ members, links, companyId, onRefre
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Link2 className="h-5 w-5" /> Vincular Analista a Coordenador

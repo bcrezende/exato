@@ -271,7 +271,7 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
 
       {/* Modal de detalhes de atrasos */}
       <Dialog open={modalType !== null} onOpenChange={(open) => !open && setModalType(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {modalType === "inicio" ? (

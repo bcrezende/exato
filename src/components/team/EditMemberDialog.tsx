@@ -87,7 +87,7 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Nome Completo</Label>
-            <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+            <Input autoFocus value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
           </div>
           <div className="space-y-2">
             <Label>Cargo</Label>
