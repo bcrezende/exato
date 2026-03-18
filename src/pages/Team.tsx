@@ -108,9 +108,9 @@ export default function Team() {
 
   const sendInvite = async () => {
     if (!inviteForm.email.trim() || !currentProfile?.company_id || !user) return;
-    const departmentId = role === "manager" ? currentProfile.department_id : (inviteForm.department_id || null);
+    const departmentId = (role === "manager" || role === "coordinator") ? currentProfile.department_id : (inviteForm.department_id || null);
     // Setor obrigatório para roles não-admin (exceto manager que herda)
-    if (inviteForm.role !== "admin" && role !== "manager" && !departmentId) {
+    if (inviteForm.role !== "admin" && role !== "manager" && role !== "coordinator" && !departmentId) {
       toast({ variant: "destructive", title: "Erro", description: "Selecione um setor para este convite." });
       return;
     }
@@ -153,9 +153,11 @@ export default function Team() {
               <Building className="mr-2 h-4 w-4" /> Novo Setor
             </Button>
           )}
-          <Button onClick={() => setInviteModal(true)}>
-            <Send className="mr-2 h-4 w-4" /> Convidar
-          </Button>
+          {role !== "analyst" && (
+            <Button onClick={() => setInviteModal(true)}>
+              <Send className="mr-2 h-4 w-4" /> Convidar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -367,11 +369,11 @@ export default function Team() {
                   {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
                   {isAdmin && <SelectItem value="manager">Gerente</SelectItem>}
                   {(isAdmin || role === "manager") && <SelectItem value="coordinator">Coordenador</SelectItem>}
-                  <SelectItem value="analyst">Analista</SelectItem>
+                  {(isAdmin || role === "manager" || role === "coordinator") && <SelectItem value="analyst">Analista</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
-            {role !== "manager" && (
+            {role !== "manager" && role !== "coordinator" && (
               <div className="space-y-2">
                 <Label>
                   Setor{inviteForm.role !== "admin" && <span className="text-destructive ml-1">*</span>}
