@@ -33,6 +33,20 @@ function AdminManagerDashboard() {
   const [coordinatorAnalystIds, setCoordinatorAnalystIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setDetailOpen(true);
+  };
+
+  const handleRefresh = () => {
+    // Re-fetch tasks
+    supabase.from("tasks").select("*").order("due_date", { ascending: true }).then(({ data }) => {
+      if (data) setTasks(data);
+    });
+  };
 
   useEffect(() => {
     if (!user) return;
