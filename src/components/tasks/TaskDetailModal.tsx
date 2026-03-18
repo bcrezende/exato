@@ -175,7 +175,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
             {localTask.due_date && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span>Término: <span className="text-foreground font-medium">{format(new Date(localTask.due_date), "dd/MM/yyyy HH:mm")}</span></span>
+                <span>Término: <span className="text-foreground font-medium">{formatStoredDate(localTask.due_date)}</span></span>
               </div>
             )}
             {extTask.estimated_minutes && (

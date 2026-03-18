@@ -46,8 +46,11 @@ export default function MyDayView() {
   const fetchTasks = async () => {
     if (!user) return;
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    const todayStart = `${y}-${m}-${d}T00:00:00+00:00`;
+    const todayEnd = `${y}-${m}-${d}T23:59:59.999+00:00`;
     const { data } = await supabase
       .from("tasks")
       .select("*")

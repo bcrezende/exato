@@ -88,17 +88,35 @@ function parseBrDate(raw: string): Date | null {
 
 function resolveDate(rawValue: any, stringValue: string): string | undefined {
   if (rawValue instanceof Date && !isNaN(rawValue.getTime())) {
-    return rawValue.toISOString();
+    // Store as-is in fake UTC: take local components and format as +00:00
+    const y = rawValue.getFullYear();
+    const mo = String(rawValue.getMonth() + 1).padStart(2, "0");
+    const d = String(rawValue.getDate()).padStart(2, "0");
+    const h = String(rawValue.getHours()).padStart(2, "0");
+    const mi = String(rawValue.getMinutes()).padStart(2, "0");
+    return `${y}-${mo}-${d}T${h}:${mi}:00+00:00`;
   }
   if (typeof rawValue === "number") {
     const excelDate = XLSX.SSF.parse_date_code(rawValue);
     if (excelDate) {
-      return new Date(excelDate.y, excelDate.m - 1, excelDate.d, excelDate.H || 0, excelDate.M || 0).toISOString();
+      const y = excelDate.y;
+      const mo = String(excelDate.m).padStart(2, "0");
+      const d = String(excelDate.d).padStart(2, "0");
+      const h = String(excelDate.H || 0).padStart(2, "0");
+      const mi = String(excelDate.M || 0).padStart(2, "0");
+      return `${y}-${mo}-${d}T${h}:${mi}:00+00:00`;
     }
   }
   if (stringValue) {
-    const d = parseBrDate(stringValue);
-    if (d) return d.toISOString();
+    const parsed = parseBrDate(stringValue);
+    if (parsed) {
+      const y = parsed.getFullYear();
+      const mo = String(parsed.getMonth() + 1).padStart(2, "0");
+      const d = String(parsed.getDate()).padStart(2, "0");
+      const h = String(parsed.getHours()).padStart(2, "0");
+      const mi = String(parsed.getMinutes()).padStart(2, "0");
+      return `${y}-${mo}-${d}T${h}:${mi}:00+00:00`;
+    }
   }
   return undefined;
 }
