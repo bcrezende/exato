@@ -347,8 +347,8 @@ export default function Tasks() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
             {kanbanColumns.map((status) => {
               const columnTasks = filtered.filter((t) => {
-                if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < new Date().toISOString() && t.status === "pending");
-                if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < new Date().toISOString());
+                if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending");
+                if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < nowAsFakeUTC());
                 if (status === "in_progress") return t.status === "in_progress";
                 return t.status === status;
               });
