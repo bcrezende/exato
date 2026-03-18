@@ -16,6 +16,7 @@ import OverdueSection from "@/components/dashboard/OverdueSection";
 import CriticalTasksList from "@/components/dashboard/CriticalTasksList";
 import PodiumCard from "@/components/dashboard/PodiumCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -180,6 +181,37 @@ function AdminManagerDashboard() {
         role={role}
       />
 
+      <KpiCards
+        todayTotal={todayTotal}
+        todayInProgress={todayTasks.filter(t => t.status === "in_progress").length}
+        todayCompleted={todayCompleted}
+        overdueCount={overdueTasks.length}
+        todayProgress={todayProgress}
+        todayTasks={todayTasks}
+        overdueTasks={overdueTasks}
+        getName={getName}
+        onTaskClick={handleTaskClick}
+      />
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <TodayProgress
+          tasks={todayTasks}
+          todayCompleted={todayCompleted}
+          todayTotal={todayTotal}
+          todayProgress={todayProgress}
+          getName={getName}
+          onTaskClick={handleTaskClick}
+        />
+        <CriticalTasksList
+          overdueTasks={overdueTasks}
+          todayTasks={todayTasks}
+          upcomingTasks={upcomingTasks}
+          getName={getName}
+          today={today}
+          onTaskClick={handleTaskClick}
+        />
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start">
           <TabsTrigger value="hoje" className="gap-1.5">
@@ -194,36 +226,41 @@ function AdminManagerDashboard() {
           <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="hoje" className="mt-4 space-y-5">
-          <KpiCards
-            todayTotal={todayTotal}
-            todayInProgress={todayTasks.filter(t => t.status === "in_progress").length}
-            todayCompleted={todayCompleted}
-            overdueCount={overdueTasks.length}
-            todayProgress={todayProgress}
-            todayTasks={todayTasks}
-            overdueTasks={overdueTasks}
-            getName={getName}
-            onTaskClick={handleTaskClick}
-          />
-          <div className="grid gap-5 lg:grid-cols-2">
-            <TodayProgress
-              tasks={todayTasks}
-              todayCompleted={todayCompleted}
-              todayTotal={todayTotal}
-              todayProgress={todayProgress}
-              getName={getName}
-              onTaskClick={handleTaskClick}
-            />
-            <CriticalTasksList
-              overdueTasks={overdueTasks}
-              todayTasks={todayTasks}
-              upcomingTasks={upcomingTasks}
-              getName={getName}
-              today={today}
-              onTaskClick={handleTaskClick}
-            />
-          </div>
+        <TabsContent value="hoje" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Todas as Tarefas de Hoje</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {todayTasks.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma tarefa para hoje</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {[...todayTasks].sort((a, b) => {
+                    const order: Record<string, number> = { in_progress: 0, pending: 1, overdue: 2, completed: 3 };
+                    return (order[a.status] ?? 4) - (order[b.status] ?? 4);
+                  }).map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center gap-2.5 py-2 px-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => handleTaskClick(task)}
+                    >
+                      <div className={`h-2 w-2 rounded-full shrink-0 ${
+                        task.status === "completed" ? "bg-green-500" :
+                        task.status === "in_progress" ? "bg-primary" :
+                        task.status === "overdue" ? "bg-destructive" : "bg-muted-foreground"
+                      }`} />
+                      <span className="text-sm font-medium truncate flex-1">{task.title}</span>
+                      <Badge variant={task.priority === "high" ? "destructive" : "secondary"} className="text-[10px] h-5">
+                        {task.priority === "high" ? "Alta" : task.priority === "medium" ? "Média" : "Baixa"}
+                      </Badge>
+                      <span className="text-[11px] text-muted-foreground shrink-0">{getName(task.assigned_to)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="atrasadas" className="mt-4">
