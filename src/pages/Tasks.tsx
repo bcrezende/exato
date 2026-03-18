@@ -527,10 +527,10 @@ export default function Tasks() {
                       {getMemberName(task.assigned_to)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {task.start_date ? format(new Date(task.start_date), "dd/MM/yyyy HH:mm") : "—"}
+                      {formatStoredDate(task.start_date)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy HH:mm") : "—"}
+                      {formatStoredDate(task.due_date)}
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
