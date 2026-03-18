@@ -40,6 +40,7 @@ function AdminManagerDashboard() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("hoje");
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
