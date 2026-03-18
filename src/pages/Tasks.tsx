@@ -173,8 +173,8 @@ export default function Tasks() {
       if (filterDate && viewMode !== "calendar") {
         const dayStart = startOfDay(filterDate);
         const dayEnd = endOfDay(filterDate);
-        const taskStart = t.start_date ? parseISO(t.start_date) : null;
-        const taskDue = t.due_date ? parseISO(t.due_date) : null;
+        const taskStart = t.start_date ? toDisplayDate(t.start_date) : null;
+        const taskDue = t.due_date ? toDisplayDate(t.due_date) : null;
         const matchesDate = (taskStart && isWithinInterval(taskStart, { start: dayStart, end: dayEnd })) ||
           (taskDue && isWithinInterval(taskDue, { start: dayStart, end: dayEnd })) ||
           (taskStart && taskDue && taskStart <= dayEnd && taskDue >= dayStart);
