@@ -153,9 +153,11 @@ export default function Team() {
               <Building className="mr-2 h-4 w-4" /> Novo Setor
             </Button>
           )}
-          <Button onClick={() => setInviteModal(true)}>
-            <Send className="mr-2 h-4 w-4" /> Convidar
-          </Button>
+          {role !== "analyst" && (
+            <Button onClick={() => setInviteModal(true)}>
+              <Send className="mr-2 h-4 w-4" /> Convidar
+            </Button>
+          )}
         </div>
       </div>
 
