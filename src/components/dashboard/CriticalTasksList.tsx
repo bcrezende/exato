@@ -12,6 +12,7 @@ interface CriticalTasksListProps {
   upcomingTasks: Task[];
   getName: (id: string | null) => string;
   today: Date;
+  onTaskClick?: (task: Task) => void;
 }
 
 const priorityLabels: Record<string, string> = { high: "Alta", medium: "Média", low: "Baixa" };
@@ -22,6 +23,7 @@ export default function CriticalTasksList({
   upcomingTasks,
   getName,
   today,
+  onTaskClick,
 }: CriticalTasksListProps) {
   // Pick top 3 most critical: overdue first, then today pending/in_progress, then upcoming
   const candidates: (Task & { urgencyLabel: string })[] = [];
@@ -59,7 +61,11 @@ export default function CriticalTasksList({
         ) : (
           <div className="space-y-2">
             {candidates.map((task) => (
-              <div key={task.id} className="flex items-center gap-2.5 p-2.5 rounded-md border hover:bg-muted/50 transition-colors">
+              <div
+                key={task.id}
+                className="flex items-center gap-2.5 p-2.5 rounded-md border hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => onTaskClick?.(task)}
+              >
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-medium truncate">{task.title}</h4>
                   <p className="text-[11px] text-muted-foreground">{getName(task.assigned_to)}</p>

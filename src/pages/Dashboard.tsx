@@ -15,6 +15,7 @@ import TodayProgress from "@/components/dashboard/TodayProgress";
 import OverdueSection from "@/components/dashboard/OverdueSection";
 import CriticalTasksList from "@/components/dashboard/CriticalTasksList";
 import PerformanceTabs from "@/components/dashboard/PerformanceTabs";
+import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null; department_id: string | null };
@@ -32,6 +33,20 @@ function AdminManagerDashboard() {
   const [coordinatorAnalystIds, setCoordinatorAnalystIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setDetailOpen(true);
+  };
+
+  const handleRefresh = () => {
+    // Re-fetch tasks
+    supabase.from("tasks").select("*").order("due_date", { ascending: true }).then(({ data }) => {
+      if (data) setTasks(data);
+    });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -174,6 +189,7 @@ function AdminManagerDashboard() {
           todayTotal={todayTotal}
           todayProgress={todayProgress}
           getName={getName}
+          onTaskClick={handleTaskClick}
         />
         <CriticalTasksList
           overdueTasks={overdueTasks}
@@ -181,10 +197,11 @@ function AdminManagerDashboard() {
           upcomingTasks={upcomingTasks}
           getName={getName}
           today={today}
+          onTaskClick={handleTaskClick}
         />
       </div>
 
-      <OverdueSection overdueTasks={overdueTasks} getName={getName} today={today} />
+      <OverdueSection overdueTasks={overdueTasks} getName={getName} today={today} onTaskClick={handleTaskClick} />
 
       <PerformanceTabs
         tasks={tasks}
@@ -192,6 +209,16 @@ function AdminManagerDashboard() {
         profiles={profilesList}
         departments={departments}
         selectedDepartment={selectedDepartment}
+      />
+
+      <TaskDetailModal
+        task={selectedTask}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        members={profilesList as any}
+        departments={departments as any}
+        onEdit={() => {}}
+        onRefresh={handleRefresh}
       />
     </div>
   );
