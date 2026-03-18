@@ -242,7 +242,17 @@ Deno.serve(async (req) => {
         ));
         weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay());
 
-        for (const wd of def.weekdays) {
+      // Fetch latest instance for content inheritance (weekday flow)
+      const { data: weekdayLatest } = await supabase
+        .from("tasks")
+        .select("title, description, priority, assigned_to, department_id")
+        .eq("recurrence_parent_id", parent.id)
+        .order("start_date", { ascending: false })
+        .limit(1);
+
+      const wdSource = weekdayLatest?.[0] || parent;
+
+      for (const wd of def.weekdays) {
           const candidate = new Date(weekStart);
           candidate.setUTCDate(candidate.getUTCDate() + wd);
           candidate.setUTCHours(startHour, startMin, 0, 0);
@@ -270,12 +280,12 @@ Deno.serve(async (req) => {
           const endISO = new Date(candidate.getTime() + durationMs).toISOString();
 
           const { error: insertError } = await supabase.from("tasks").insert({
-            title: parent.title,
-            description: parent.description,
-            priority: parent.priority,
+            title: wdSource.title || parent.title,
+            description: wdSource.description ?? parent.description,
+            priority: wdSource.priority || parent.priority,
             status: "pending",
-            assigned_to: parent.assigned_to,
-            department_id: parent.department_id,
+            assigned_to: wdSource.assigned_to || parent.assigned_to,
+            department_id: wdSource.department_id || parent.department_id,
             company_id: parent.company_id,
             created_by: parent.created_by,
             recurrence_type: "none",
@@ -301,7 +311,7 @@ Deno.serve(async (req) => {
       // Standard interval-based logic
       const { data: latestInstances } = await supabase
         .from("tasks")
-        .select("start_date, due_date, status")
+        .select("start_date, due_date, status, title, description, priority, assigned_to, department_id")
         .eq("recurrence_parent_id", parent.id)
         .order("start_date", { ascending: false })
         .limit(1);
@@ -379,13 +389,15 @@ Deno.serve(async (req) => {
 
       const newEnd = new Date(newStart.getTime() + durationMs);
 
+      const source = latestInstance || parent;
+
       const { error: insertError } = await supabase.from("tasks").insert({
-        title: parent.title,
-        description: parent.description,
-        priority: parent.priority,
+        title: source.title || parent.title,
+        description: source.description ?? parent.description,
+        priority: source.priority || parent.priority,
         status: "pending",
-        assigned_to: parent.assigned_to,
-        department_id: parent.department_id,
+        assigned_to: source.assigned_to || parent.assigned_to,
+        department_id: source.department_id || parent.department_id,
         company_id: parent.company_id,
         created_by: parent.created_by,
         recurrence_type: "none",
