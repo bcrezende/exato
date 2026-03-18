@@ -10,6 +10,7 @@ interface OverdueSectionProps {
   overdueTasks: Task[];
   getName: (id: string | null) => string;
   today: Date;
+  onTaskClick?: (task: Task) => void;
 }
 
 export default function OverdueSection({ overdueTasks, getName, today }: OverdueSectionProps) {
