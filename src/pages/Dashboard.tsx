@@ -188,12 +188,12 @@ function AdminManagerDashboard() {
             Meu Dia
           </Button>
           <Select value={selectedDepartment ?? "all"} onValueChange={(v) => { setSelectedDepartment(v === "all" ? null : v); setSelectedEmployee(null); }}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-[200px]" disabled={role === "manager" || role === "coordinator"}>
               <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
               <SelectValue placeholder="Todos os setores" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os setores</SelectItem>
+              {role === "admin" && <SelectItem value="all">Todos os setores</SelectItem>}
               {departments.map((d) => (
                 <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
               ))}
