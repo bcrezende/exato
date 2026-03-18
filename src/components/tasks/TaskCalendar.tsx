@@ -357,7 +357,7 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
                   >
                     <div className="truncate font-semibold">{lt.task.title}</div>
                     {lt.task.start_date && (
-                      <div className="text-[10px] opacity-70">{format(new Date(lt.task.start_date), "HH:mm")} - {lt.task.due_date ? format(new Date(lt.task.due_date), "HH:mm") : ""}</div>
+                      <div className="text-[10px] opacity-70">{formatStoredDate(lt.task.start_date, "time")} - {lt.task.due_date ? formatStoredDate(lt.task.due_date, "time") : ""}</div>
                     )}
                     {lt.task.description && durationHours >= 2 && <div className="truncate text-[10px] opacity-60 mt-0.5">{lt.task.description}</div>}
                   </div>
