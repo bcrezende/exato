@@ -52,7 +52,7 @@ export default function Settings() {
   const saveCompany = async () => {
     if (!profile?.company_id) return;
     setSaving(true);
-    const { error } = await supabase.from("companies").update({ name: companyName.trim() }).eq("id", profile.company_id);
+    const { error } = await supabase.from("companies").update({ name: companyName.trim(), timezone: companyTimezone }).eq("id", profile.company_id);
     if (error) toast({ variant: "destructive", title: "Erro", description: error.message });
     else toast({ title: "Empresa atualizada!" });
     setSaving(false);
