@@ -201,7 +201,7 @@ function AdminManagerDashboard() {
         />
       </div>
 
-      <OverdueSection overdueTasks={overdueTasks} getName={getName} today={today} />
+      <OverdueSection overdueTasks={overdueTasks} getName={getName} today={today} onTaskClick={handleTaskClick} />
 
       <PerformanceTabs
         tasks={tasks}
