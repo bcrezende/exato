@@ -451,7 +451,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Bottleneck tasks dialog */}
       <Dialog open={showBottlenecks} onOpenChange={setShowBottlenecks}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tarefas com Gargalo</DialogTitle>
           </DialogHeader>
