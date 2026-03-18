@@ -224,7 +224,7 @@ export default function PodiumCard({ tasks, timeLogs, profiles, departments, sel
       </Card>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-400" />

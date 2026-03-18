@@ -366,12 +366,12 @@ export default function Team() {
 
       {/* Department Modal */}
       <Dialog open={deptModal} onOpenChange={setDeptModal}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Novo Setor</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Nome do Setor</Label>
-              <Input value={deptName} onChange={(e) => setDeptName(e.target.value)} placeholder="Ex: Financeiro" />
+              <Input autoFocus value={deptName} onChange={(e) => setDeptName(e.target.value)} placeholder="Ex: Financeiro" />
             </div>
           </div>
           <DialogFooter>
@@ -383,12 +383,12 @@ export default function Team() {
 
       {/* Invite Modal */}
       <Dialog open={inviteModal} onOpenChange={setInviteModal}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Convidar Membro</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} placeholder="email@exemplo.com" />
+              <Input autoFocus type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} placeholder="email@exemplo.com" />
             </div>
             <div className="space-y-2">
               <Label>Papel</Label>

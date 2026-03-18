@@ -104,7 +104,7 @@ export default function KpiCards({
       </div>
 
       <Dialog open={!!modalData} onOpenChange={(open) => !open && setModalData(null)}>
-        <DialogContent className="max-w-lg max-h-[70vh] flex flex-col">
+        <DialogContent className="sm:max-w-lg max-h-[70vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{modalData?.title}</DialogTitle>
           </DialogHeader>

@@ -451,7 +451,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Bottleneck tasks dialog */}
       <Dialog open={showBottlenecks} onOpenChange={setShowBottlenecks}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tarefas com Gargalo</DialogTitle>
           </DialogHeader>
@@ -484,7 +484,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Avg time dialog */}
       <Dialog open={showAvgTime} onOpenChange={setShowAvgTime}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tarefas Concluídas — Tempo de Execução</DialogTitle>
           </DialogHeader>
@@ -513,7 +513,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Delay rate dialog */}
       <Dialog open={showDelayRate} onOpenChange={setShowDelayRate}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tarefas Iniciadas com Atraso</DialogTitle>
           </DialogHeader>
@@ -540,7 +540,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
 
       {/* Completed last 7 days dialog */}
       <Dialog open={showCompleted7d} onOpenChange={setShowCompleted7d}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tarefas Concluídas — Últimos 7 Dias</DialogTitle>
           </DialogHeader>
