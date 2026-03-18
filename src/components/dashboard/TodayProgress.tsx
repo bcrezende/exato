@@ -27,6 +27,7 @@ export default function TodayProgress({
   todayTotal,
   todayProgress,
   getName,
+  onTaskClick,
 }: TodayProgressProps) {
   // Sort: in_progress first, then pending, then completed
   const sorted = [...tasks].sort((a, b) => {
