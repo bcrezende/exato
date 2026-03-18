@@ -232,7 +232,7 @@ export default function Tasks() {
     // Verificar permissão: analista só pode arrastar as próprias
     if (role === "analyst" && task.assigned_to !== user?.id) return;
     // Determinar status atual real da tarefa
-    const currentEffective = task.status === "pending" && task.due_date && task.due_date < new Date().toISOString() ? "overdue" : task.status;
+    const currentEffective = task.status === "pending" && task.due_date && task.due_date < nowAsFakeUTC() ? "overdue" : task.status;
     if (newStatus === currentEffective) return; // sem mudança
     await handleStatusChange(draggableId, newStatus);
   }, [tasks, role, user?.id, handleStatusChange]);
