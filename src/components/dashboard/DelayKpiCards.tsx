@@ -70,10 +70,28 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
     );
   }, [delays, periodStart, filteredTaskIds]);
 
-  const { startDelayPct, completionDelayPct, lateStartCount, lateCompletionCount } = useMemo(() => {
+  const { startDelayPct, completionDelayPct, lateStartCount, lateCompletionCount, overdueNow, periodTaskCount, overduePct } = useMemo(() => {
     let filteredTasks = tasks;
     if (selectedDepartment) filteredTasks = filteredTasks.filter(t => t.department_id === selectedDepartment);
     if (selectedEmployee) filteredTasks = filteredTasks.filter(t => t.assigned_to === selectedEmployee);
+
+    const now = new Date();
+    const startStr = periodStart.toISOString();
+
+    // Tasks in the selected period (by start_date or due_date falling within range)
+    const tasksInPeriod = filteredTasks.filter(t => {
+      const ref = t.due_date || t.start_date;
+      return ref && ref >= startStr.slice(0, 10);
+    });
+
+    // Currently overdue: pending/in_progress with due_date in the past
+    const overdue = tasksInPeriod.filter(t =>
+      (t.status === "pending" || t.status === "in_progress") &&
+      t.due_date && new Date(t.due_date) < now
+    );
+
+    const totalInPeriod = tasksInPeriod.length;
+    const pct = totalInPeriod > 0 ? (overdue.length / totalInPeriod) * 100 : 0;
 
     const startedOrDone = filteredTasks.filter(t => t.status === "in_progress" || t.status === "completed").length;
     const completed = filteredTasks.filter(t => t.status === "completed").length;
@@ -86,8 +104,11 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
       completionDelayPct: completed > 0 ? Math.round((lateCompletions.length / completed) * 100) : 0,
       lateStartCount: lateStarts.length,
       lateCompletionCount: lateCompletions.length,
+      overdueNow: overdue.length,
+      periodTaskCount: totalInPeriod,
+      overduePct: pct,
     };
-  }, [tasks, periodDelays, selectedDepartment, selectedEmployee]);
+  }, [tasks, periodDelays, selectedDepartment, selectedEmployee, periodStart]);
 
   // Trend data: last 30 days
   const trendData = useMemo(() => {
@@ -129,6 +150,19 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
           </TabsList>
         </Tabs>
       </div>
+
+      <Card>
+        <CardContent className="pt-4 pb-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Resumo do período ({periodLabel})</span>
+            <span className={`text-sm font-bold ${
+              overduePct > 20 ? "text-destructive" : overduePct >= 10 ? "text-yellow-500" : "text-green-500"
+            }`}>
+              {overdueNow} atrasadas / {periodTaskCount} total = {overduePct.toFixed(1)}%
+            </span>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
