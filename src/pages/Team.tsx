@@ -110,7 +110,7 @@ export default function Team() {
     if (!inviteForm.email.trim() || !currentProfile?.company_id || !user) return;
     const departmentId = (role === "manager" || role === "coordinator") ? currentProfile.department_id : (inviteForm.department_id || null);
     // Setor obrigatório para roles não-admin (exceto manager que herda)
-    if (inviteForm.role !== "admin" && role !== "manager" && !departmentId) {
+    if (inviteForm.role !== "admin" && role !== "manager" && role !== "coordinator" && !departmentId) {
       toast({ variant: "destructive", title: "Erro", description: "Selecione um setor para este convite." });
       return;
     }
