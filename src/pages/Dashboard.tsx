@@ -180,6 +180,10 @@ function AdminManagerDashboard() {
         todayCompleted={todayCompleted}
         overdueCount={overdueTasks.length}
         todayProgress={todayProgress}
+        todayTasks={todayTasks}
+        overdueTasks={overdueTasks}
+        getName={getName}
+        onTaskClick={handleTaskClick}
       />
 
       <div className="grid gap-5 lg:grid-cols-2">
