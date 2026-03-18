@@ -17,7 +17,7 @@ type Task = Tables<"tasks">;
 function formatTime(dateStr: string | null) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
-  return format(d, "HH:mm");
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
 }
 
 function AnimatedCounter({ value }: { value: number }) {
