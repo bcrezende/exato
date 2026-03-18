@@ -6,60 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ── Timezone helpers ──
+// ── Date helpers ──
+// Dates in the DB are stored as "fake UTC" — the UTC components represent
+// local time. So getUTCHours() on a stored date gives the user's local hour.
 
-/** Get UTC offset in ms for a given IANA timezone at a specific UTC date */
-function getTimezoneOffsetMs(timezone: string, utcDate: Date): number {
-  try {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(utcDate);
-    const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || "0");
-    const localDate = new Date(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
-    // Difference between what the local clock shows and UTC
-    const utcMs = Date.UTC(utcDate.getUTCFullYear(), utcDate.getUTCMonth(), utcDate.getUTCDate(),
-      utcDate.getUTCHours(), utcDate.getUTCMinutes(), utcDate.getUTCSeconds());
-    const localMs = localDate.getTime();
-    return localMs - utcMs;
-  } catch {
-    // Fallback to -3h (BRT)
-    return -3 * 60 * 60 * 1000;
-  }
-}
-
-/** Convert a UTC Date to "local" Date object in the given timezone (shifts the instant so getHours/getDay return local values) */
-function toLocalDate(utcDate: Date, timezone: string): Date {
-  const offset = getTimezoneOffsetMs(timezone, utcDate);
-  return new Date(utcDate.getTime() + offset);
-}
-
-/** Build a UTC Date from local year/month/day/hour/min in a timezone */
-function fromLocalToUtc(localYear: number, localMonth: number, localDay: number, localHour: number, localMin: number, timezone: string): Date {
-  // Create a rough UTC date, then find the offset at that point
-  const rough = new Date(Date.UTC(localYear, localMonth, localDay, localHour, localMin, 0));
-  const offset = getTimezoneOffsetMs(timezone, rough);
-  return new Date(rough.getTime() - offset);
-}
-
-// ── Date validation helpers ──
-
-function isWeekend(localDate: Date): boolean {
-  const day = localDate.getDay();
+function isWeekend(d: Date): boolean {
+  const day = d.getUTCDay();
   return day === 0 || day === 6;
 }
 
-function isHoliday(localDate: Date, holidays: { holiday_date: string; is_recurring: boolean }[]): boolean {
-  const month = localDate.getMonth() + 1;
-  const dayOfMonth = localDate.getDate();
-  const year = localDate.getFullYear();
+function isHoliday(d: Date, holidays: { holiday_date: string; is_recurring: boolean }[]): boolean {
+  const month = d.getUTCMonth() + 1;
+  const dayOfMonth = d.getUTCDate();
+  const year = d.getUTCFullYear();
   const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(dayOfMonth).padStart(2, "0")}`;
 
   for (const h of holidays) {
@@ -73,36 +32,40 @@ function isHoliday(localDate: Date, holidays: { holiday_date: string; is_recurri
   return false;
 }
 
-/** Advance a LOCAL date to next valid day, then return it. All day checks use getDay() which works because the Date is already shifted to local. */
 function adjustToValidDay(
-  localDate: Date,
+  d: Date,
   weekdays: number[] | null,
   skipWeekends: boolean,
   skipHolidays: boolean,
   holidays: { holiday_date: string; is_recurring: boolean }[]
 ): Date {
-  let adjusted = new Date(localDate);
+  let adjusted = new Date(d);
   let safety = 0;
   while (safety < 365) {
-    const day = adjusted.getDay();
+    const day = adjusted.getUTCDay();
     if (skipWeekends && isWeekend(adjusted)) {
-      adjusted.setDate(adjusted.getDate() + 1);
+      adjusted.setUTCDate(adjusted.getUTCDate() + 1);
       safety++;
       continue;
     }
     if (weekdays && weekdays.length > 0 && !weekdays.includes(day)) {
-      adjusted.setDate(adjusted.getDate() + 1);
+      adjusted.setUTCDate(adjusted.getUTCDate() + 1);
       safety++;
       continue;
     }
     if (skipHolidays && isHoliday(adjusted, holidays)) {
-      adjusted.setDate(adjusted.getDate() + 1);
+      adjusted.setUTCDate(adjusted.getUTCDate() + 1);
       safety++;
       continue;
     }
     break;
   }
   return adjusted;
+}
+
+/** Build a fake-UTC ISO string from components */
+function fakeUtcISO(year: number, month: number, day: number, hour: number, min: number): string {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}:00+00:00`;
 }
 
 Deno.serve(async (req) => {
@@ -126,28 +89,49 @@ Deno.serve(async (req) => {
     }
 
     // === Step 1: Mark overdue tasks ===
+    // Compare against current local time in fake-UTC format
+    const nowFakeUtc = fakeUtcISO(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
+    // But edge function runs in UTC, and we need to check per-company timezone...
+    // Actually, since dates are stored as fake UTC representing local time,
+    // we need the company timezone to know what "now" is in local time.
+    // For the overdue check, we'll fetch tasks per company.
+
     let overdueCount = 0;
     if (!singleParentId) {
-      const { data: overdueTasks, error: overdueError } = await supabase
-        .from("tasks")
-        .select("id")
-        .lt("due_date", now.toISOString())
-        .in("status", ["pending"]);
+      // Get all companies with their timezones
+      const { data: companies } = await supabase.from("companies").select("id, timezone");
+      
+      for (const company of (companies || [])) {
+        const tz = company.timezone || "America/Sao_Paulo";
+        // Get current local time in the company's timezone
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", second: "2-digit",
+          hour12: false,
+        });
+        const parts = formatter.formatToParts(now);
+        const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || "0");
+        const localNowISO = fakeUtcISO(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"));
 
-      if (overdueError) {
-        console.error("Error fetching overdue tasks:", overdueError);
-      } else if (overdueTasks && overdueTasks.length > 0) {
-        const overdueIds = overdueTasks.map((t: { id: string }) => t.id);
-        const { error: updateError } = await supabase
+        const { data: overdueTasks } = await supabase
           .from("tasks")
-          .update({ status: "overdue" })
-          .in("id", overdueIds);
+          .select("id")
+          .eq("company_id", company.id)
+          .lt("due_date", localNowISO)
+          .in("status", ["pending"]);
 
-        if (updateError) {
-          console.error("Error marking tasks as overdue:", updateError);
-        } else {
-          overdueCount = overdueIds.length;
-          console.log(`Marked ${overdueIds.length} tasks as overdue`);
+        if (overdueTasks && overdueTasks.length > 0) {
+          const overdueIds = overdueTasks.map((t: { id: string }) => t.id);
+          const { error: updateError } = await supabase
+            .from("tasks")
+            .update({ status: "overdue" })
+            .in("id", overdueIds);
+
+          if (!updateError) {
+            overdueCount += overdueIds.length;
+            console.log(`Marked ${overdueIds.length} tasks as overdue for company ${company.id}`);
+          }
         }
       }
     }
@@ -192,7 +176,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch holidays for all relevant companies
+    // Fetch holidays
     const companyIds = [...new Set(parentTasks.map(t => t.company_id))];
     const { data: allHolidays } = await supabase
       .from("company_holidays")
@@ -208,7 +192,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch company timezones
+    // Fetch company timezones for "now" comparison
     const { data: companiesData } = await supabase
       .from("companies")
       .select("id, timezone")
@@ -229,64 +213,62 @@ Deno.serve(async (req) => {
       const holidays = holidaysMap.get(parent.company_id) || [];
       const tz = tzMap.get(parent.company_id) || "America/Sao_Paulo";
 
-      // For weekday-based recurrences, generate multiple instances per week
-      if (def && def.weekdays && def.weekdays.length > 0 && def.interval_unit === "week") {
-        const nowLocal = toLocalDate(now, tz);
-        // Get start of week (Sunday) in local time
-        const weekStartLocal = new Date(nowLocal);
-        weekStartLocal.setDate(weekStartLocal.getDate() - weekStartLocal.getDay());
-        weekStartLocal.setHours(0, 0, 0, 0);
+      // Get "now" in company local time for comparison
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+        hour12: false,
+      });
+      const parts = formatter.formatToParts(now);
+      const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || "0");
+      const nowLocalFakeUtc = new Date(Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second")));
 
-        // Get the original local hour/minute from parent start_date
-        const parentStartUtc = parent.start_date ? new Date(parent.start_date) : now;
-        const parentStartLocal = toLocalDate(parentStartUtc, tz);
-        const parentEndUtc = parent.due_date ? new Date(parent.due_date) : null;
-        const durationMs = parentEndUtc && parent.start_date
-          ? parentEndUtc.getTime() - new Date(parent.start_date).getTime()
+      // For weekday-based recurrences
+      if (def && def.weekdays && def.weekdays.length > 0 && def.interval_unit === "week") {
+        // Since dates are fake UTC, we work directly with UTC methods
+        const parentStart = parent.start_date ? new Date(parent.start_date) : nowLocalFakeUtc;
+        const parentEnd = parent.due_date ? new Date(parent.due_date) : null;
+        const durationMs = parentEnd && parent.start_date
+          ? parentEnd.getTime() - new Date(parent.start_date).getTime()
           : 3600000;
 
-        const startHour = parentStartLocal.getHours();
-        const startMin = parentStartLocal.getMinutes();
+        const startHour = parentStart.getUTCHours();
+        const startMin = parentStart.getUTCMinutes();
+
+        // Get start of current week (Sunday) in fake UTC
+        const weekStart = new Date(Date.UTC(
+          nowLocalFakeUtc.getUTCFullYear(), nowLocalFakeUtc.getUTCMonth(), nowLocalFakeUtc.getUTCDate()
+        ));
+        weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay());
 
         for (const wd of def.weekdays) {
-          // Calculate candidate in local time
-          const candidateLocal = new Date(weekStartLocal);
-          candidateLocal.setDate(candidateLocal.getDate() + wd);
-          candidateLocal.setHours(startHour, startMin, 0, 0);
+          const candidate = new Date(weekStart);
+          candidate.setUTCDate(candidate.getUTCDate() + wd);
+          candidate.setUTCHours(startHour, startMin, 0, 0);
 
-          // Skip if candidate local time is in the past
-          if (candidateLocal < nowLocal) continue;
+          // Skip past
+          if (candidate < nowLocalFakeUtc) continue;
+          // Skip holidays
+          if (def.skip_holidays && isHoliday(candidate, holidays)) continue;
 
-          // Skip holidays if configured
-          if (def.skip_holidays && isHoliday(candidateLocal, holidays)) continue;
-
-          // Convert candidate local back to UTC for storage
-          const candidateUtc = fromLocalToUtc(
-            candidateLocal.getFullYear(), candidateLocal.getMonth(), candidateLocal.getDate(),
-            startHour, startMin, tz
-          );
-
-          // Check if instance already exists for this day
-          const startOfDayUtc = fromLocalToUtc(
-            candidateLocal.getFullYear(), candidateLocal.getMonth(), candidateLocal.getDate(),
-            0, 0, tz
-          );
-          const endOfDayUtc = fromLocalToUtc(
-            candidateLocal.getFullYear(), candidateLocal.getMonth(), candidateLocal.getDate(),
-            23, 59, tz
-          );
+          // Check existing
+          const dayStart = fakeUtcISO(candidate.getUTCFullYear(), candidate.getUTCMonth(), candidate.getUTCDate(), 0, 0);
+          const dayEnd = fakeUtcISO(candidate.getUTCFullYear(), candidate.getUTCMonth(), candidate.getUTCDate(), 23, 59);
 
           const { data: existing } = await supabase
             .from("tasks")
             .select("id")
             .eq("recurrence_parent_id", parent.id)
-            .gte("start_date", startOfDayUtc.toISOString())
-            .lte("start_date", endOfDayUtc.toISOString())
+            .gte("start_date", dayStart)
+            .lte("start_date", dayEnd)
             .limit(1);
 
           if (existing && existing.length > 0) continue;
 
-          const newEndUtc = new Date(candidateUtc.getTime() + durationMs);
+          const candidateISO = candidate.toISOString();
+          const endISO = new Date(candidate.getTime() + durationMs).toISOString();
+
           const { error: insertError } = await supabase.from("tasks").insert({
             title: parent.title,
             description: parent.description,
@@ -298,8 +280,8 @@ Deno.serve(async (req) => {
             created_by: parent.created_by,
             recurrence_type: "none",
             recurrence_parent_id: parent.id,
-            start_date: candidateUtc.toISOString(),
-            due_date: newEndUtc.toISOString(),
+            start_date: candidateISO,
+            due_date: endISO,
           });
 
           if (insertError) {
@@ -310,7 +292,7 @@ Deno.serve(async (req) => {
             }
           } else {
             createdCount++;
-            console.log(`Created weekday instance for parent ${parent.id}: day=${wd} — ${candidateUtc.toISOString()} (local ${startHour}:${String(startMin).padStart(2,"0")} ${tz})`);
+            console.log(`Created weekday instance for parent ${parent.id}: day=${wd}`);
           }
         }
         continue;
@@ -331,88 +313,71 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const refStartUtc = reference.start_date ? new Date(reference.start_date) : now;
-      const refEndUtc = reference.due_date ? new Date(reference.due_date) : null;
-      const durationMs = refEndUtc && reference.start_date
-        ? refEndUtc.getTime() - new Date(reference.start_date).getTime()
+      const refStart = reference.start_date ? new Date(reference.start_date) : nowLocalFakeUtc;
+      const refEnd = reference.due_date ? new Date(reference.due_date) : null;
+      const durationMs = refEnd && reference.start_date
+        ? refEnd.getTime() - new Date(reference.start_date).getTime()
         : 3600000;
 
-      // Convert reference start to local time to preserve hour/minute
-      const refStartLocal = toLocalDate(refStartUtc, tz);
-      const localHour = refStartLocal.getHours();
-      const localMin = refStartLocal.getMinutes();
+      const hour = refStart.getUTCHours();
+      const min = refStart.getUTCMinutes();
 
-      // Calculate next start in LOCAL time
-      let newStartLocal: Date;
+      // Calculate next start using UTC methods (since fake UTC = local)
+      let newStart = new Date(refStart);
 
       if (def && def.interval_value > 0) {
-        newStartLocal = new Date(refStartLocal);
         switch (def.interval_unit) {
           case "day":
-            newStartLocal.setDate(newStartLocal.getDate() + def.interval_value);
+            newStart.setUTCDate(newStart.getUTCDate() + def.interval_value);
             break;
           case "week":
-            newStartLocal.setDate(newStartLocal.getDate() + (def.interval_value * 7));
+            newStart.setUTCDate(newStart.getUTCDate() + (def.interval_value * 7));
             break;
           case "month":
-            newStartLocal.setMonth(newStartLocal.getMonth() + def.interval_value);
+            newStart.setUTCMonth(newStart.getUTCMonth() + def.interval_value);
             break;
           case "year":
-            newStartLocal.setFullYear(newStartLocal.getFullYear() + def.interval_value);
+            newStart.setUTCFullYear(newStart.getUTCFullYear() + def.interval_value);
             break;
           default:
             continue;
         }
       } else {
-        // Fallback legacy logic
-        newStartLocal = new Date(refStartLocal);
         switch (parent.recurrence_type) {
-          case "daily": newStartLocal.setDate(newStartLocal.getDate() + 1); break;
-          case "weekly": newStartLocal.setDate(newStartLocal.getDate() + 7); break;
-          case "monthly": newStartLocal.setMonth(newStartLocal.getMonth() + 1); break;
-          case "yearly": newStartLocal.setFullYear(newStartLocal.getFullYear() + 1); break;
+          case "daily": newStart.setUTCDate(newStart.getUTCDate() + 1); break;
+          case "weekly": newStart.setUTCDate(newStart.getUTCDate() + 7); break;
+          case "monthly": newStart.setUTCMonth(newStart.getUTCMonth() + 1); break;
+          case "yearly": newStart.setUTCFullYear(newStart.getUTCFullYear() + 1); break;
           default: continue;
         }
       }
 
-      // Preserve original local hour/minute after month/year shifts
-      newStartLocal.setHours(localHour, localMin, 0, 0);
+      // Preserve original hour/minute
+      newStart.setUTCHours(hour, min, 0, 0);
 
-      // Apply weekday/weekend/holiday adjustments (all in local time)
+      // Adjust for weekdays/weekends/holidays
       const skipWeekends = def?.skip_weekends || false;
       const skipHolidays = def?.skip_holidays || false;
       const weekdays = def?.weekdays || null;
 
-      newStartLocal = adjustToValidDay(newStartLocal, weekdays, skipWeekends, skipHolidays, holidays);
-      // Preserve hour after adjustment
-      newStartLocal.setHours(localHour, localMin, 0, 0);
+      newStart = adjustToValidDay(newStart, weekdays, skipWeekends, skipHolidays, holidays);
+      newStart.setUTCHours(hour, min, 0, 0);
 
-      // Convert back to UTC for storage
-      const newStartUtc = fromLocalToUtc(
-        newStartLocal.getFullYear(), newStartLocal.getMonth(), newStartLocal.getDate(),
-        localHour, localMin, tz
-      );
-      const newEndUtc = new Date(newStartUtc.getTime() + durationMs);
-
-      // Check if instance already exists (check by local day range)
-      const startOfDayUtc = fromLocalToUtc(
-        newStartLocal.getFullYear(), newStartLocal.getMonth(), newStartLocal.getDate(),
-        0, 0, tz
-      );
-      const endOfDayUtc = fromLocalToUtc(
-        newStartLocal.getFullYear(), newStartLocal.getMonth(), newStartLocal.getDate(),
-        23, 59, tz
-      );
+      // Check if instance already exists
+      const dayStartISO = fakeUtcISO(newStart.getUTCFullYear(), newStart.getUTCMonth(), newStart.getUTCDate(), 0, 0);
+      const dayEndISO = fakeUtcISO(newStart.getUTCFullYear(), newStart.getUTCMonth(), newStart.getUTCDate(), 23, 59);
 
       const { data: existing } = await supabase
         .from("tasks")
         .select("id")
         .eq("recurrence_parent_id", parent.id)
-        .gte("start_date", startOfDayUtc.toISOString())
-        .lte("start_date", endOfDayUtc.toISOString())
+        .gte("start_date", dayStartISO)
+        .lte("start_date", dayEndISO)
         .limit(1);
 
       if (existing && existing.length > 0) continue;
+
+      const newEnd = new Date(newStart.getTime() + durationMs);
 
       const { error: insertError } = await supabase.from("tasks").insert({
         title: parent.title,
@@ -425,8 +390,8 @@ Deno.serve(async (req) => {
         created_by: parent.created_by,
         recurrence_type: "none",
         recurrence_parent_id: parent.id,
-        start_date: newStartUtc.toISOString(),
-        due_date: newEndUtc.toISOString(),
+        start_date: newStart.toISOString(),
+        due_date: newEnd.toISOString(),
       });
 
       if (insertError) {
@@ -437,7 +402,7 @@ Deno.serve(async (req) => {
         }
       } else {
         createdCount++;
-        console.log(`Created instance for parent ${parent.id}: ${parent.title} — UTC: ${newStartUtc.toISOString()} (local ${localHour}:${String(localMin).padStart(2,"0")} ${tz})`);
+        console.log(`Created instance for parent ${parent.id}: ${parent.title} — ${newStart.toISOString()}`);
       }
     }
 

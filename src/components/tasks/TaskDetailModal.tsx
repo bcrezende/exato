@@ -10,6 +10,7 @@ import { updateTaskStatus } from "@/lib/task-utils";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star } from "lucide-react";
 import { format } from "date-fns";
+import { formatStoredDate } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -169,13 +170,13 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
             {localTask.start_date && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <CalendarDays className="h-4 w-4 shrink-0" />
-                <span>Início: <span className="text-foreground font-medium">{format(new Date(localTask.start_date), "dd/MM/yyyy HH:mm")}</span></span>
+                <span>Início: <span className="text-foreground font-medium">{formatStoredDate(localTask.start_date)}</span></span>
               </div>
             )}
             {localTask.due_date && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span>Término: <span className="text-foreground font-medium">{format(new Date(localTask.due_date), "dd/MM/yyyy HH:mm")}</span></span>
+                <span>Término: <span className="text-foreground font-medium">{formatStoredDate(localTask.due_date)}</span></span>
               </div>
             )}
             {extTask.estimated_minutes && (

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toDisplayDate, formatStoredDate } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -49,11 +50,11 @@ interface LayoutedTask {
 }
 
 function getTaskTimeRange(t: Task): { startHour: number; endHour: number } {
-  const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
+  const start = toDisplayDate(t.start_date) || toDisplayDate(t.due_date);
   if (!start) return { startHour: 0, endHour: 1 };
   const startHour = start.getHours() + start.getMinutes() / 60;
   if (!t.start_date || !t.due_date) return { startHour, endHour: startHour + 1 };
-  const end = new Date(t.due_date);
+  const end = toDisplayDate(t.due_date)!;
   const endHour = end.getHours() + end.getMinutes() / 60;
   return { startHour, endHour: Math.max(endHour, startHour + 0.5) };
 }
@@ -183,8 +184,8 @@ function MonthView({ currentDate, tasks, onTaskClick, onDayClick }: { currentDat
 
   const getTasksForDay = (day: Date) =>
     tasks.filter(t => {
-      const start = t.start_date ? new Date(t.start_date) : null;
-      const end = t.due_date ? new Date(t.due_date) : null;
+      const start = toDisplayDate(t.start_date);
+      const end = toDisplayDate(t.due_date);
       if (start && end) return day >= new Date(start.toDateString()) && day <= new Date(end.toDateString());
       if (end) return isSameDay(day, end);
       if (start) return isSameDay(day, start);
@@ -255,7 +256,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
     const map = new Map<number, LayoutedTask[]>();
     weekDays.forEach((day, i) => {
       const dayTasks = tasks.filter(t => {
-        const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
+        const start = toDisplayDate(t.start_date) || toDisplayDate(t.due_date);
         return start && isSameDay(start, day);
       });
       map.set(i, layoutOverlappingTasks(dayTasks));
@@ -299,7 +300,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
                       >
                         <div className="truncate">{lt.task.title}</div>
                         {durationHours > 1 && lt.task.start_date && (
-                          <div className="text-[10px] opacity-70">{format(new Date(lt.task.start_date), "HH:mm")} - {lt.task.due_date ? format(new Date(lt.task.due_date), "HH:mm") : ""}</div>
+                          <div className="text-[10px] opacity-70">{formatStoredDate(lt.task.start_date, "time")} - {lt.task.due_date ? formatStoredDate(lt.task.due_date, "time") : ""}</div>
                         )}
                       </div>
                     );
@@ -325,7 +326,7 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
 
   const layouted = useMemo(() => {
     const dayTasks = tasks.filter(t => {
-      const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
+      const start = toDisplayDate(t.start_date) || toDisplayDate(t.due_date);
       return start && isSameDay(start, currentDate);
     });
     return layoutOverlappingTasks(dayTasks);
@@ -356,7 +357,7 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
                   >
                     <div className="truncate font-semibold">{lt.task.title}</div>
                     {lt.task.start_date && (
-                      <div className="text-[10px] opacity-70">{format(new Date(lt.task.start_date), "HH:mm")} - {lt.task.due_date ? format(new Date(lt.task.due_date), "HH:mm") : ""}</div>
+                      <div className="text-[10px] opacity-70">{formatStoredDate(lt.task.start_date, "time")} - {lt.task.due_date ? formatStoredDate(lt.task.due_date, "time") : ""}</div>
                     )}
                     {lt.task.description && durationHours >= 2 && <div className="truncate text-[10px] opacity-60 mt-0.5">{lt.task.description}</div>}
                   </div>

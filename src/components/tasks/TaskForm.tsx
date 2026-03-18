@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
+import { localInputToISO, isoToLocalInput } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -138,8 +139,8 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       assigned_to: assignedTo,
       status: editing ? form.status as any : "pending" as any,
       priority: "medium" as any,
-      start_date: form.start_date ? new Date(form.start_date).toISOString() : null,
-      due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
+      start_date: localInputToISO(form.start_date),
+      due_date: localInputToISO(form.due_date),
       recurrence_type: form.recurrence_type as any,
       company_id: currentProfile.company_id,
       department_id: departmentId,
@@ -336,16 +337,8 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   );
 }
 
-function toLocalDatetimeString(isoString: string | null): string {
-  if (!isoString) return "";
-  const d = new Date(isoString);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
+// Now uses isoToLocalInput from date-utils (reads UTC components)
+const toLocalDatetimeString = isoToLocalInput;
 
 function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tables<"profiles"> | null) {
   if (task) {

@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { startOfDay, endOfDay, isWithinInterval, parseISO } from "date-fns";
+import { toDisplayDate, formatStoredDate, getTodayRange, nowAsFakeUTC } from "@/lib/date-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
@@ -172,8 +173,8 @@ export default function Tasks() {
       if (filterDate && viewMode !== "calendar") {
         const dayStart = startOfDay(filterDate);
         const dayEnd = endOfDay(filterDate);
-        const taskStart = t.start_date ? parseISO(t.start_date) : null;
-        const taskDue = t.due_date ? parseISO(t.due_date) : null;
+        const taskStart = t.start_date ? toDisplayDate(t.start_date) : null;
+        const taskDue = t.due_date ? toDisplayDate(t.due_date) : null;
         const matchesDate = (taskStart && isWithinInterval(taskStart, { start: dayStart, end: dayEnd })) ||
           (taskDue && isWithinInterval(taskDue, { start: dayStart, end: dayEnd })) ||
           (taskStart && taskDue && taskStart <= dayEnd && taskDue >= dayStart);
@@ -231,7 +232,7 @@ export default function Tasks() {
     // Verificar permissão: analista só pode arrastar as próprias
     if (role === "analyst" && task.assigned_to !== user?.id) return;
     // Determinar status atual real da tarefa
-    const currentEffective = task.status === "pending" && task.due_date && task.due_date < new Date().toISOString() ? "overdue" : task.status;
+    const currentEffective = task.status === "pending" && task.due_date && task.due_date < nowAsFakeUTC() ? "overdue" : task.status;
     if (newStatus === currentEffective) return; // sem mudança
     await handleStatusChange(draggableId, newStatus);
   }, [tasks, role, user?.id, handleStatusChange]);
@@ -346,8 +347,8 @@ export default function Tasks() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
             {kanbanColumns.map((status) => {
               const columnTasks = filtered.filter((t) => {
-                if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < new Date().toISOString() && t.status === "pending");
-                if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < new Date().toISOString());
+                if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending");
+                if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < nowAsFakeUTC());
                 if (status === "in_progress") return t.status === "in_progress";
                 return t.status === status;
               });
@@ -417,7 +418,7 @@ export default function Tasks() {
                                           {task.due_date && (
                                             <div className="flex items-center gap-1">
                                               <Clock className="h-3 w-3" />
-                                              <span>{format(new Date(task.due_date), "dd/MM")}</span>
+                                              <span>{formatStoredDate(task.due_date, "short-date")}</span>
                                             </div>
                                           )}
                                         </div>
@@ -526,10 +527,10 @@ export default function Tasks() {
                       {getMemberName(task.assigned_to)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {task.start_date ? format(new Date(task.start_date), "dd/MM/yyyy HH:mm") : "—"}
+                      {formatStoredDate(task.start_date)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy HH:mm") : "—"}
+                      {formatStoredDate(task.due_date)}
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
