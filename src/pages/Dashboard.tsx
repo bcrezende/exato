@@ -189,6 +189,7 @@ function AdminManagerDashboard() {
           todayTotal={todayTotal}
           todayProgress={todayProgress}
           getName={getName}
+          onTaskClick={handleTaskClick}
         />
         <CriticalTasksList
           overdueTasks={overdueTasks}
@@ -196,6 +197,7 @@ function AdminManagerDashboard() {
           upcomingTasks={upcomingTasks}
           getName={getName}
           today={today}
+          onTaskClick={handleTaskClick}
         />
       </div>
 
