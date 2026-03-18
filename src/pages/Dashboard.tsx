@@ -116,7 +116,7 @@ function AdminManagerDashboard() {
     filteredTasks.forEach((t) => {
       const isCompleted = t.status === "completed";
       const isInProgress = t.status === "in_progress";
-      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < new Date().toISOString()));
+      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowAsFakeUTC()));
 
       if (isOverdue && !isCompleted) {
         overdue.push(t);
