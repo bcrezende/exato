@@ -256,7 +256,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
     const map = new Map<number, LayoutedTask[]>();
     weekDays.forEach((day, i) => {
       const dayTasks = tasks.filter(t => {
-        const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
+        const start = toDisplayDate(t.start_date) || toDisplayDate(t.due_date);
         return start && isSameDay(start, day);
       });
       map.set(i, layoutOverlappingTasks(dayTasks));
