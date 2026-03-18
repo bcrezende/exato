@@ -16,6 +16,7 @@ export default function Settings() {
   const { toast } = useToast();
   const [profileForm, setProfileForm] = useState({ full_name: "", phone: "", position: "" });
   const [companyName, setCompanyName] = useState("");
+  const [companyTimezone, setCompanyTimezone] = useState("America/Sao_Paulo");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
