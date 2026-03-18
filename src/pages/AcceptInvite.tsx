@@ -67,8 +67,9 @@ export default function AcceptInvite() {
       return;
     }
 
-    toast({ title: "Bem-vindo!", description: "Sua conta foi criada com sucesso." });
-    navigate("/dashboard");
+    await supabase.auth.signOut();
+    toast({ title: "Conta criada!", description: "Faça login com suas credenciais para acessar o sistema." });
+    navigate("/login");
     setSubmitting(false);
   };
 
