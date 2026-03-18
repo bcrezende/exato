@@ -15,6 +15,7 @@ import TodayProgress from "@/components/dashboard/TodayProgress";
 import OverdueSection from "@/components/dashboard/OverdueSection";
 import CriticalTasksList from "@/components/dashboard/CriticalTasksList";
 import PerformanceTabs from "@/components/dashboard/PerformanceTabs";
+import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null; department_id: string | null };
