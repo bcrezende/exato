@@ -180,46 +180,80 @@ function AdminManagerDashboard() {
         role={role}
       />
 
-      <KpiCards
-        todayTotal={todayTotal}
-        todayInProgress={todayTasks.filter(t => t.status === "in_progress").length}
-        todayCompleted={todayCompleted}
-        overdueCount={overdueTasks.length}
-        todayProgress={todayProgress}
-        todayTasks={todayTasks}
-        overdueTasks={overdueTasks}
-        getName={getName}
-        onTaskClick={handleTaskClick}
-      />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="hoje" className="gap-1.5">
+            📅 Hoje
+            {todayTotal > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[11px]">{todayTotal}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="atrasadas" className="gap-1.5">
+            ⚠️ Atrasadas
+            {overdueTasks.length > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[11px]">{overdueTasks.length}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="equipe">🏆 Equipe</TabsTrigger>
+          <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <TodayProgress
-          tasks={todayTasks}
-          todayCompleted={todayCompleted}
-          todayTotal={todayTotal}
-          todayProgress={todayProgress}
-          getName={getName}
-          onTaskClick={handleTaskClick}
-        />
-        <CriticalTasksList
-          overdueTasks={overdueTasks}
-          todayTasks={todayTasks}
-          upcomingTasks={upcomingTasks}
-          getName={getName}
-          today={today}
-          onTaskClick={handleTaskClick}
-        />
-      </div>
+        <TabsContent value="hoje" className="mt-4 space-y-5">
+          <KpiCards
+            todayTotal={todayTotal}
+            todayInProgress={todayTasks.filter(t => t.status === "in_progress").length}
+            todayCompleted={todayCompleted}
+            overdueCount={overdueTasks.length}
+            todayProgress={todayProgress}
+            todayTasks={todayTasks}
+            overdueTasks={overdueTasks}
+            getName={getName}
+            onTaskClick={handleTaskClick}
+          />
+          <div className="grid gap-5 lg:grid-cols-2">
+            <TodayProgress
+              tasks={todayTasks}
+              todayCompleted={todayCompleted}
+              todayTotal={todayTotal}
+              todayProgress={todayProgress}
+              getName={getName}
+              onTaskClick={handleTaskClick}
+            />
+            <CriticalTasksList
+              overdueTasks={overdueTasks}
+              todayTasks={todayTasks}
+              upcomingTasks={upcomingTasks}
+              getName={getName}
+              today={today}
+              onTaskClick={handleTaskClick}
+            />
+          </div>
+        </TabsContent>
 
-      <OverdueSection overdueTasks={overdueTasks} getName={getName} today={today} onTaskClick={handleTaskClick} />
+        <TabsContent value="atrasadas" className="mt-4">
+          <OverdueSection overdueTasks={overdueTasks} getName={getName} today={today} onTaskClick={handleTaskClick} />
+        </TabsContent>
 
-      <PerformanceTabs
-        tasks={tasks}
-        timeLogs={timeLogs}
-        profiles={profilesList}
-        departments={departments}
-        selectedDepartment={selectedDepartment}
-      />
+        <TabsContent value="equipe" className="mt-4">
+          <PodiumCard
+            tasks={tasks}
+            timeLogs={timeLogs}
+            profiles={profilesList}
+            departments={departments}
+            selectedDepartment={selectedDepartment}
+          />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-4">
+          {activeTab === "analytics" && (
+            <Suspense fallback={<Skeleton className="h-[400px] w-full rounded-lg" />}>
+              <LazyPerformanceAnalytics
+                tasks={tasks}
+                timeLogs={timeLogs}
+                departments={departments}
+                selectedDepartment={selectedDepartment}
+                profiles={profilesList}
+              />
+            </Suspense>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <TaskDetailModal
         task={selectedTask}
