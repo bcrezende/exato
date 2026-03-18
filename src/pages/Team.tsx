@@ -373,7 +373,7 @@ export default function Team() {
                 </SelectContent>
               </Select>
             </div>
-            {role !== "manager" && (
+            {role !== "manager" && role !== "coordinator" && (
               <div className="space-y-2">
                 <Label>
                   Setor{inviteForm.role !== "admin" && <span className="text-destructive ml-1">*</span>}
