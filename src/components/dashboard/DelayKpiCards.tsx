@@ -9,8 +9,22 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import { format, subDays, startOfDay, endOfDay, startOfWeek, startOfMonth } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
+import { format, subDays, startOfDay, startOfWeek, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface DelayRecord {
@@ -25,28 +39,36 @@ interface DelayRecord {
 }
 
 interface DelayKpiCardsProps {
-  tasks: { id: string; status: string; start_date: string | null; due_date: string | null; department_id: string | null; assigned_to: string | null }[];
+  tasks: { id: string; title?: string; status: string; start_date: string | null; due_date: string | null; department_id: string | null; assigned_to: string | null }[];
   selectedDepartment: string | null;
   selectedEmployee: string | null;
 }
 
 type Period = "hoje" | "semana" | "mes";
+type ModalType = "inicio" | "conclusao" | null;
 
 export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmployee }: DelayKpiCardsProps) {
   const [delays, setDelays] = useState<DelayRecord[]>([]);
   const [period, setPeriod] = useState<Period>("semana");
   const [loading, setLoading] = useState(true);
+  const [modalType, setModalType] = useState<ModalType>(null);
+  const [profilesMap, setProfilesMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from("task_delays")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (data) setDelays(data as unknown as DelayRecord[]);
+    const fetchData = async () => {
+      const [{ data: delayData }, { data: profileData }] = await Promise.all([
+        supabase.from("task_delays").select("*").order("created_at", { ascending: true }),
+        supabase.from("profiles").select("id, full_name"),
+      ]);
+      if (delayData) setDelays(delayData as unknown as DelayRecord[]);
+      if (profileData) {
+        const map = new Map<string, string>();
+        profileData.forEach((p: any) => map.set(p.id, p.full_name || "Sem nome"));
+        setProfilesMap(map);
+      }
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, []);
 
   const periodStart = useMemo(() => {
@@ -78,13 +100,11 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
     const now = new Date();
     const startStr = periodStart.toISOString();
 
-    // Tasks in the selected period (by start_date or due_date falling within range)
     const tasksInPeriod = filteredTasks.filter(t => {
       const ref = t.due_date || t.start_date;
       return ref && ref >= startStr.slice(0, 10);
     });
 
-    // Currently overdue: pending/in_progress with due_date in the past
     const overdue = tasksInPeriod.filter(t =>
       (t.status === "pending" || t.status === "in_progress") &&
       t.due_date && new Date(t.due_date) < now
@@ -110,7 +130,20 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
     };
   }, [tasks, periodDelays, selectedDepartment, selectedEmployee, periodStart]);
 
-  // Trend data: last 30 days
+  const modalDelays = useMemo(() => {
+    if (!modalType) return [];
+    const logType = modalType === "inicio" ? "inicio_atrasado" : "conclusao_atrasada";
+    return periodDelays
+      .filter(d => d.log_type === logType)
+      .sort((a, b) => b.delay_minutes - a.delay_minutes);
+  }, [modalType, periodDelays]);
+
+  const tasksMap = useMemo(() => {
+    const map = new Map<string, typeof tasks[0]>();
+    tasks.forEach(t => map.set(t.id, t));
+    return map;
+  }, [tasks]);
+
   const trendData = useMemo(() => {
     const now = new Date();
     const days: { date: string; label: string; inicio: number; conclusao: number }[] = [];
@@ -134,6 +167,13 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
   if (loading) return null;
 
   const periodLabel = period === "hoje" ? "hoje" : period === "semana" ? "esta semana" : "este mês";
+
+  const formatDelayTime = (minutes: number) => {
+    if (minutes < 60) return `${minutes}min`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h ${m}min` : `${h}h`;
+  };
 
   return (
     <div className="space-y-4">
@@ -165,7 +205,10 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
+        <Card
+          className="cursor-pointer transition-colors hover:bg-accent/50"
+          onClick={() => setModalType("inicio")}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Clock className="h-4 w-4 text-orange-500" />
@@ -180,7 +223,10 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          className="cursor-pointer transition-colors hover:bg-accent/50"
+          onClick={() => setModalType("conclusao")}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-destructive" />
@@ -216,26 +262,72 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
               <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
               <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Area
-                type="monotone"
-                dataKey="inicio"
-                stackId="1"
-                stroke="var(--color-inicio)"
-                fill="var(--color-inicio)"
-                fillOpacity={0.3}
-              />
-              <Area
-                type="monotone"
-                dataKey="conclusao"
-                stackId="1"
-                stroke="var(--color-conclusao)"
-                fill="var(--color-conclusao)"
-                fillOpacity={0.3}
-              />
+              <Area type="monotone" dataKey="inicio" stackId="1" stroke="var(--color-inicio)" fill="var(--color-inicio)" fillOpacity={0.3} />
+              <Area type="monotone" dataKey="conclusao" stackId="1" stroke="var(--color-conclusao)" fill="var(--color-conclusao)" fillOpacity={0.3} />
             </AreaChart>
           </ChartContainer>
         </CardContent>
       </Card>
+
+      {/* Modal de detalhes de atrasos */}
+      <Dialog open={modalType !== null} onOpenChange={(open) => !open && setModalType(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {modalType === "inicio" ? (
+                <><Clock className="h-5 w-5 text-orange-500" /> Tarefas com Início Atrasado</>
+              ) : (
+                <><AlertTriangle className="h-5 w-5 text-destructive" /> Tarefas com Conclusão Atrasada</>
+              )}
+              <Badge variant="secondary" className="ml-2">{periodLabel}</Badge>
+            </DialogTitle>
+          </DialogHeader>
+
+          {modalDelays.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              Nenhum atraso registrado neste período.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tarefa</TableHead>
+                  <TableHead>Responsável</TableHead>
+                  <TableHead className="text-right">Atraso</TableHead>
+                  <TableHead className="text-right">Data Prevista</TableHead>
+                  <TableHead className="text-right">Data Real</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {modalDelays.map((d) => {
+                  const task = tasksMap.get(d.task_id);
+                  return (
+                    <TableRow key={d.id}>
+                      <TableCell className="font-medium max-w-[200px] truncate">
+                        {task?.title || "Tarefa removida"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {profilesMap.get(d.user_id) || "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={d.delay_minutes > 60 ? "destructive" : "secondary"}>
+                          {formatDelayTime(d.delay_minutes)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {format(new Date(d.scheduled_time), "dd/MM HH:mm", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {format(new Date(d.actual_time), "dd/MM HH:mm", { locale: ptBR })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
