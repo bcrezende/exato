@@ -194,6 +194,12 @@ function AdminManagerDashboard() {
         onTaskClick={handleTaskClick}
       />
 
+      <DelayKpiCards
+        tasks={filteredTasks}
+        selectedDepartment={selectedDepartment}
+        selectedEmployee={selectedEmployee}
+      />
+
       <div className="grid gap-5 lg:grid-cols-2">
         <TodayProgress
           tasks={todayTasks}
