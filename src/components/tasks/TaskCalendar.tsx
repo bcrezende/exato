@@ -50,11 +50,11 @@ interface LayoutedTask {
 }
 
 function getTaskTimeRange(t: Task): { startHour: number; endHour: number } {
-  const start = t.start_date ? new Date(t.start_date) : t.due_date ? new Date(t.due_date) : null;
+  const start = toDisplayDate(t.start_date) || toDisplayDate(t.due_date);
   if (!start) return { startHour: 0, endHour: 1 };
   const startHour = start.getHours() + start.getMinutes() / 60;
   if (!t.start_date || !t.due_date) return { startHour, endHour: startHour + 1 };
-  const end = new Date(t.due_date);
+  const end = toDisplayDate(t.due_date)!;
   const endHour = end.getHours() + end.getMinutes() / 60;
   return { startHour, endHour: Math.max(endHour, startHour + 0.5) };
 }
