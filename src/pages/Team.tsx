@@ -369,7 +369,7 @@ export default function Team() {
                   {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
                   {isAdmin && <SelectItem value="manager">Gerente</SelectItem>}
                   {(isAdmin || role === "manager") && <SelectItem value="coordinator">Coordenador</SelectItem>}
-                  <SelectItem value="analyst">Analista</SelectItem>
+                  {(isAdmin || role === "manager" || role === "coordinator") && <SelectItem value="analyst">Analista</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
