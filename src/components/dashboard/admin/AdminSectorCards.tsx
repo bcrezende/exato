@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Building2 } from "lucide-react";
+import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -64,12 +65,14 @@ export default function AdminSectorCards({ tasks, departments, profiles }: Admin
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Conclusão</span>
-              <Badge
-                variant={sector.onTimeRate >= 80 ? "default" : sector.onTimeRate >= 50 ? "secondary" : "destructive"}
-                className="text-[10px]"
-              >
-                {sector.onTimeRate}%
-              </Badge>
+              <FormulaTooltip formula="Concluídas ÷ Total × 100">
+                <Badge
+                  variant={sector.onTimeRate >= 80 ? "default" : sector.onTimeRate >= 50 ? "secondary" : "destructive"}
+                  className="text-[10px]"
+                >
+                  {sector.onTimeRate}%
+                </Badge>
+              </FormulaTooltip>
             </div>
             <Progress value={sector.onTimeRate} className="h-2" />
 

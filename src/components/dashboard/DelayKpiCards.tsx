@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, Clock, TrendingUp } from "lucide-react";
+import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 import {
   ChartContainer,
   ChartTooltip,
@@ -199,7 +200,9 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
             <span className={`text-sm font-bold ${
               overduePct > 20 ? "text-destructive" : overduePct >= 10 ? "text-yellow-500" : "text-green-500"
             }`}>
-              {overdueNow} atrasadas / {periodTaskCount} total = {overduePct.toFixed(1)}%
+              <FormulaTooltip formula="Atrasadas no período ÷ Total no período × 100" showIcon={false}>
+                <span>{overdueNow} atrasadas / {periodTaskCount} total = {overduePct.toFixed(1)}%</span>
+              </FormulaTooltip>
             </span>
           </div>
         </CardContent>
@@ -217,7 +220,9 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{startDelayPct}%</div>
+            <FormulaTooltip formula="Inícios atrasados ÷ Tarefas iniciadas × 100">
+              <div className="text-2xl font-bold">{startDelayPct}%</div>
+            </FormulaTooltip>
             <p className="text-xs text-muted-foreground">
               {lateStartCount} tarefa{lateStartCount !== 1 ? "s" : ""} {periodLabel}
             </p>
@@ -243,7 +248,9 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completionDelayPct}%</div>
+            <FormulaTooltip formula="Conclusões atrasadas ÷ Tarefas concluídas × 100">
+              <div className="text-2xl font-bold">{completionDelayPct}%</div>
+            </FormulaTooltip>
             <p className="text-xs text-muted-foreground">
               {lateCompletionCount} tarefa{lateCompletionCount !== 1 ? "s" : ""} {periodLabel}
             </p>

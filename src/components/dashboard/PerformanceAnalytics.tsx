@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer } from "recharts";
 import { Timer, TrendingDown, CheckCircle, AlertTriangle } from "lucide-react";
+import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 import { format, subDays, startOfDay, differenceInMilliseconds } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
@@ -308,7 +309,9 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <Timer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatDuration(summary.avgExecution)}</div>
+            <FormulaTooltip formula="Soma tempo execução ÷ Nº tarefas concluídas">
+              <div className="text-2xl font-bold">{formatDuration(summary.avgExecution)}</div>
+            </FormulaTooltip>
             <p className="text-xs text-muted-foreground">por tarefa concluída</p>
             {completedTasksWithTime.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1">Clique para ver {completedTasksWithTime.length} tarefas →</p>
@@ -324,7 +327,9 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <TrendingDown className={`h-4 w-4 ${summary.delayRate > 30 ? "text-destructive" : "text-muted-foreground"}`} />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${summary.delayRate > 30 ? "text-destructive" : ""}`}>{summary.delayRate}%</div>
+            <FormulaTooltip formula="Inícios atrasados ÷ Total iniciadas × 100">
+              <div className={`text-2xl font-bold ${summary.delayRate > 30 ? "text-destructive" : ""}`}>{summary.delayRate}%</div>
+            </FormulaTooltip>
             <p className="text-xs text-muted-foreground">tarefas iniciadas com atraso</p>
             {delayedTasks.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1">Clique para ver {delayedTasks.length} tarefas →</p>

@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Users, ExternalLink } from "lucide-react";
+import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 import { useNavigate } from "react-router-dom";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -112,9 +113,11 @@ export default function CoordinatorCards({ tasks, profiles, coordinatorLinks, co
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">No prazo</span>
-              <span className={`font-bold ${getStatusColor(coord.onTimeRate)}`}>
-                {coord.onTimeRate}%
-              </span>
+              <FormulaTooltip formula="(Total − Atrasadas) ÷ Total × 100">
+                <span className={`font-bold ${getStatusColor(coord.onTimeRate)}`}>
+                  {coord.onTimeRate}%
+                </span>
+              </FormulaTooltip>
             </div>
             <Progress value={coord.onTimeRate} className={`h-2 ${getProgressColor(coord.onTimeRate)}`} />
 
