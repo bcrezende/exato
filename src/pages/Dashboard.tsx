@@ -94,8 +94,12 @@ function AdminManagerDashboard() {
     fetchData();
   }, [user, role, profile]);
 
-  const today = startOfDay(new Date());
-  const todayStr = format(today, "yyyy-MM-dd");
+  const referenceDate = useMemo(() => {
+    const now = startOfDay(new Date());
+    return viewDate === "yesterday" ? subDays(now, 1) : now;
+  }, [viewDate]);
+  const referenceDateStr = format(referenceDate, "yyyy-MM-dd");
+  const today = referenceDate;
 
   const filteredTasks = useMemo(() => {
     let result = tasks;
