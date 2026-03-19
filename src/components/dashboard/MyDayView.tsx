@@ -44,6 +44,7 @@ export default function MyDayView() {
   const [loading, setLoading] = useState(true);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
+  const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
 
   const fetchTasks = async () => {
     if (!user) return;
