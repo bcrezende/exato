@@ -219,7 +219,9 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{startDelayPct}%</div>
+            <FormulaTooltip formula="Inícios atrasados ÷ Tarefas iniciadas × 100">
+              <div className="text-2xl font-bold">{startDelayPct}%</div>
+            </FormulaTooltip>
             <p className="text-xs text-muted-foreground">
               {lateStartCount} tarefa{lateStartCount !== 1 ? "s" : ""} {periodLabel}
             </p>
