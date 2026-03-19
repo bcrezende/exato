@@ -48,7 +48,7 @@ function AdminManagerDashboard() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("hoje");
   const [viewDate, setViewDate] = useState<"today" | "yesterday">("today");
-  const [analysisOpen, setAnalysisOpen] = useState(false);
+  
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
