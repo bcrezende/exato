@@ -10,6 +10,8 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { updateTaskStatus } from "@/lib/task-utils";
 import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
+import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
+import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
