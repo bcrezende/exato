@@ -23,14 +23,21 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   // No user at all
   if (!user) return <Navigate to="/login" replace />;
 
-  // User exists but profile/role failed to load
-  if (profileError || !identityReady) {
+  // Still loading profile/role (not an error yet)
+  if (!identityReady && !profileError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Profile/role fetch actually failed
+  if (profileError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">
         <p className="text-muted-foreground">
-          {profileError
-            ? "Erro ao carregar dados do perfil. O servidor pode estar temporariamente indisponível."
-            : "Carregando dados do perfil..."}
+          Erro ao carregar dados do perfil. O servidor pode estar temporariamente indisponível.
         </p>
         <div className="flex gap-2">
           <Button variant="outline" onClick={retryProfile} className="gap-2">
