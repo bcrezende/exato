@@ -355,7 +355,8 @@ export default function AnalystDetail() {
           onOpenChange={(open) => !open && setSelectedTask(null)}
           members={members}
           departments={departments}
-          onUpdated={fetchData}
+          onEdit={() => {}}
+          onRefresh={fetchData}
         />
       )}
 
