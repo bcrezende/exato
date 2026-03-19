@@ -1,5 +1,6 @@
 import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound } from "lucide-react";
 import logoWhite from "@/assets/logo-white.png";
+import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,7 +48,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <img src={logoWhite} alt="Exato" className={collapsed ? "h-10 w-auto" : "h-14 w-auto"} />
+          <img src={collapsed ? logoIcon : logoWhite} alt="Exato" className={collapsed ? "h-8 w-8 object-contain" : "h-14 w-auto"} />
         </div>
       </SidebarHeader>
 
