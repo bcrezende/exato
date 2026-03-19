@@ -105,7 +105,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const deptName = departments.find(d => d.id === localTask.department_id)?.name || null;
   const effectiveRecurrenceType = localTask.recurrence_type !== "none" ? localTask.recurrence_type : (parentRecurrenceType || "none");
 
-  const handleStatusChange = async (newStatus: string, difficultyRating?: number) => {
+  const executeStatusChange = async (newStatus: string, difficultyRating?: number) => {
     const previousTask = localTask;
     setLocalTask({ ...localTask, status: newStatus as any });
     setStatusLoading(true);
@@ -118,6 +118,14 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
     } finally {
       setStatusLoading(false);
+    }
+  };
+
+  const handleStatusChange = (newStatus: string, difficultyRating?: number) => {
+    if (newStatus === "in_progress") {
+      checkBeforeStart(localTask.id, () => executeStatusChange(newStatus, difficultyRating));
+    } else {
+      executeStatusChange(newStatus, difficultyRating);
     }
   };
 
