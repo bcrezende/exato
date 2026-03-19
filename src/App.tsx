@@ -15,7 +15,7 @@ import AcceptInvite from "./pages/AcceptInvite";
 import NotFound from "./pages/NotFound";
 
 // Lazy-loaded routes
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Dashboard = lazy(() => import("./pages/Dashboard/index"));
 const Tasks = lazy(() => import("./pages/Tasks"));
 const MyDayView = lazy(() => import("./components/dashboard/MyDayView"));
 const Team = lazy(() => import("./pages/Team"));
