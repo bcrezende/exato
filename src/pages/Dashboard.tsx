@@ -187,6 +187,8 @@ function AdminManagerDashboard() {
         onOpenFilters={() => setFiltersOpen(true)}
         onNavigateMyDay={() => navigate("/my-day")}
         hasActiveFilters={hasActiveFilters}
+        viewDate={viewDate}
+        onViewDateChange={setViewDate}
       />
 
       <DashboardFilters
