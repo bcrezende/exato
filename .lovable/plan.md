@@ -1,93 +1,57 @@
 
 
-## Refatoracao: Dashboard Especializado para Admin
+## Dashboard Especializado para Gerente
 
-### Estrutura de arquivos
+### Resumo
 
-```text
-src/pages/Dashboard/
-├── index.tsx                    # Roteador por role (existente Dashboard export)
-├── AdminDashboard.tsx           # Nova visao estrategica admin
-├── ManagerCoordinatorDashboard.tsx  # Extrai AdminManagerDashboard atual
-```
+Criar `ManagerDashboard.tsx` separado do `ManagerCoordinatorDashboard.tsx`, com visao focada no setor do gerente: cards de coordenadores, tabela de analistas com coordenador responsavel, KPIs do setor, e tabs especificas.
 
-O `Dashboard.tsx` atual sera movido para a pasta `Dashboard/`. A logica existente do `AdminManagerDashboard` sera preservada em `ManagerCoordinatorDashboard.tsx` para manager e coordinator. O novo `AdminDashboard.tsx` tera visao estrategica exclusiva.
+O `ManagerCoordinatorDashboard.tsx` atual passa a ser usado apenas por coordenadores.
 
-### Novos componentes admin
+### Arquivos a criar
 
-```text
-src/components/dashboard/admin/
-├── AdminPeriodToggle.tsx        # [Hoje] [Ontem] [Semana] [Mes]
-├── AdminKpiCards.tsx            # KPIs estrategicos (setores ativos, total tarefas, atrasadas, % atraso)
-├── AdminSectorCards.tsx         # Grid de cards com metricas por setor
-├── AdminUserRanking.tsx         # Tabela ranking de todos os usuarios
-```
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/pages/Dashboard/ManagerDashboard.tsx` | Dashboard completo do gerente |
+| `src/components/dashboard/manager/CoordinatorCards.tsx` | Cards dos coordenadores do setor com metricas |
+| `src/components/dashboard/manager/AnalystRankingTable.tsx` | Tabela ranking dos analistas com coordenador |
 
-### index.tsx (roteador)
+### Arquivos a editar
 
-- analyst → MyDayView
-- admin → AdminDashboard
-- manager/coordinator → ManagerCoordinatorDashboard
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/pages/Dashboard/index.tsx` | Rotear `manager` para `ManagerDashboard` (coordenador continua em `ManagerCoordinatorDashboard`) |
 
-### AdminDashboard.tsx
+### ManagerDashboard.tsx
 
-**Data fetching**: tasks, profiles, departments, time_logs, task_delays (mesma query existente)
+**Data fetching**: tasks, profiles, departments, task_time_logs, coordinator_analysts (para mapear analista→coordenador)
 
-**Header**: titulo "Visao Geral da Empresa" + AdminPeriodToggle
+**Header**: Reutiliza `DashboardHeader` com roleLabel "Visao do Setor — {nome}" + `AdminPeriodToggle` para [Hoje/Ontem/Semana/Mes]
 
-**Filtros**: 
-- Dropdown "Todos os Setores" (com busca via Input dentro do SelectContent)
-- Dropdown "Todos os Usuarios" (com busca)
-- Chips de filtros ativos com X
+**Filtro**: Dropdown "Todos os Membros" com busca (coordenadores + analistas do setor). Setor pre-selecionado e bloqueado.
 
-**KPIs (AdminKpiCards)**: 
-- Total de setores ativos (departments com pelo menos 1 tarefa)
-- Total de tarefas no periodo
-- Tarefas atrasadas hoje
-- % de atraso medio com cor (verde <10%, amarelo 10-20%, vermelho >20%)
+**KPIs** (4 cards): Tarefas no periodo, Em andamento, Atrasadas, Produtividade do setor (%) com cor condicional (verde <10% atraso, amarelo 10-20%, vermelho >20%)
 
-**Tabs**:
-- Visao Geral: TeamSummaryCard + KpiCards existente + RiskRadar + DelayKpiCards + TodayProgress/CriticalTasks
-- Setores: SectorComparisonCard existente + AdminSectorCards (grid expandido)
-- Usuarios: AdminUserRanking (reutiliza logica do PodiumCard mas como tabela completa)
-- Atrasos: DelayKpiCards expandido com tabela de logs de inicio/conclusao atrasados
-- Analytics: PerformanceAnalytics existente
+**Secao "Seus Coordenadores"**: `CoordinatorCards` — grid horizontal de cards, cada um mostrando nome do coordenador, quantidade de analistas vinculados, % de tarefas no prazo da equipe, indicador verde/amarelo/vermelho, botao "Ver Equipe" que navega para `/team/monitoring`
 
-### AdminPeriodToggle
+**Secao "Desempenho dos Analistas"**: `AnalystRankingTable` — tabela com posicao, nome, coordenador responsavel, total tarefas, status visual (verde = 0 atrasos, amarelo = 1, vermelho = 2+)
 
-ToggleGroup com 4 opcoes: "today" | "yesterday" | "week" | "month". Emite o periodo selecionado. O AdminDashboard calcula referenceDate e dateRange baseado no periodo.
+**Tabs**: Visao Geral (KPIs + CoordinatorCards + Top 5 analistas), Coordenadores (cards detalhados), Analistas (tabela completa), Atrasos (reutiliza `DelayKpiCards`)
 
-### AdminKpiCards
+### CoordinatorCards
 
-4 cards com metricas estrategicas. Cada card clicavel abre modal com detalhes. % de atraso usa a mesma logica de cores do DelayKpiCards.
+- Busca coordenadores do setor via `coordinator_analysts` + `user_roles`
+- Para cada coordenador: conta analistas vinculados, calcula % tarefas concluidas no prazo
+- Card com avatar, nome, badge "X analistas", Progress bar com %, botao "Ver Equipe"
 
-### AdminSectorCards
+### AnalystRankingTable
 
-Grid de cards (1 por setor). Cada card mostra: nome do setor, total de tarefas, concluidas, atrasadas, % no prazo com Progress bar, lista dos top 3 analistas do setor. Reutiliza logica do SectorComparisonCard.
-
-### AdminUserRanking
-
-Tabela completa com todos os usuarios. Colunas: posicao, nome, setor, tarefas concluidas, no prazo, atrasadas, pontuacao. Reutiliza logica de calculo do PodiumCard. Filtro por periodo integrado.
-
-### ManagerCoordinatorDashboard.tsx
-
-Copia exata do `AdminManagerDashboard` atual, sem mudancas. Apenas movido de arquivo.
-
-### Arquivos impactados
-
-| Arquivo | Acao |
-|---------|------|
-| `src/pages/Dashboard.tsx` | Deletar (substituido pela pasta) |
-| `src/pages/Dashboard/index.tsx` | Criar — roteador por role |
-| `src/pages/Dashboard/AdminDashboard.tsx` | Criar — dashboard admin completo |
-| `src/pages/Dashboard/ManagerCoordinatorDashboard.tsx` | Criar — extrair AdminManagerDashboard atual |
-| `src/components/dashboard/admin/AdminPeriodToggle.tsx` | Criar |
-| `src/components/dashboard/admin/AdminKpiCards.tsx` | Criar |
-| `src/components/dashboard/admin/AdminSectorCards.tsx` | Criar |
-| `src/components/dashboard/admin/AdminUserRanking.tsx` | Criar |
-| `src/App.tsx` | Nenhuma mudanca (import de Dashboard continua igual com pasta/index) |
+- Lista analistas do setor (filtrados por `department_id`)
+- Cruza com `coordinator_analysts` para mostrar coluna "Coordenador"
+- Colunas: #, Analista, Coordenador, Tarefas, Status (indicador visual)
+- Ordenavel por qualquer coluna
 
 ### Nenhuma mudanca no banco de dados
 
-Todos os dados necessarios ja existem nas tabelas `tasks`, `profiles`, `departments`, `task_time_logs` e `task_delays`.
+Todos os dados necessarios ja existem nas tabelas existentes.
 
