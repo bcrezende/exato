@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, Re
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { devError } from "@/lib/logger";
 
 type AppRole = "admin" | "manager" | "coordinator" | "analyst";
 
