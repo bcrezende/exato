@@ -41,6 +41,7 @@ export default function Settings() {
       const vals = { full_name: profile.full_name || "", phone: profile.phone || "", position: profile.position || "" };
       setProfileForm(vals);
       setInitialProfileForm(vals);
+      setDismissWarnings((profile as any).dismiss_pending_warnings === true);
     }
   }, [profile]);
 
