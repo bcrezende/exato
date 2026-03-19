@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { devError } from "@/lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -128,7 +129,7 @@ export default function AIAnalysisDialog({ departments, profiles }: Props) {
 
       setResult(data.analysis);
     } catch (e: any) {
-      console.error(e);
+      devError(e);
       toast({ title: "Erro", description: e.message || "Falha ao gerar análise.", variant: "destructive" });
     } finally {
       setLoading(false);

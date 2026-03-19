@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, lazy, Suspense } from "react";
+import { devError } from "@/lib/logger";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,7 +75,7 @@ export default function AnalystDetail() {
       setMembers(membersRes.data || []);
       setDepartments(deptsRes.data || []);
     } catch (err) {
-      console.error(err);
+      devError(err);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState, useMemo } from "react";
+import { devError } from "@/lib/logger";
 import { nowAsFakeUTC } from "@/lib/date-utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,7 +97,7 @@ export default function ManagerCoordinatorDashboard() {
           setProfilesList(profilesRes.value.data as Profile[]);
         }
       } catch (err) {
-        console.error("Dashboard fetch error:", err);
+        devError("Dashboard fetch error:", err);
       } finally {
         setLoading(false);
       }

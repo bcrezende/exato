@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState, useMemo } from "react";
+import { devError } from "@/lib/logger";
 import { nowAsFakeUTC } from "@/lib/date-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,7 +83,7 @@ export default function AdminDashboard() {
           setProfilesList(profilesRes.value.data as Profile[]);
         }
       } catch (err) {
-        console.error("Admin dashboard fetch error:", err);
+        devError("Admin dashboard fetch error:", err);
       } finally {
         setLoading(false);
       }

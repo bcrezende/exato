@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { devError } from "@/lib/logger";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -203,7 +204,7 @@ export default function Analysis() {
         fetchHistory();
       }
     } catch (e: any) {
-      console.error(e);
+      devError(e);
       toast({ title: "Erro", description: e.message || "Falha ao gerar análise.", variant: "destructive" });
     } finally {
       setLoading(false);
