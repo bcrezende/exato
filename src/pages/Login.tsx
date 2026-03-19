@@ -22,10 +22,10 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ variant: "destructive", title: "Erro ao entrar", description: error.message });
+      setLoading(false);
     } else {
       navigate("/dashboard");
     }
-    setLoading(false);
   };
 
   return (
