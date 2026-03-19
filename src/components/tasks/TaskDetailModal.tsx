@@ -263,5 +263,12 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
         )}
       </DialogContent>
     </Dialog>
+    <PendingTasksAlert
+      open={isAlertOpen}
+      tasks={pendingTasks}
+      onClose={closeAlert}
+      onProceed={() => proceedAction?.()}
+    />
+    </>
   );
 }
