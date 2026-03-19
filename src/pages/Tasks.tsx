@@ -59,6 +59,7 @@ export default function Tasks() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
   // Sorting
   const [sortColumn, setSortColumn] = useState<string | null>("start_date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
