@@ -104,7 +104,7 @@ export default function Tasks() {
     if (data) setDepartments(data);
   };
 
-  useEffect(() => { if (user && currentProfile?.company_id) { fetchTasks(); fetchMembers(); fetchDepartments(); } }, [user, currentProfile?.company_id]);
+  useEffect(() => { if (user && currentProfile?.company_id && role) { fetchTasks(); fetchMembers(); fetchDepartments(); } }, [user?.id, currentProfile?.company_id]);
 
   const openCreate = () => { setEditing(null); setFormOpen(true); };
   const openEdit = (task: Task) => { setEditing(task); setFormOpen(true); };
