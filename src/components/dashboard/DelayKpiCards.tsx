@@ -42,12 +42,13 @@ interface DelayKpiCardsProps {
   tasks: { id: string; title?: string; status: string; start_date: string | null; due_date: string | null; department_id: string | null; assigned_to: string | null }[];
   selectedDepartment: string | null;
   selectedEmployee: string | null;
+  referenceDate?: Date;
 }
 
 type Period = "hoje" | "semana" | "mes";
 type ModalType = "inicio" | "conclusao" | null;
 
-export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmployee }: DelayKpiCardsProps) {
+export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmployee, referenceDate }: DelayKpiCardsProps) {
   const [delays, setDelays] = useState<DelayRecord[]>([]);
   const [period, setPeriod] = useState<Period>("semana");
   const [loading, setLoading] = useState(true);
@@ -97,7 +98,7 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
     if (selectedDepartment) filteredTasks = filteredTasks.filter(t => t.department_id === selectedDepartment);
     if (selectedEmployee) filteredTasks = filteredTasks.filter(t => t.assigned_to === selectedEmployee);
 
-    const now = new Date();
+    const refDate = referenceDate || new Date();
     const startStr = periodStart.toISOString();
 
     const tasksInPeriod = filteredTasks.filter(t => {
@@ -107,7 +108,7 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
 
     const overdue = tasksInPeriod.filter(t =>
       (t.status === "pending" || t.status === "in_progress") &&
-      t.due_date && new Date(t.due_date) < now
+      t.due_date && new Date(t.due_date) < refDate
     );
 
     const totalInPeriod = tasksInPeriod.length;

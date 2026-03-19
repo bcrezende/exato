@@ -1,7 +1,9 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, SlidersHorizontal } from "lucide-react";
+import { CalendarIcon, ChevronLeft, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+type ViewDate = "today" | "yesterday";
 
 interface DashboardHeaderProps {
   today: Date;
@@ -9,6 +11,8 @@ interface DashboardHeaderProps {
   onOpenFilters: () => void;
   onNavigateMyDay: () => void;
   hasActiveFilters: boolean;
+  viewDate: ViewDate;
+  onViewDateChange: (v: ViewDate) => void;
 }
 
 export default function DashboardHeader({
@@ -17,6 +21,8 @@ export default function DashboardHeader({
   onOpenFilters,
   onNavigateMyDay,
   hasActiveFilters,
+  viewDate,
+  onViewDateChange,
 }: DashboardHeaderProps) {
   return (
     <div className="flex items-center justify-between">
@@ -27,6 +33,24 @@ export default function DashboardHeader({
         </p>
       </div>
       <div className="flex items-center gap-2">
+        <Button
+          variant={viewDate === "yesterday" ? "default" : "outline"}
+          size="sm"
+          onClick={() => onViewDateChange(viewDate === "yesterday" ? "today" : "yesterday")}
+          className="gap-1.5 text-xs"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Ontem
+        </Button>
+        <Button
+          variant={viewDate === "today" ? "default" : "outline"}
+          size="sm"
+          onClick={() => onViewDateChange("today")}
+          className="gap-1.5 text-xs"
+        >
+          <CalendarIcon className="h-3.5 w-3.5" />
+          Hoje
+        </Button>
         <Button variant="ghost" size="sm" onClick={onNavigateMyDay} className="gap-1.5 text-xs">
           <CalendarIcon className="h-3.5 w-3.5" />
           Meu Dia

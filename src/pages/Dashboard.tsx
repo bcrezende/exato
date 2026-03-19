@@ -3,7 +3,7 @@ import { nowAsFakeUTC } from "@/lib/date-utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, addDays, startOfDay } from "date-fns";
+import { format, addDays, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
 import MyDayView from "@/components/dashboard/MyDayView";
@@ -43,6 +43,7 @@ function AdminManagerDashboard() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("hoje");
+  const [viewDate, setViewDate] = useState<"today" | "yesterday">("today");
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
@@ -93,8 +94,12 @@ function AdminManagerDashboard() {
     fetchData();
   }, [user, role, profile]);
 
-  const today = startOfDay(new Date());
-  const todayStr = format(today, "yyyy-MM-dd");
+  const referenceDate = useMemo(() => {
+    const now = startOfDay(new Date());
+    return viewDate === "yesterday" ? subDays(now, 1) : now;
+  }, [viewDate]);
+  const referenceDateStr = format(referenceDate, "yyyy-MM-dd");
+  const today = referenceDate;
 
   const filteredTasks = useMemo(() => {
     let result = tasks;
@@ -120,18 +125,32 @@ function AdminManagerDashboard() {
     const todayList: Task[] = [];
     const upcoming: Task[] = [];
 
+    const isYesterday = viewDate === "yesterday";
+    const nowFake = nowAsFakeUTC();
+
     filteredTasks.forEach((t) => {
       const isCompleted = t.status === "completed";
+      const dueDay = t.due_date?.split("T")[0];
+      const startDay = t.start_date?.split("T")[0];
+
+      if (isYesterday) {
+        // Snapshot mode: only tasks with due/start on reference date
+        if (dueDay === referenceDateStr || startDay === referenceDateStr) {
+          todayList.push(t);
+        } else if (!isCompleted && t.due_date && t.due_date.split("T")[0]! < referenceDateStr) {
+          overdue.push(t);
+        }
+        return;
+      }
+
+      // Today mode (original logic)
       const isInProgress = t.status === "in_progress";
-      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowAsFakeUTC()));
+      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowFake));
 
       if (isOverdue && !isCompleted) { overdue.push(t); return; }
       if (isInProgress) { todayList.push(t); return; }
 
-      const dueDay = t.due_date?.split("T")[0];
-      const startDay = t.start_date?.split("T")[0];
-
-      if (dueDay === todayStr || startDay === todayStr) { todayList.push(t); return; }
+      if (dueDay === referenceDateStr || startDay === referenceDateStr) { todayList.push(t); return; }
 
       // Upcoming: next 3 days
       for (let i = 1; i <= 3; i++) {
@@ -147,7 +166,7 @@ function AdminManagerDashboard() {
     });
 
     return { overdueTasks: overdue, todayTasks: todayList, upcomingTasks: upcoming };
-  }, [filteredTasks, todayStr, today]);
+  }, [filteredTasks, referenceDateStr, today, viewDate]);
 
   const todayCompleted = todayTasks.filter((t) => t.status === "completed").length;
   const todayTotal = todayTasks.length;
@@ -168,6 +187,8 @@ function AdminManagerDashboard() {
         onOpenFilters={() => setFiltersOpen(true)}
         onNavigateMyDay={() => navigate("/my-day")}
         hasActiveFilters={hasActiveFilters}
+        viewDate={viewDate}
+        onViewDateChange={setViewDate}
       />
 
       <DashboardFilters
@@ -198,6 +219,7 @@ function AdminManagerDashboard() {
         tasks={filteredTasks}
         selectedDepartment={selectedDepartment}
         selectedEmployee={selectedEmployee}
+        referenceDate={referenceDate}
       />
 
       <div className="grid gap-5 lg:grid-cols-2">
