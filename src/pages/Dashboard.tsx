@@ -17,6 +17,10 @@ import OverdueSection from "@/components/dashboard/OverdueSection";
 import CriticalTasksList from "@/components/dashboard/CriticalTasksList";
 import PodiumCard from "@/components/dashboard/PodiumCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
+import TeamSummaryCard from "@/components/dashboard/TeamSummaryCard";
+import RiskRadar from "@/components/dashboard/RiskRadar";
+import SectorComparisonCard from "@/components/dashboard/SectorComparisonCard";
+import AIAnalysisDialog from "@/components/dashboard/AIAnalysisDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +48,7 @@ function AdminManagerDashboard() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("hoje");
   const [viewDate, setViewDate] = useState<"today" | "yesterday">("today");
+  
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
@@ -51,7 +56,6 @@ function AdminManagerDashboard() {
   };
 
   const handleRefresh = () => {
-    // Re-fetch tasks
     supabase.from("tasks").select("*").order("due_date", { ascending: true }).then(({ data }) => {
       if (data) setTasks(data);
     });
@@ -142,7 +146,6 @@ function AdminManagerDashboard() {
       const startDay = t.start_date?.split("T")[0];
 
       if (isYesterday) {
-        // Snapshot mode: only tasks with due/start on reference date
         if (dueDay === referenceDateStr || startDay === referenceDateStr) {
           todayList.push(t);
         } else if (!isCompleted && t.due_date && t.due_date.split("T")[0]! < referenceDateStr) {
@@ -151,7 +154,6 @@ function AdminManagerDashboard() {
         return;
       }
 
-      // Today mode (original logic)
       const isInProgress = t.status === "in_progress";
       const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowFake));
 
@@ -160,7 +162,6 @@ function AdminManagerDashboard() {
 
       if (dueDay === referenceDateStr || startDay === referenceDateStr) { todayList.push(t); return; }
 
-      // Upcoming: next 3 days
       for (let i = 1; i <= 3; i++) {
         const uStr = format(addDays(today, i), "yyyy-MM-dd");
         if (dueDay === uStr || startDay === uStr) { upcoming.push(t); break; }
@@ -197,6 +198,7 @@ function AdminManagerDashboard() {
         hasActiveFilters={hasActiveFilters}
         viewDate={viewDate}
         onViewDateChange={setViewDate}
+        
       />
 
       <DashboardFilters
@@ -211,6 +213,8 @@ function AdminManagerDashboard() {
         role={role}
       />
 
+      <TeamSummaryCard profiles={employeeOptions} todayTasks={todayTasks} />
+
       <KpiCards
         todayTotal={todayTotal}
         todayInProgress={todayTasks.filter(t => t.status === "in_progress").length}
@@ -221,6 +225,13 @@ function AdminManagerDashboard() {
         overdueTasks={overdueTasks}
         getName={getName}
         onTaskClick={handleTaskClick}
+      />
+
+      <RiskRadar
+        tasks={filteredTasks}
+        timeLogs={timeLogs}
+        profiles={profiles}
+        departments={departments}
       />
 
       <DelayKpiCards
@@ -260,6 +271,7 @@ function AdminManagerDashboard() {
             {overdueTasks.length > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[11px]">{overdueTasks.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="equipe">🏆 Equipe</TabsTrigger>
+          {role === "admin" && <TabsTrigger value="setores">🏢 Setores</TabsTrigger>}
           <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
         </TabsList>
 
@@ -314,6 +326,12 @@ function AdminManagerDashboard() {
           />
         </TabsContent>
 
+        {role === "admin" && (
+          <TabsContent value="setores" className="mt-4">
+            <SectorComparisonCard tasks={tasks} departments={departments} />
+          </TabsContent>
+        )}
+
         <TabsContent value="analytics" className="mt-4">
           {activeTab === "analytics" && (
             <Suspense fallback={<Skeleton className="h-[400px] w-full rounded-lg" />}>
@@ -338,6 +356,11 @@ function AdminManagerDashboard() {
         onEdit={() => {}}
         onRefresh={handleRefresh}
       />
+
+      <AIAnalysisDialog
+        departments={departments as any}
+        profiles={profilesList as any}
+      />
     </div>
   );
 }
@@ -345,7 +368,6 @@ function AdminManagerDashboard() {
 export default function Dashboard() {
   const { role, identityReady } = useAuth();
   
-  // Don't render anything until identity is confirmed
   if (!identityReady) return <DashboardSkeleton />;
   
   if (role === "analyst") return <MyDayView />;
