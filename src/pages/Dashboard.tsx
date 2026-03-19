@@ -3,7 +3,7 @@ import { nowAsFakeUTC } from "@/lib/date-utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, addDays, startOfDay } from "date-fns";
+import { format, addDays, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
 import MyDayView from "@/components/dashboard/MyDayView";
