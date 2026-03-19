@@ -459,14 +459,15 @@ export default function AnalystDashboard() {
       </Tabs>
 
       {/* Task detail modal */}
-      {selectedTask && (
-        <TaskDetailModal
-          task={selectedTask}
-          open={!!selectedTask}
-          onClose={() => setSelectedTask(null)}
-          onRefresh={() => { fetchTasks(); fetchUpcoming(); }}
-        />
-      )}
+      <TaskDetailModal
+        task={selectedTask}
+        open={!!selectedTask}
+        onOpenChange={(open) => { if (!open) setSelectedTask(null); }}
+        members={[]}
+        departments={[]}
+        onEdit={() => {}}
+        onRefresh={() => { fetchTasks(); fetchUpcoming(); }}
+      />
 
       <PendingTasksAlert
         open={isAlertOpen}
