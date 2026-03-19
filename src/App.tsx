@@ -60,6 +60,8 @@ const App = () => (
               <Route path="/tasks" element={<Suspense fallback={<PageLoader />}><Tasks /></Suspense>} />
               <Route path="/my-day" element={<Suspense fallback={<PageLoader />}><MyDayView /></Suspense>} />
               <Route path="/team" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><Team /></Suspense></ProtectedRoute>} />
+              <Route path="/team/monitoring" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><TeamMonitoring /></Suspense></ProtectedRoute>} />
+              <Route path="/team/monitoring/:userId" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><AnalystDetail /></Suspense></ProtectedRoute>} />
               <Route path="/analysis" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><Analysis /></Suspense></ProtectedRoute>} />
               <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
             </Route>
