@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { devError } from "@/lib/logger";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
