@@ -58,7 +58,7 @@ function AdminManagerDashboard() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !role || !profile) return;
     const fetchData = async () => {
       const [tasksRes, profilesRes, depsRes, logsRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date", { ascending: true }),
@@ -92,7 +92,7 @@ function AdminManagerDashboard() {
       setLoading(false);
     };
     fetchData();
-  }, [user, role, profile]);
+  }, [user?.id]);
 
   const referenceDate = useMemo(() => {
     const now = startOfDay(new Date());
