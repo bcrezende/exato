@@ -34,7 +34,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-const FETCH_TIMEOUT = 12000;
+const FETCH_TIMEOUT = 20000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([

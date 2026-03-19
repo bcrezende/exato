@@ -16,7 +16,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { identityReady, user } = useAuth();
+  const { identityReady, user, profileError } = useAuth();
 
   // Redirect when identity is fully ready (not just authenticated)
   useEffect(() => {
@@ -24,6 +24,14 @@ export default function Login() {
       navigate("/dashboard", { replace: true });
     }
   }, [user, identityReady, navigate]);
+
+  // Reset loading state if profile fetch fails after successful auth
+  useEffect(() => {
+    if (profileError && loading) {
+      setLoading(false);
+      toast({ variant: "destructive", title: "Erro ao carregar perfil", description: "O servidor está lento. Tente novamente em alguns segundos." });
+    }
+  }, [profileError, loading, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
