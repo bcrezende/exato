@@ -42,6 +42,7 @@ interface DelayKpiCardsProps {
   tasks: { id: string; title?: string; status: string; start_date: string | null; due_date: string | null; department_id: string | null; assigned_to: string | null }[];
   selectedDepartment: string | null;
   selectedEmployee: string | null;
+  referenceDate?: Date;
 }
 
 type Period = "hoje" | "semana" | "mes";
