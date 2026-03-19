@@ -228,6 +228,12 @@ export default function MyDayView() {
           ))}
         </div>
       )}
+      <PendingTasksAlert
+        open={isAlertOpen}
+        tasks={pendingTasks}
+        onClose={closeAlert}
+        onProceed={() => proceedAction?.()}
+      />
     </div>
   );
 }
