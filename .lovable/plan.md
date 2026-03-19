@@ -1,75 +1,53 @@
 
-Objetivo
 
-Restabelecer o login e eliminar o cenário em que o usuário clica em “Entrar” e o app fica parado/carregando indefinidamente.
+## Diagnóstico completo da causa raiz dos timeouts
 
-Diagnóstico
+A investigação do backend revelou a causa real dos timeouts persistentes:
 
-- O botão de login em si está funcionando; o formulário envia normalmente.
-- As políticas de acesso de `profiles` e `user_roles` permitem leitura do próprio usuário, então o problema principal não parece ser bloqueio de permissão.
-- O gargalo está no pós-login:
-  - `AuthContext` define `user/session` antes de concluir `profile/role`
-  - `ProtectedRoute` libera a área protegida cedo demais
-  - `Dashboard` cai no fluxo errado quando `role` ainda é `null`
-  - o efeito interno aborta (`if !user || !role || !profile return`) e o loading local pode ficar preso para sempre
-- Os logs do backend também mostram instabilidade real no auth (`/token` com 500/504 e timeouts). Então hoje existem 2 problemas combinados:
-  1. estado de autenticação frágil no frontend
-  2. instabilidade intermitente no backend de autenticação
+### Causa raiz: sobrecarga do banco por cron jobs a cada 5 segundos
 
-Plano
+1. **Cron job de email rodando a cada 5 segundos** (job #3) -- chama a edge function `process-email-queue` que faz múltiplas queries ao banco. A function está falhando com 503/504 (timeout), mas o cron continua chamando a cada 5s, acumulando conexões.
 
-1. Reestruturar o bootstrap de autenticação
-- Ajustar `AuthContext` para separar claramente:
-  - sessão autenticada
-  - identidade pronta (`profile + role`)
-  - erro recuperável
-- Tratar falha de `profiles` e `user_roles` individualmente, sem deixar estado “meio pronto”.
-- Considerar ausência de `profile` ou `role` como erro explícito, não como sucesso parcial.
+2. **Cron jobs duplicados de tarefas recorrentes** -- jobs #1 e #2 fazem a mesma coisa (chamam `generate-recurring-tasks` a cada hora). Dobro de carga desnecessária.
 
-2. Corrigir o gate das rotas protegidas
-- Em `ProtectedRoute`, só renderizar a aplicação quando a identidade estiver realmente pronta.
-- Se houver usuário autenticado mas `role/profile` faltando, mostrar tela de recuperação com retry e saída, em vez de deixar entrar no app incompleto.
+3. **Conexões presas** -- há uma conexão postgrest "idle in transaction" por mais de 4 minutos, e 22 conexões em espera. O pool de conexões (max 10 para postgrest) está saturado.
 
-3. Corrigir a corrida do login
-- Em `Login.tsx`, remover a dependência de navegação imediata como única estratégia.
-- Fazer o redirecionamento acontecer somente quando o contexto confirmar que a autenticação terminou de carregar corretamente.
+4. **RLS policies pesadas amplificam o problema** -- cada query a `profiles`, `user_roles`, `tasks` etc. avalia policies que chamam `get_user_company_id()` e `has_role()`, gerando subconsultas adicionais. Com 15 rows em profiles mas **401.096 sequential scans**, o overhead de RLS é desproporcional.
 
-4. Blindar o Dashboard e páginas protegidas
-- Em `Dashboard.tsx`, não assumir fluxo de admin/manager quando `role` for `null`.
-- Adicionar fallback explícito para auth incompleto.
-- Revisar outras páginas/componentes que dependem de `useAuth` para não iniciar consultas enquanto a identidade ainda não estiver pronta.
-
-5. Tratar a instabilidade do backend sem travar a UI
-- Adicionar estados claros para timeout/erro de autenticação.
-- Se o backend falhar, a UI deve mostrar erro e opção de retry, nunca spinner infinito.
-- Revalidar os logs de auth após os ajustes do cliente para separar bug de app de incidente de infraestrutura.
-
-6. Validar os fluxos críticos
-- Testar:
-  - login com credencial inválida
-  - login com credencial válida
-  - refresh com usuário já autenticado
-  - logout
-  - aceite de convite
-  - redefinição de senha
-- Confirmar que nenhum fluxo fica preso em loading/skeleton.
-
-Arquivos principais
-
-- `src/contexts/AuthContext.tsx`
-- `src/components/ProtectedRoute.tsx`
-- `src/pages/Login.tsx`
-- `src/pages/Dashboard.tsx`
-- revisão secundária em páginas/componentes que usam `useAuth`
-
-Detalhes técnicos
+5. **Fila de emails quebrada** -- 25 emails falharam, 6 pendentes, apenas 1 enviado. O cron continua tentando processar a fila quebrada, gerando carga constante sem resultado.
 
 ```text
-Hoje:
-signIn -> user/session entram -> rota protegida abre cedo -> role/profile ainda nulos ->
-Dashboard aborta inicialização -> loading interno pode ficar infinito
-
-Depois:
-signIn -> sessão confirmada -> profile/role resolvidos ou erro recuperável ->
-só então a rota protegida libera a aplicação
+Ciclo vicioso atual:
+pg_cron (5s) → edge function → múltiplas queries → RLS avalia subconsultas →
+conexões saturam → auth/profiles/user_roles dão timeout → login falha
 ```
+
+### Plano de ação
+
+#### 1. Pausar cron jobs que saturam o banco (migração SQL)
+- Desativar o cron job de email (job #3 -- roda a cada 5s)
+- Remover o cron job duplicado de recorrência (job #2 -- duplicata do #1)
+- Isso libera imediatamente o pool de conexões
+
+#### 2. Adicionar retry automático no AuthContext
+- Quando `fetchUserData` falha por timeout, tentar novamente automaticamente (até 2 retries com delay crescente)
+- Isso cobre o caso em que o backend está momentaneamente lento mas se recupera em segundos
+- Manter o botão manual de retry como fallback final
+
+#### 3. Reduzir frequência do cron de email para quando reativar
+- Mudar de 5 segundos para 30 segundos ou 1 minuto
+- Suficiente para processar emails sem saturar conexões
+
+#### 4. Limpar fila de emails pendentes/falhados
+- Os 6 emails pendentes e 25 falhados estão gerando queries repetidas sem resultado
+- Limpar a fila para o cron não processar lixo quando for reativado
+
+### Arquivos impactados
+- Migração SQL: desativar cron jobs
+- `src/contexts/AuthContext.tsx`: adicionar auto-retry com backoff
+
+### Resultado esperado
+- Login deve funcionar imediatamente após pausar os cron jobs
+- Pool de conexões volta ao normal
+- Retry automático cobre instabilidades residuais
+
