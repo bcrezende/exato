@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           if (!profileOk || !roleOk) {
-            console.error("Failed to load identity (attempt " + (attempt + 1) + "):", profileRes.error, roleRes.error);
+            devError("Failed to load identity (attempt " + (attempt + 1) + "):", profileRes.error, roleRes.error);
             if (attempt < maxRetries) {
               await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
               continue;
