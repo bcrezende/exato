@@ -1,57 +1,58 @@
 
 
-## Dashboard Especializado para Gerente
+## Dashboard Especializado para Coordenador
 
 ### Resumo
 
-Criar `ManagerDashboard.tsx` separado do `ManagerCoordinatorDashboard.tsx`, com visao focada no setor do gerente: cards de coordenadores, tabela de analistas com coordenador responsavel, KPIs do setor, e tabs especificas.
-
-O `ManagerCoordinatorDashboard.tsx` atual passa a ser usado apenas por coordenadores.
+Criar `CoordinatorDashboard.tsx` dedicado, substituindo o `ManagerCoordinatorDashboard` para coordenadores. Foco na equipe vinculada via `coordinator_analysts`, performance propria, e tabs especificas.
 
 ### Arquivos a criar
 
 | Arquivo | Descricao |
 |---------|-----------|
-| `src/pages/Dashboard/ManagerDashboard.tsx` | Dashboard completo do gerente |
-| `src/components/dashboard/manager/CoordinatorCards.tsx` | Cards dos coordenadores do setor com metricas |
-| `src/components/dashboard/manager/AnalystRankingTable.tsx` | Tabela ranking dos analistas com coordenador |
+| `src/pages/Dashboard/CoordinatorDashboard.tsx` | Dashboard completo do coordenador |
 
 ### Arquivos a editar
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/pages/Dashboard/index.tsx` | Rotear `manager` para `ManagerDashboard` (coordenador continua em `ManagerCoordinatorDashboard`) |
+| `src/pages/Dashboard/index.tsx` | Rotear `coordinator` para `CoordinatorDashboard` em vez de `ManagerCoordinatorDashboard` |
 
-### ManagerDashboard.tsx
+### CoordinatorDashboard.tsx
 
-**Data fetching**: tasks, profiles, departments, task_time_logs, coordinator_analysts (para mapear analista→coordenador)
+**Data fetching**: tasks (filtradas por assigned_to in analistas vinculados + proprio coordenador), profiles, departments, task_time_logs, coordinator_analysts
 
-**Header**: Reutiliza `DashboardHeader` com roleLabel "Visao do Setor — {nome}" + `AdminPeriodToggle` para [Hoje/Ontem/Semana/Mes]
+**Header**: "Visao da Minha Equipe" + nome do coordenador + AdminPeriodToggle [Hoje/Ontem/Semana/Mes] + badge "X analistas vinculados"
 
-**Filtro**: Dropdown "Todos os Membros" com busca (coordenadores + analistas do setor). Setor pre-selecionado e bloqueado.
+**Filtros**:
+- Dropdown "Todos os Analistas" (apenas vinculados, com busca)
+- Checkbox "Incluir minhas tarefas" (toggle para incluir/excluir tarefas do proprio coordenador nos KPIs e listas)
+- Chips de filtros ativos com X
 
-**KPIs** (4 cards): Tarefas no periodo, Em andamento, Atrasadas, Produtividade do setor (%) com cor condicional (verde <10% atraso, amarelo 10-20%, vermelho >20%)
+**KPIs** (4 cards):
+- Tarefas Total (equipe + opcional coordenador)
+- Minhas Tarefas (count do proprio coordenador)
+- Atrasadas da Equipe
+- Produtividade da Equipe (%) com cor condicional
 
-**Secao "Seus Coordenadores"**: `CoordinatorCards` — grid horizontal de cards, cada um mostrando nome do coordenador, quantidade de analistas vinculados, % de tarefas no prazo da equipe, indicador verde/amarelo/vermelho, botao "Ver Equipe" que navega para `/team/monitoring`
+**Secao "Seus Analistas"**: Grid de cards (reutiliza padrao do TeamMonitoring). Cada card mostra nome, indicador de atividade (verde=in_progress, amarelo=pendentes, cinza=sem tarefas), contadores (em execucao, atrasadas, pendentes), botao "Ver Detalhes" → navega para `/team/monitoring/:userId`
 
-**Secao "Desempenho dos Analistas"**: `AnalystRankingTable` — tabela com posicao, nome, coordenador responsavel, total tarefas, status visual (verde = 0 atrasos, amarelo = 1, vermelho = 2+)
+**Secao "Minha Performance"**: Card com progress bar das tarefas do coordenador, contadores concluidas/em andamento/atrasadas
 
-**Tabs**: Visao Geral (KPIs + CoordinatorCards + Top 5 analistas), Coordenadores (cards detalhados), Analistas (tabela completa), Atrasos (reutiliza `DelayKpiCards`)
+**Tabs**:
+- Visao Geral: KPIs + Cards Analistas + Minha Performance + TodayProgress/CriticalTasks
+- Meus Analistas: cards detalhados dos analistas
+- Minhas Tarefas: lista das tarefas do proprio coordenador com status/prioridade
+- Atrasos: reutiliza DelayKpiCards filtrado pelos analistas vinculados
 
-### CoordinatorCards
+### Logica de dados
 
-- Busca coordenadores do setor via `coordinator_analysts` + `user_roles`
-- Para cada coordenador: conta analistas vinculados, calcula % tarefas concluidas no prazo
-- Card com avatar, nome, badge "X analistas", Progress bar com %, botao "Ver Equipe"
+- Busca `coordinator_analysts` onde `coordinator_id = user.id` para obter IDs dos analistas
+- Tasks filtradas: `assigned_to IN (analistas_ids)` + opcionalmente `assigned_to = user.id` (quando checkbox ativo)
+- Profiles filtrados: apenas os analistas vinculados
+- Indicador de atividade: mesmo padrao do TeamMonitoring (in_progress=ativo, pendentes=idle, sem tarefas=inativo)
 
-### AnalystRankingTable
+### Sem mudancas no banco
 
-- Lista analistas do setor (filtrados por `department_id`)
-- Cruza com `coordinator_analysts` para mostrar coluna "Coordenador"
-- Colunas: #, Analista, Coordenador, Tarefas, Status (indicador visual)
-- Ordenavel por qualquer coluna
-
-### Nenhuma mudanca no banco de dados
-
-Todos os dados necessarios ja existem nas tabelas existentes.
+Todos os dados necessarios ja existem.
 
