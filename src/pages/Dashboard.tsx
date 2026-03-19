@@ -166,7 +166,7 @@ function AdminManagerDashboard() {
     });
 
     return { overdueTasks: overdue, todayTasks: todayList, upcomingTasks: upcoming };
-  }, [filteredTasks, todayStr, today]);
+  }, [filteredTasks, referenceDateStr, today, viewDate]);
 
   const todayCompleted = todayTasks.filter((t) => t.status === "completed").length;
   const todayTotal = todayTasks.length;
