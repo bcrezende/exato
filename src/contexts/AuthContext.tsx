@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           fetchingRef.current = false;
           return true;
         } catch (err) {
-          console.error("Auth data fetch failed (attempt " + (attempt + 1) + "):", err);
+          devError("Auth data fetch failed (attempt " + (attempt + 1) + "):", err);
           if (attempt < maxRetries) {
             await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
             continue;
