@@ -19,12 +19,18 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast({ variant: "destructive", title: "Erro ao entrar", description: error.message });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast({ variant: "destructive", title: "Erro ao entrar", description: error.message });
+        setLoading(false);
+      } else {
+        navigate("/dashboard");
+        // Keep loading=true so the button stays in "Entrando..." state until navigation completes
+      }
+    } catch {
+      toast({ variant: "destructive", title: "Erro ao entrar", description: "Falha na conexão. Tente novamente." });
       setLoading(false);
-    } else {
-      navigate("/dashboard");
     }
   };
 

@@ -60,36 +60,44 @@ function AdminManagerDashboard() {
   useEffect(() => {
     if (!user || !role || !profile) return;
     const fetchData = async () => {
-      const [tasksRes, profilesRes, depsRes, logsRes] = await Promise.all([
-        supabase.from("tasks").select("*").order("due_date", { ascending: true }),
-        supabase.from("profiles").select("id, full_name, department_id"),
-        supabase.from("departments").select("id, name").order("name"),
-        supabase.from("task_time_logs").select("*").order("created_at", { ascending: true }),
-      ]);
-      if (tasksRes.data) setTasks(tasksRes.data);
-      if (depsRes.data) {
-        if ((role === "manager" || role === "coordinator") && profile?.department_id) {
-          setDepartments(depsRes.data.filter(d => d.id === profile.department_id));
-          setSelectedDepartment(profile.department_id);
-        } else {
-          setDepartments(depsRes.data);
+      try {
+        const results = await Promise.allSettled([
+          supabase.from("tasks").select("id,title,description,status,priority,due_date,start_date,assigned_to,created_by,department_id,company_id,recurrence_type,recurrence_parent_id,estimated_minutes,difficulty_rating,created_at,updated_at").order("due_date", { ascending: true }),
+          supabase.from("profiles").select("id, full_name, department_id"),
+          supabase.from("departments").select("id, name").order("name"),
+          supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }),
+        ]);
+
+        const [tasksRes, profilesRes, depsRes, logsRes] = results;
+
+        if (tasksRes.status === "fulfilled" && tasksRes.value.data) setTasks(tasksRes.value.data);
+        if (depsRes.status === "fulfilled" && depsRes.value.data) {
+          if ((role === "manager" || role === "coordinator") && profile?.department_id) {
+            setDepartments(depsRes.value.data.filter(d => d.id === profile.department_id));
+            setSelectedDepartment(profile.department_id);
+          } else {
+            setDepartments(depsRes.value.data);
+          }
         }
+        if (role === "coordinator" && user) {
+          const { data: links } = await supabase
+            .from("coordinator_analysts")
+            .select("analyst_id")
+            .eq("coordinator_id", user.id);
+          if (links) setCoordinatorAnalystIds(links.map(l => l.analyst_id));
+        }
+        if (logsRes.status === "fulfilled" && logsRes.value.data) setTimeLogs(logsRes.value.data);
+        if (profilesRes.status === "fulfilled" && profilesRes.value.data) {
+          const map = new Map<string, string>();
+          profilesRes.value.data.forEach((p: Profile) => map.set(p.id, p.full_name || "Sem nome"));
+          setProfiles(map);
+          setProfilesList(profilesRes.value.data as Profile[]);
+        }
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
       }
-      if (role === "coordinator" && user) {
-        const { data: links } = await supabase
-          .from("coordinator_analysts")
-          .select("analyst_id")
-          .eq("coordinator_id", user.id);
-        if (links) setCoordinatorAnalystIds(links.map(l => l.analyst_id));
-      }
-      if (logsRes.data) setTimeLogs(logsRes.data);
-      if (profilesRes.data) {
-        const map = new Map<string, string>();
-        profilesRes.data.forEach((p: Profile) => map.set(p.id, p.full_name || "Sem nome"));
-        setProfiles(map);
-        setProfilesList(profilesRes.data as Profile[]);
-      }
-      setLoading(false);
     };
     fetchData();
   }, [user?.id]);
