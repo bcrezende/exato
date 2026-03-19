@@ -50,17 +50,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let initialSessionHandled = false;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         if (initialSessionHandled && _event === 'INITIAL_SESSION') return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchUserData(session.user.id);
+          fetchUserData(session.user.id).then(() => setLoading(false));
         } else {
           setProfile(null);
           setRole(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
