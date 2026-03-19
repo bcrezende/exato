@@ -269,7 +269,7 @@ export default function AnalystDetail() {
                     <CardContent className="p-3 flex items-center gap-3">
                       <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
                       <span className="text-sm text-foreground truncate flex-1">{t.title}</span>
-                      <span className="text-xs text-muted-foreground">{formatStoredDate(t.updated_at, "dd/MM")}</span>
+                      <span className="text-xs text-muted-foreground">{formatStoredDate(t.updated_at, "short-date")}</span>
                     </CardContent>
                   </Card>
                 ))}
