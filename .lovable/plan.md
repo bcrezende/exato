@@ -1,88 +1,54 @@
 
 
-## Substituir Seletor de Data/Hora por DatePicker + Time Select
+## Corrigir visibilidade de todos os usuários para Admin na tela "Minha Equipe"
 
-### Resumo
+### Problema
 
-Trocar os dois campos `<input type="datetime-local">` por um grid 2x2 com DatePicker (calendário popover do shadcn) + Select de hora (intervalos de 15min), com validação visual, sugestão automática de duração de 1h, e formato brasileiro DD/MM/YYYY.
+Na linha 62-65 do `TeamMonitoring.tsx`, o admin busca apenas usuários com role `analyst` na tabela `user_roles`. Isso exclui gerentes, coordenadores e outros membros da empresa.
+
+### Solução
+
+Para o admin, buscar **todos os profiles da empresa** diretamente, sem filtrar por role. O manager continua filtrando por departamento, e o coordinator pelos vínculos.
 
 ### Arquivo a editar
 
-`src/components/tasks/TaskForm.tsx`
+`src/pages/TeamMonitoring.tsx`
 
-### Mudanças
+### Mudança (linhas 60-81)
 
-**1. Imports adicionais:**
-- `Calendar` de `@/components/ui/calendar`
-- `Popover`, `PopoverTrigger`, `PopoverContent` de `@/components/ui/popover`
-- `CalendarIcon`, `Clock` de `lucide-react`
-- `format` de `date-fns`
-- `ptBR` de `date-fns/locale/pt-BR`
-
-**2. Gerar opções de hora:**
-- Array de strings de 00:00 a 23:45 em intervalos de 15min
-- Usado em dois `Select` (hora início e hora término)
-
-**3. Separar estado do form:**
-- `start_date` e `due_date` continuam como strings `"YYYY-MM-DDTHH:MM"` (compatível com `localInputToISO`)
-- Internamente, extrair/compor data e hora separadamente nos handlers
-- Helper: `extractDate(dtStr) → Date | undefined`, `extractTime(dtStr) → string`, `composeDatetime(date, time) → string`
-
-**4. Layout do grid 2x2 (linhas 308-330):**
-```
-Linha 1: [📅 Data Início (DatePicker)] [🕐 Hora Início (Select 15min)]
-Linha 2: [📅 Data Término (DatePicker)] [🕐 Hora Término (Select 15min)]
-```
-
-Cada DatePicker:
-- Botão com ícone CalendarIcon + data formatada DD/MM/YYYY ou placeholder "Selecione..."
-- Popover com Calendar (`pointer-events-auto`)
-- `onSelect` atualiza a parte de data no form
-
-Cada Select de hora:
-- Ícone Clock no label
-- Opções de 00:00 a 23:45 (15min)
-- Placeholder "Selecione..."
-- `onValueChange` atualiza a parte de hora no form
-
-**5. Auto-sugestão de 1h:**
-- Quando o usuário seleciona data+hora de início e o término está vazio, auto-preencher hora término = hora início + 1h (mesma data)
-
-**6. Validação visual:**
-- Borda vermelha (`border-destructive`) nos campos com erro
-- Mensagem de erro abaixo do grid quando data/hora fim < início
-
-**7. Compatibilidade:**
-- `localInputToISO` e `isoToLocalInput` continuam funcionando — o form mantém o formato `"YYYY-MM-DDTHH:MM"`
-- A lógica de auto-ajuste para recorrência diária e cálculo de `estimated_minutes` não muda
-
-### Seção técnica — helpers internos
+Substituir a lógica do bloco `else` (admin/manager):
 
 ```typescript
-const timeOptions = Array.from({ length: 96 }, (_, i) => {
-  const h = String(Math.floor(i / 4)).padStart(2, "0");
-  const m = String((i % 4) * 15).padStart(2, "0");
-  return `${h}:${m}`;
-});
+} else {
+  if (role === "manager") {
+    // Manager: get analysts in own department
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "analyst");
+    const roleUserIds = (roles || []).map((r) => r.user_id);
 
-function getDatePart(dt: string): Date | undefined {
-  if (!dt) return undefined;
-  const [datePart] = dt.split("T");
-  const [y, m, d] = datePart.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
+    const { data: companyProfiles } = await supabase
+      .from("profiles")
+      .select("id, department_id")
+      .eq("company_id", companyId)
+      .in("id", roleUserIds);
 
-function getTimePart(dt: string): string {
-  if (!dt || !dt.includes("T")) return "";
-  return dt.split("T")[1]?.slice(0, 5) || "";
-}
+    analystIds = (companyProfiles || [])
+      .filter((p) => p.department_id === profile!.department_id)
+      .map((p) => p.id);
+  } else {
+    // Admin: get ALL company members (except self)
+    const { data: companyProfiles } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("company_id", companyId)
+      .neq("id", user!.id);
 
-function composeDt(date: Date | undefined, time: string): string {
-  if (!date) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}T${time || "08:00"}`;
+    analystIds = (companyProfiles || []).map((p) => p.id);
+  }
 }
 ```
+
+Isso remove o filtro por role para admins, garantindo que todos os membros da empresa apareçam no monitoramento.
 
