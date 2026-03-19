@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
-import MyDayView from "@/components/dashboard/MyDayView";
+import AnalystDashboard from "./AnalystDashboard";
 import AdminDashboard from "./AdminDashboard";
 import ManagerDashboard from "./ManagerDashboard";
 import CoordinatorDashboard from "./CoordinatorDashboard";
@@ -11,7 +11,7 @@ export default function Dashboard() {
 
   if (!identityReady) return <DashboardSkeleton />;
 
-  if (role === "analyst") return <MyDayView />;
+  if (role === "analyst") return <AnalystDashboard />;
   if (role === "admin") return <AdminDashboard />;
   if (role === "manager") return <ManagerDashboard />;
   if (role === "coordinator") return <CoordinatorDashboard />;
