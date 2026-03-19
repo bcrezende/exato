@@ -199,7 +199,9 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
             <span className={`text-sm font-bold ${
               overduePct > 20 ? "text-destructive" : overduePct >= 10 ? "text-yellow-500" : "text-green-500"
             }`}>
-              {overdueNow} atrasadas / {periodTaskCount} total = {overduePct.toFixed(1)}%
+              <FormulaTooltip formula="Atrasadas no período ÷ Total no período × 100" showIcon={false}>
+                <span>{overdueNow} atrasadas / {periodTaskCount} total = {overduePct.toFixed(1)}%</span>
+              </FormulaTooltip>
             </span>
           </div>
         </CardContent>
