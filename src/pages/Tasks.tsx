@@ -117,7 +117,7 @@ export default function Tasks() {
     fetchTasks();
   };
 
-  const handleStatusChange = useCallback(async (taskId: string, newStatus: string) => {
+  const executeStatusChange = useCallback(async (taskId: string, newStatus: string) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
@@ -145,6 +145,14 @@ export default function Tasks() {
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
     }
   }, [tasks, toast, fetchTasks]);
+
+  const handleStatusChange = useCallback((taskId: string, newStatus: string) => {
+    if (newStatus === "in_progress") {
+      checkBeforeStart(taskId, () => executeStatusChange(taskId, newStatus));
+    } else {
+      executeStatusChange(taskId, newStatus);
+    }
+  }, [checkBeforeStart, executeStatusChange]);
 
   const getEffectiveRecurrenceType = (task: Task): string => {
     if (task.recurrence_type !== "none") return task.recurrence_type;
