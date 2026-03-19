@@ -247,7 +247,9 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completionDelayPct}%</div>
+            <FormulaTooltip formula="Conclusões atrasadas ÷ Tarefas concluídas × 100">
+              <div className="text-2xl font-bold">{completionDelayPct}%</div>
+            </FormulaTooltip>
             <p className="text-xs text-muted-foreground">
               {lateCompletionCount} tarefa{lateCompletionCount !== 1 ? "s" : ""} {periodLabel}
             </p>

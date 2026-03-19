@@ -74,7 +74,9 @@ export default function TodayProgress({
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold">{todayProgress}%</span>
+              <FormulaTooltip formula="Concluídas ÷ Total do dia × 100" showIcon={false}>
+                <span className="text-xl font-bold">{todayProgress}%</span>
+              </FormulaTooltip>
               <span className="text-[10px] text-muted-foreground">{todayCompleted}/{todayTotal}</span>
             </div>
           </div>

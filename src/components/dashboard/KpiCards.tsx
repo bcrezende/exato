@@ -57,7 +57,9 @@ export default function KpiCards({
           </CardHeader>
           <CardContent className="px-4 pb-3">
             <div className="text-xl font-bold">{todayTotal}</div>
-            <p className="text-[11px] text-muted-foreground">{todayProgress}% concluídas</p>
+            <FormulaTooltip formula="Concluídas ÷ Total do dia × 100">
+              <p className="text-[11px] text-muted-foreground">{todayProgress}% concluídas</p>
+            </FormulaTooltip>
           </CardContent>
         </Card>
 
