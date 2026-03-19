@@ -145,6 +145,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const difficultyLabels = ["Muito fácil", "Fácil", "Moderada", "Difícil", "Muito difícil"];
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
