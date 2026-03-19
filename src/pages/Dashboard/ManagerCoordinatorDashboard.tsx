@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { format, addDays, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
-import MyDayView from "@/components/dashboard/MyDayView";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardFilters from "@/components/dashboard/DashboardFilters";
@@ -25,14 +24,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, AlertCircle, Users, Building2, BarChart3 } from "lucide-react";
+import { Calendar, AlertCircle, Users, BarChart3 } from "lucide-react";
 
 const LazyPerformanceAnalytics = lazy(() => import("@/components/dashboard/PerformanceAnalytics"));
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null; department_id: string | null };
 
-function AdminManagerDashboard() {
+export default function ManagerCoordinatorDashboard() {
   const { user, role, profile } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -183,13 +182,11 @@ function AdminManagerDashboard() {
   const getName = (id: string | null) => (id ? profiles.get(id) || "—" : "Não atribuída");
 
   const departmentName = departments.find(d => d.id === profile?.department_id)?.name;
-  const roleLabel = role === "admin"
-    ? "Visão Geral da Empresa"
-    : role === "manager"
-      ? `Visão do Setor — ${departmentName || "Setor"}`
-      : role === "coordinator"
-        ? "Visão da Minha Equipe"
-        : "Visão geral";
+  const roleLabel = role === "manager"
+    ? `Visão do Setor — ${departmentName || "Setor"}`
+    : role === "coordinator"
+      ? "Visão da Minha Equipe"
+      : "Visão geral";
 
   if (loading) return <DashboardSkeleton />;
 
@@ -276,12 +273,6 @@ function AdminManagerDashboard() {
             <Users className="h-3.5 w-3.5" />
             Equipe
           </TabsTrigger>
-          {role === "admin" && (
-            <TabsTrigger value="setores" className="gap-1.5">
-              <Building2 className="h-3.5 w-3.5" />
-              Setores
-            </TabsTrigger>
-          )}
           <TabsTrigger value="analytics" className="gap-1.5">
             <BarChart3 className="h-3.5 w-3.5" />
             Analytics
@@ -339,12 +330,6 @@ function AdminManagerDashboard() {
           />
         </TabsContent>
 
-        {role === "admin" && (
-          <TabsContent value="setores" className="mt-4">
-            <SectorComparisonCard tasks={tasks} departments={departments} />
-          </TabsContent>
-        )}
-
         <TabsContent value="analytics" className="mt-4">
           {activeTab === "analytics" && (
             <Suspense fallback={<Skeleton className="h-[400px] w-full rounded-lg" />}>
@@ -376,13 +361,4 @@ function AdminManagerDashboard() {
       />
     </div>
   );
-}
-
-export default function Dashboard() {
-  const { role, identityReady } = useAuth();
-  
-  if (!identityReady) return <DashboardSkeleton />;
-  
-  if (role === "analyst") return <MyDayView />;
-  return <AdminManagerDashboard />;
 }
