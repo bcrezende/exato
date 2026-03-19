@@ -219,6 +219,7 @@ function AdminManagerDashboard() {
         tasks={filteredTasks}
         selectedDepartment={selectedDepartment}
         selectedEmployee={selectedEmployee}
+        referenceDate={referenceDate}
       />
 
       <div className="grid gap-5 lg:grid-cols-2">
