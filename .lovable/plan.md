@@ -1,50 +1,46 @@
 
 
-## Adicionar Tooltips Explicativos de Cálculos nos Cards do Dashboard
+## Apresentação HTML da Plataforma Exato
 
-### Objetivo
-Exibir um balão flutuante (tooltip) ao passar o mouse sobre valores calculados (percentuais, taxas, pontuações), mostrando a fórmula usada de forma legível.
+### O que será criado
+Uma página HTML standalone (single-file) com apresentação profissional em slides, estilo pitch deck, para apresentar a plataforma Exato a empresas. A página será adicionada ao projeto como `src/pages/Presentation.tsx` com rota `/presentation`.
 
-### Componentes afetados e fórmulas a documentar
+### Estrutura dos Slides (10 slides)
 
-| Componente | Valor | Fórmula no tooltip |
-|---|---|---|
-| **KpiCards** | `todayProgress%` | "Concluídas ÷ Total do dia × 100" |
-| **AdminKpiCards** | `avgDelayRate%` | "Tarefas atrasadas ÷ Total de tarefas × 100" |
-| **DelayKpiCards** | `startDelayPct%` | "Inícios atrasados ÷ Tarefas iniciadas × 100" |
-| **DelayKpiCards** | `completionDelayPct%` | "Conclusões atrasadas ÷ Tarefas concluídas × 100" |
-| **DelayKpiCards** | `overduePct%` | "Atrasadas no período ÷ Total no período × 100" |
-| **TodayProgress** | `todayProgress%` | "Concluídas ÷ Total do dia × 100" |
-| **SectorComparisonCard** | `onTimeRate%` | "(Total − Atrasadas) ÷ Total × 100" |
-| **AdminSectorCards** | `onTimeRate%` | "Concluídas ÷ Total × 100" |
-| **CoordinatorCards** | `onTimeRate%` | "(Total − Atrasadas) ÷ Total × 100" |
-| **PodiumCard** | `totalPoints` | "+10 concluída, +5 no prazo, −3 atrasada, +3 alta prioridade" |
-| **PerformanceAnalytics** | `delayRate%` | "Inícios atrasados ÷ Total iniciadas × 100" |
-| **PerformanceAnalytics** | `avgExecution` | "Soma tempo execução ÷ Nº tarefas concluídas" |
+1. **Capa** — Logo Exato, tagline "Gestão de tarefas inteligente para equipes que entregam resultados"
+2. **O Problema** — Falta de visibilidade, atrasos não rastreados, gestão manual
+3. **A Solução** — Plataforma Exato com visão geral das funcionalidades
+4. **Dashboards por Papel** — Admin, Gerente, Coordenador, Analista — cada um vê o que precisa
+5. **Gestão de Tarefas** — Kanban, Lista, Calendário, importação em massa, recorrência
+6. **Monitoramento de Equipe** — Ranking, status de atividade, detalhamento por analista
+7. **Análise com IA** — Insights automáticos, histórico de análises, recomendações
+8. **Segurança** — RLS por papel, logging seguro, dados isolados por empresa
+9. **Diferenciais** — Tooltips de fórmulas, notificações, convites, feriados, temas dark/light
+10. **CTA / Contato** — Call to action final
 
 ### Abordagem técnica
 
-1. **Criar componente reutilizável `FormulaTooltip`** em `src/components/ui/formula-tooltip.tsx`
-   - Wrapper simples que usa os componentes `Tooltip`/`TooltipTrigger`/`TooltipContent` já existentes
-   - Recebe `formula: string` e `children` (o elemento que recebe hover)
-   - Exibe um ícone sutil de info (ℹ) ao lado do valor, ou aplica o tooltip diretamente no valor
+- **Componente React** com navegação por teclado (setas) e clique
+- **Fullscreen** via botão
+- **Design**: Paleta da plataforma (primary azul `hsl(221,83%,53%)`, fundo escuro `hsl(222,47%,11%)`, branco)
+- **Fontes**: Space Grotesk (títulos) + Inter (corpo) — já importadas no projeto
+- **Animações**: Fade-in nos elementos ao trocar slide
+- **Responsivo**: Escala proporcional para qualquer tela
+- **Barra de progresso** no rodapé
+- **Thumbnails** lateral opcional
 
-2. **Aplicar nos 10 componentes listados** — envolver os valores percentuais/calculados com `FormulaTooltip`
+### Arquivos
 
-### Exemplo de uso
+| Ação | Arquivo |
+|------|---------|
+| Criar | `src/pages/Presentation.tsx` |
+| Editar | `src/App.tsx` (adicionar rota `/presentation` pública) |
 
-```tsx
-<FormulaTooltip formula="Concluídas ÷ Total do dia × 100">
-  <span className="text-xl font-bold">{todayProgress}%</span>
-</FormulaTooltip>
-```
+### Detalhes visuais por slide
 
-### Resultado visual
-- Ao passar o mouse, aparece tooltip com fundo escuro mostrando a fórmula em texto legível
-- Sem impacto visual quando não há hover — mantém a interface limpa
-- Transição suave de entrada/saída (já presente no componente Tooltip existente)
-
-### Arquivos a criar/editar
-- **Criar**: `src/components/ui/formula-tooltip.tsx`
-- **Editar**: `KpiCards.tsx`, `AdminKpiCards.tsx`, `DelayKpiCards.tsx`, `TodayProgress.tsx`, `SectorComparisonCard.tsx`, `AdminSectorCards.tsx`, `CoordinatorCards.tsx`, `PodiumCard.tsx`, `PerformanceAnalytics.tsx`
+- Slides ímpares: fundo escuro com texto claro (premium feel)
+- Slides pares: fundo claro com cards e ícones coloridos
+- Ícones Lucide para cada funcionalidade
+- Grid cards para features (2x2 ou 3x2)
+- Números grandes (48-72px) para estatísticas de impacto
 
