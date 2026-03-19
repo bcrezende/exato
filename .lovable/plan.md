@@ -1,58 +1,77 @@
 
 
-## Dashboard Especializado para Coordenador
+## Dashboard Especializado para Analista
 
 ### Resumo
 
-Criar `CoordinatorDashboard.tsx` dedicado, substituindo o `ManagerCoordinatorDashboard` para coordenadores. Foco na equipe vinculada via `coordinator_analysts`, performance propria, e tabs especificas.
+Substituir o `MyDayView` atual por um `AnalystDashboard.tsx` completo com filtro de periodo, grafico de produtividade (donut), checklist interativo, preview de proximas tarefas, e 4 tabs (Hoje, Proximos Dias, Concluidas, Atrasadas).
+
+O `MyDayView` existente ja tem a logica base (fetch de tasks do usuario, status change, KPIs, confetti). O novo dashboard expande isso com periodo toggle, donut chart, tabs, e secao de proximas tarefas.
 
 ### Arquivos a criar
 
 | Arquivo | Descricao |
 |---------|-----------|
-| `src/pages/Dashboard/CoordinatorDashboard.tsx` | Dashboard completo do coordenador |
+| `src/pages/Dashboard/AnalystDashboard.tsx` | Dashboard completo do analista com tabs e grafico |
 
 ### Arquivos a editar
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/pages/Dashboard/index.tsx` | Rotear `coordinator` para `CoordinatorDashboard` em vez de `ManagerCoordinatorDashboard` |
+| `src/pages/Dashboard/index.tsx` | Rotear `analyst` para `AnalystDashboard` em vez de `MyDayView` |
 
-### CoordinatorDashboard.tsx
+### AnalystDashboard.tsx
 
-**Data fetching**: tasks (filtradas por assigned_to in analistas vinculados + proprio coordenador), profiles, departments, task_time_logs, coordinator_analysts
+**Data fetching**: tasks onde `assigned_to = user.id`, filtradas por periodo selecionado. Fetch separado para "proximas tarefas" (amanha em diante, limit 3).
 
-**Header**: "Visao da Minha Equipe" + nome do coordenador + AdminPeriodToggle [Hoje/Ontem/Semana/Mes] + badge "X analistas vinculados"
+**Header**: "Meu Dashboard" + nome do analista + `AdminPeriodToggle` [Hoje/Ontem/Semana/Mes]. Sem filtros de setor ou usuario.
 
-**Filtros**:
-- Dropdown "Todos os Analistas" (apenas vinculados, com busca)
-- Checkbox "Incluir minhas tarefas" (toggle para incluir/excluir tarefas do proprio coordenador nos KPIs e listas)
-- Chips de filtros ativos com X
+**KPIs** (4 cards — reutiliza padrao AnimatedCounter do MyDayView):
+- Tarefas no periodo
+- Em andamento
+- Concluidas no periodo
+- Atrasadas
 
-**KPIs** (4 cards):
-- Tarefas Total (equipe + opcional coordenador)
-- Minhas Tarefas (count do proprio coordenador)
-- Atrasadas da Equipe
-- Produtividade da Equipe (%) com cor condicional
+**Grafico de Produtividade** (donut via Recharts PieChart):
+- Segmentos: concluidas (verde), em andamento (azul), pendentes (amarelo), atrasadas (vermelho)
+- Centro: "X de Y concluidas"
+- Usa ChartContainer do projeto
 
-**Secao "Seus Analistas"**: Grid de cards (reutiliza padrao do TeamMonitoring). Cada card mostra nome, indicador de atividade (verde=in_progress, amarelo=pendentes, cinza=sem tarefas), contadores (em execucao, atrasadas, pendentes), botao "Ver Detalhes" → navega para `/team/monitoring/:userId`
+**Checklist de Tarefas (tab Hoje)**:
+- Reutiliza logica do MyDayView: checkbox/botoes para Iniciar/Concluir
+- Horario inicio-fim, indicador de status por cor
+- Clique abre TaskDetailModal
+- Confetti quando todas concluidas
 
-**Secao "Minha Performance"**: Card com progress bar das tarefas do coordenador, contadores concluidas/em andamento/atrasadas
+**Proximas Tarefas**: Card compacto mostrando ate 3 tarefas futuras (amanha+), com titulo e data
 
 **Tabs**:
-- Visao Geral: KPIs + Cards Analistas + Minha Performance + TodayProgress/CriticalTasks
-- Meus Analistas: cards detalhados dos analistas
-- Minhas Tarefas: lista das tarefas do proprio coordenador com status/prioridade
-- Atrasos: reutiliza DelayKpiCards filtrado pelos analistas vinculados
+- Hoje: KPIs + Donut + Checklist + Proximas Tarefas
+- Proximos Dias: lista de tarefas dos proximos 7 dias agrupadas por dia
+- Concluidas: historico de tarefas concluidas no periodo
+- Atrasadas: tarefas com status overdue
 
-### Logica de dados
+### Logica de periodo
 
-- Busca `coordinator_analysts` onde `coordinator_id = user.id` para obter IDs dos analistas
-- Tasks filtradas: `assigned_to IN (analistas_ids)` + opcionalmente `assigned_to = user.id` (quando checkbox ativo)
-- Profiles filtrados: apenas os analistas vinculados
-- Indicador de atividade: mesmo padrao do TeamMonitoring (in_progress=ativo, pendentes=idle, sem tarefas=inativo)
+Reutiliza `AdminPeriodToggle` e calcula dateRange igual aos outros dashboards. Na tab "Hoje" sempre mostra tarefas do dia atual independente do periodo (periodo afeta KPIs e outras tabs).
+
+### Componentes reutilizados
+
+- `AdminPeriodToggle` — seletor de periodo
+- `AnimatedCounter` — extraido inline (mesmo padrao do MyDayView)
+- `TaskDetailModal` — modal de detalhes da tarefa
+- `PendingTasksAlert` — alerta de tarefas pendentes antes de iniciar
+- `ChartContainer`, `PieChart` do Recharts — grafico donut
+- `ConfettiCanvas` — movido inline (mesmo do MyDayView)
 
 ### Sem mudancas no banco
 
-Todos os dados necessarios ja existem.
+Todos os dados ja existem. RLS garante que analista so ve suas proprias tarefas.
+
+### Secao tecnica
+
+- Fetch principal: `supabase.from("tasks").select("*").eq("assigned_to", user.id)` com filtros de data
+- Fetch proximas: `supabase.from("tasks").select("*").eq("assigned_to", user.id).gte("start_date", tomorrowStart).order("start_date").limit(3)`
+- Status update: reutiliza `updateTaskStatus` de `@/lib/task-utils`
+- `usePendingTasksCheck` para validacao antes de iniciar tarefas
 
