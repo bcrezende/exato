@@ -1,51 +1,36 @@
 
 
-## Diagnóstico Final: Por que o login ainda trava
+## Diagnóstico: Login ainda trava por instabilidade do banco
 
-### Causa raiz encontrada
-
-A tabela `net._http_response` tem **340 requisições com status NULL** (de um total de 3.571). Essas são chamadas HTTP do `pg_net` (usadas pelos cron jobs) que nunca receberam resposta. O worker do `pg_net` mantém conexões abertas aguardando esses responses, consumindo slots do pool de conexões do banco.
-
-Mesmo após reduzir o cron de email de 5s para 1min, o cron **continua ativo** (job #4) e gerando novas requisições que potencialmente travam. Além disso, os 340 responses pendentes nunca são limpos automaticamente.
-
-```text
-Fluxo atual:
-cron job → pg_net.http_post() → edge function timeout → response fica NULL →
-worker pg_net segura conexão → pool satura → queries de profiles/user_roles levam 13-64s →
-FETCH_TIMEOUT de 12s expira → login trava
-```
-
-Adicionalmente, o `Login.tsx` tem um bug: quando o auth **sucede** mas o fetch de profile/role **falha** (profileError), o botão fica em "Entrando..." para sempre porque o `loading` local nunca é resetado.
+### Situação atual
+- A limpeza dos cron jobs e `net._http_response` funcionou (0 entradas, 1 cron ativo)
+- Porém o banco de dados continua intermitentemente irresponsivo (até `SELECT 1` dá timeout)
+- A chamada `signInWithPassword` fica pendente sem timeout, travando o botão para sempre
+- O fix do `profileError` não cobre o caso em que **a própria autenticação** trava (só cobre quando auth sucede mas profile falha)
 
 ### Plano de ação
 
-#### 1. Migração SQL: Desativar cron jobs e limpar pg_net
-- Desativar **ambos** os cron jobs ativos (job #1 e #4)
-- Limpar a tabela `net._http_response` (remover as 3.571 entradas acumuladas)
-- Isso libera imediatamente as conexões presas do pg_net
+#### 1. Adicionar timeout na chamada de login (`src/pages/Login.tsx`)
+- Envolver `signInWithPassword` com um `Promise.race` e timeout de 15 segundos
+- Se expirar, mostrar toast de erro e resetar o botão
+- Isso garante que o botão **nunca** fique travado indefinidamente
 
-#### 2. Corrigir bug do Login.tsx
-- O botão "Entrando..." fica travado quando auth sucede mas profile falha
-- Adicionar watch do estado `profileError` do AuthContext
-- Quando `profileError` é true, resetar `loading` local e mostrar toast de erro
-- Permitir que o usuário tente novamente
+#### 2. Adicionar índices para otimizar RLS (`migração SQL`)
+- Criar índices em `profiles(company_id)` e `user_roles(user_id)` 
+- As RLS policies fazem subconsultas nestas colunas em cada query
+- Sem índices, cada avaliação de policy faz sequential scan, amplificando a carga
 
-#### 3. Aumentar FETCH_TIMEOUT no AuthContext
-- Aumentar de 12s para 20s para cobrir a latência real do banco (queries levando 13s+)
-- Manter retry com backoff para resiliência
-
-#### 4. Recriar cron jobs com proteção
-- Recriar o cron de tarefas recorrentes com frequência menor (a cada 6 horas em vez de 1 hora)
-- Manter o cron de email **desativado** até estabilizar
-- Futuramente, adicionar `statement_timeout` no comando do cron
+#### 3. Terminar conexões idle-in-transaction (`migração SQL`)
+- Configurar `idle_in_transaction_session_timeout` para 30 segundos
+- Conexões presas em transação aberta são liberadas automaticamente
+- Isso previne saturação do pool de conexões
 
 ### Arquivos impactados
-- Migração SQL (desativar crons + limpar pg_net)
-- `src/pages/Login.tsx` (corrigir bug do loading)
-- `src/contexts/AuthContext.tsx` (aumentar timeout)
+- `src/pages/Login.tsx` -- timeout na chamada de auth
+- Migração SQL -- índices + configuração de timeout de sessão
 
 ### Resultado esperado
-- Pool de conexões volta ao normal imediatamente
-- Login deve completar em poucos segundos
-- Botão "Entrar" nunca mais fica travado indefinidamente
+- Botão de login nunca fica travado mais que 15 segundos
+- Queries de RLS ficam mais rápidas com índices
+- Conexões presas são liberadas automaticamente
 
