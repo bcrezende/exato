@@ -1,54 +1,33 @@
 
 
-## Corrigir visibilidade de todos os usuários para Admin na tela "Minha Equipe"
+## Usar logo reduzida no sidebar colapsado
 
 ### Problema
-
-Na linha 62-65 do `TeamMonitoring.tsx`, o admin busca apenas usuários com role `analyst` na tabela `user_roles`. Isso exclui gerentes, coordenadores e outros membros da empresa.
+Quando o sidebar é colapsado, a logo completa (`logo-white.png`) fica achatada e ilegível.
 
 ### Solução
-
-Para o admin, buscar **todos os profiles da empresa** diretamente, sem filtrar por role. O manager continua filtrando por departamento, e o coordinator pelos vínculos.
+Copiar a imagem enviada como `src/assets/logo-icon.png` e exibi-la no lugar da logo completa quando o sidebar estiver colapsado.
 
 ### Arquivo a editar
+`src/components/AppSidebar.tsx`
 
-`src/pages/TeamMonitoring.tsx`
+### Mudanças
 
-### Mudança (linhas 60-81)
+1. Copiar `user-uploads://Editedimage_1773942516854_copia.png` → `src/assets/logo-icon.png`
 
-Substituir a lógica do bloco `else` (admin/manager):
-
+2. Importar a nova logo:
 ```typescript
-} else {
-  if (role === "manager") {
-    // Manager: get analysts in own department
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "analyst");
-    const roleUserIds = (roles || []).map((r) => r.user_id);
-
-    const { data: companyProfiles } = await supabase
-      .from("profiles")
-      .select("id, department_id")
-      .eq("company_id", companyId)
-      .in("id", roleUserIds);
-
-    analystIds = (companyProfiles || [])
-      .filter((p) => p.department_id === profile!.department_id)
-      .map((p) => p.id);
-  } else {
-    // Admin: get ALL company members (except self)
-    const { data: companyProfiles } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("company_id", companyId)
-      .neq("id", user!.id);
-
-    analystIds = (companyProfiles || []).map((p) => p.id);
-  }
-}
+import logoIcon from "@/assets/logo-icon.png";
 ```
 
-Isso remove o filtro por role para admins, garantindo que todos os membros da empresa apareçam no monitoramento.
+3. Trocar a tag `<img>` no `SidebarHeader` (linha 50):
+```typescript
+<img
+  src={collapsed ? logoIcon : logoWhite}
+  alt="Exato"
+  className={collapsed ? "h-8 w-8 object-contain" : "h-14 w-auto"}
+/>
+```
+
+Quando expandido: logo completa branca. Quando colapsado: ícone compacto.
 
