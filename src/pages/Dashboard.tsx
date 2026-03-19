@@ -360,8 +360,6 @@ function AdminManagerDashboard() {
       <AIAnalysisDialog
         departments={departments as any}
         profiles={profilesList as any}
-        open={analysisOpen}
-        onOpenChange={setAnalysisOpen}
       />
     </div>
   );
