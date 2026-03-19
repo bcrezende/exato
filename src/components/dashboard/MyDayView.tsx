@@ -73,11 +73,10 @@ export default function MyDayView() {
 
   useEffect(() => { fetchTasks(); }, [user]);
 
-  const handleStatusChange = async (taskId: string, newStatus: "in_progress" | "completed") => {
+  const executeStatusChange = async (taskId: string, newStatus: "in_progress" | "completed") => {
     const task = tasks.find((t) => t.id === taskId);
     const previousTasks = tasks;
 
-    // Optimistic update — instant feedback
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
     if (newStatus === "in_progress") {
       setHighlightedId(taskId);
@@ -92,9 +91,16 @@ export default function MyDayView() {
       const { generatedRecurring } = await updateTaskStatus(taskId, newStatus, task);
       if (generatedRecurring) fetchTasks();
     } catch {
-      // Revert on error
       setTasks(previousTasks);
       toast.error("Erro ao atualizar status");
+    }
+  };
+
+  const handleStatusChange = (taskId: string, newStatus: "in_progress" | "completed") => {
+    if (newStatus === "in_progress") {
+      checkBeforeStart(taskId, () => executeStatusChange(taskId, newStatus));
+    } else {
+      executeStatusChange(taskId, newStatus);
     }
   };
 
