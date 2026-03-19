@@ -5,11 +5,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { localInputToISO, isoToLocalInput } from "@/lib/date-utils";
+import { CalendarIcon, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale/pt-BR";
+import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -17,6 +23,41 @@ type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
+
+// Time options in 15-min intervals
+const timeOptions = Array.from({ length: 96 }, (_, i) => {
+  const h = String(Math.floor(i / 4)).padStart(2, "0");
+  const m = String((i % 4) * 15).padStart(2, "0");
+  return `${h}:${m}`;
+});
+
+function getDatePart(dt: string): Date | undefined {
+  if (!dt) return undefined;
+  const [datePart] = dt.split("T");
+  if (!datePart) return undefined;
+  const [y, m, d] = datePart.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function getTimePart(dt: string): string {
+  if (!dt || !dt.includes("T")) return "";
+  return dt.split("T")[1]?.slice(0, 5) || "";
+}
+
+function composeDt(date: Date | undefined, time: string): string {
+  if (!date) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}T${time || "08:00"}`;
+}
+
+function addOneHour(time: string): string {
+  if (!time) return "09:00";
+  const [h, m] = time.split(":").map(Number);
+  const newH = (h + 1) % 24;
+  return `${String(newH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
 
 interface TaskFormProps {
   open: boolean;
@@ -67,6 +108,18 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       }
     }
   }, [form.recurrence_type, form.start_date]);
+
+  // Auto-suggest 1h duration when start is set and due is empty
+  useEffect(() => {
+    if (form.start_date && !form.due_date) {
+      const startDate = getDatePart(form.start_date);
+      const startTime = getTimePart(form.start_date);
+      if (startDate && startTime) {
+        const endTime = addOneHour(startTime);
+        setForm(prev => ({ ...prev, due_date: composeDt(startDate, endTime) }));
+      }
+    }
+  }, [form.start_date]);
 
   const resetForm = (task: Task | null) => {
     setForm(getInitialForm(task, isAdmin, currentProfile));
@@ -167,6 +220,38 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
 
   const fieldClass = (field: string) =>
     errors[field] ? "border-destructive focus:ring-destructive" : "";
+
+  // Handlers for DatePicker + Time Select
+  const handleStartDateSelect = (date: Date | undefined) => {
+    const currentTime = getTimePart(form.start_date) || "08:00";
+    const newStart = composeDt(date, currentTime);
+    setForm(prev => ({ ...prev, start_date: newStart }));
+  };
+
+  const handleStartTimeChange = (time: string) => {
+    const currentDate = getDatePart(form.start_date);
+    const newStart = composeDt(currentDate, time);
+    setForm(prev => ({ ...prev, start_date: newStart }));
+  };
+
+  const handleDueDateSelect = (date: Date | undefined) => {
+    const currentTime = getTimePart(form.due_date) || "09:00";
+    const newDue = composeDt(date, currentTime);
+    setForm(prev => ({ ...prev, due_date: newDue }));
+  };
+
+  const handleDueTimeChange = (time: string) => {
+    const currentDate = getDatePart(form.due_date);
+    const newDue = composeDt(currentDate, time);
+    setForm(prev => ({ ...prev, due_date: newDue }));
+  };
+
+  const startDateValue = getDatePart(form.start_date);
+  const startTimeValue = getTimePart(form.start_date);
+  const dueDateValue = getDatePart(form.due_date);
+  const dueTimeValue = getTimePart(form.due_date);
+
+  const dateTimeError = errors.due_date && form.start_date && form.due_date;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -305,28 +390,111 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
             )}
           </div>
 
-          {/* Datas */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Data/Hora de Início <span className="text-destructive">*</span></Label>
-              <Input
-                type="datetime-local"
-                value={form.start_date}
-                onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                className={fieldClass("start_date")}
-              />
-              {errors.start_date && <p className="text-xs text-destructive">{errors.start_date}</p>}
+          {/* Datas - Grid 2x2: DatePicker + Time Select */}
+          <div className="space-y-3">
+            {/* Linha 1: Data Início + Hora Início */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  Data Início <span className="text-destructive">*</span>
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDateValue && "text-muted-foreground",
+                        errors.start_date && "border-destructive"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDateValue ? format(startDateValue, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione...</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDateValue}
+                      onSelect={handleStartDateSelect}
+                      locale={ptBR}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  Hora Início <span className="text-destructive">*</span>
+                </Label>
+                <Select value={startTimeValue || undefined} onValueChange={handleStartTimeChange}>
+                  <SelectTrigger className={cn(errors.start_date && !startTimeValue && "border-destructive")}>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {timeOptions.map((t) => (
+                      <SelectItem key={`start-${t}`} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Data/Hora de Término <span className="text-destructive">*</span></Label>
-              <Input
-                type="datetime-local"
-                value={form.due_date}
-                onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                className={fieldClass("due_date")}
-              />
-              {errors.due_date && <p className="text-xs text-destructive">{errors.due_date}</p>}
+            {errors.start_date && <p className="text-xs text-destructive">{errors.start_date}</p>}
+
+            {/* Linha 2: Data Término + Hora Término */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  Data Término <span className="text-destructive">*</span>
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dueDateValue && "text-muted-foreground",
+                        errors.due_date && "border-destructive"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dueDateValue ? format(dueDateValue, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione...</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dueDateValue}
+                      onSelect={handleDueDateSelect}
+                      locale={ptBR}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  Hora Término <span className="text-destructive">*</span>
+                </Label>
+                <Select value={dueTimeValue || undefined} onValueChange={handleDueTimeChange}>
+                  <SelectTrigger className={cn(errors.due_date && !dueTimeValue && "border-destructive")}>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {timeOptions.map((t) => (
+                      <SelectItem key={`due-${t}`} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            {errors.due_date && <p className="text-xs text-destructive">{errors.due_date}</p>}
           </div>
         </div>
         <DialogFooter>
