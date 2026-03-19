@@ -58,25 +58,31 @@ export default function TeamMonitoring() {
           .eq("coordinator_id", user!.id);
         analystIds = (links || []).map((l) => l.analyst_id);
       } else {
-        // admin or manager - get analysts by role
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "analyst");
-        const roleUserIds = (roles || []).map((r) => r.user_id);
-
-        // Filter by company profiles
-        const { data: companyProfiles } = await supabase
-          .from("profiles")
-          .select("id, department_id")
-          .eq("company_id", companyId)
-          .in("id", roleUserIds);
-
         if (role === "manager") {
+          // Manager: get analysts in own department
+          const { data: roles } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "analyst");
+          const roleUserIds = (roles || []).map((r) => r.user_id);
+
+          const { data: companyProfiles } = await supabase
+            .from("profiles")
+            .select("id, department_id")
+            .eq("company_id", companyId)
+            .in("id", roleUserIds);
+
           analystIds = (companyProfiles || [])
             .filter((p) => p.department_id === profile!.department_id)
             .map((p) => p.id);
         } else {
+          // Admin: get ALL company members (except self)
+          const { data: companyProfiles } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("company_id", companyId)
+            .neq("id", user!.id);
+
           analystIds = (companyProfiles || []).map((p) => p.id);
         }
       }
