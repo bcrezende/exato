@@ -37,14 +37,26 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        toast({ variant: "destructive", title: "Erro ao entrar", description: error.message });
+      const result = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("LOGIN_TIMEOUT")), 15000)
+        ),
+      ]);
+      if (result.error) {
+        toast({ variant: "destructive", title: "Erro ao entrar", description: result.error.message });
         setLoading(false);
       }
       // On success, the AuthContext listener will set identityReady → useEffect redirects
-    } catch {
-      toast({ variant: "destructive", title: "Erro ao entrar", description: "Falha na conexão. Tente novamente." });
+    } catch (err: any) {
+      const isTimeout = err?.message === "LOGIN_TIMEOUT";
+      toast({
+        variant: "destructive",
+        title: "Erro ao entrar",
+        description: isTimeout
+          ? "O servidor demorou para responder. Tente novamente em alguns segundos."
+          : "Falha na conexão. Tente novamente.",
+      });
       setLoading(false);
     }
   };
