@@ -1,36 +1,20 @@
 
 
-## Diagnóstico: Login ainda trava por instabilidade do banco
+## Criar índices de performance para RLS
 
-### Situação atual
-- A limpeza dos cron jobs e `net._http_response` funcionou (0 entradas, 1 cron ativo)
-- Porém o banco de dados continua intermitentemente irresponsivo (até `SELECT 1` dá timeout)
-- A chamada `signInWithPassword` fica pendente sem timeout, travando o botão para sempre
-- O fix do `profileError` não cobre o caso em que **a própria autenticação** trava (só cobre quando auth sucede mas profile falha)
+### Objetivo
+Adicionar índices nas colunas mais usadas pelas políticas de RLS para eliminar sequential scans e prevenir futuros problemas de performance.
 
-### Plano de ação
+### Migração SQL
 
-#### 1. Adicionar timeout na chamada de login (`src/pages/Login.tsx`)
-- Envolver `signInWithPassword` com um `Promise.race` e timeout de 15 segundos
-- Se expirar, mostrar toast de erro e resetar o botão
-- Isso garante que o botão **nunca** fique travado indefinidamente
+Uma única migração com os seguintes índices:
 
-#### 2. Adicionar índices para otimizar RLS (`migração SQL`)
-- Criar índices em `profiles(company_id)` e `user_roles(user_id)` 
-- As RLS policies fazem subconsultas nestas colunas em cada query
-- Sem índices, cada avaliação de policy faz sequential scan, amplificando a carga
-
-#### 3. Terminar conexões idle-in-transaction (`migração SQL`)
-- Configurar `idle_in_transaction_session_timeout` para 30 segundos
-- Conexões presas em transação aberta são liberadas automaticamente
-- Isso previne saturação do pool de conexões
+1. **`idx_profiles_company_id`** em `profiles(company_id)` — usado por `get_user_company_id()` que é chamado em praticamente toda policy de RLS
+2. **`idx_user_roles_user_id`** em `user_roles(user_id)` — usado por `has_role()` que é chamado em toda verificação de permissão
+3. **`idx_tasks_company_id`** em `tasks(company_id)` — filtro principal em todas as policies da tabela tasks
+4. **`idx_tasks_assigned_to`** em `tasks(assigned_to)` — usado em policies de SELECT/UPDATE/DELETE de tasks
+5. **`idx_notifications_user_id`** em `notifications(user_id)` — filtro principal nas policies de notifications
 
 ### Arquivos impactados
-- `src/pages/Login.tsx` -- timeout na chamada de auth
-- Migração SQL -- índices + configuração de timeout de sessão
-
-### Resultado esperado
-- Botão de login nunca fica travado mais que 15 segundos
-- Queries de RLS ficam mais rápidas com índices
-- Conexões presas são liberadas automaticamente
+- Apenas migração SQL (nenhuma alteração de código)
 
