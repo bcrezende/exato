@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer } from "recharts";
 import { Timer, TrendingDown, CheckCircle, AlertTriangle } from "lucide-react";
+import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 import { format, subDays, startOfDay, differenceInMilliseconds } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
