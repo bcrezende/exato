@@ -294,7 +294,7 @@ export default function AnalystDetail() {
                       <CardContent className="p-3">
                         <p className="text-sm font-medium text-foreground truncate">{t.title}</p>
                         {t.due_date && (
-                          <p className="text-xs text-muted-foreground mt-1">{formatStoredDate(t.due_date, "dd/MM HH:mm")}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{formatStoredDate(t.due_date, "short-date")}</p>
                         )}
                       </CardContent>
                     </Card>
