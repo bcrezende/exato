@@ -198,7 +198,7 @@ function AdminManagerDashboard() {
         hasActiveFilters={hasActiveFilters}
         viewDate={viewDate}
         onViewDateChange={setViewDate}
-        onOpenAnalysis={() => setAnalysisOpen(true)}
+        
       />
 
       <DashboardFilters
