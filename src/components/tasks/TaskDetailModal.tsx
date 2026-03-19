@@ -36,6 +36,69 @@ function formatDuration(ms: number): string {
   return `${hours}h ${minutes}min`;
 }
 
+function ManagementActions({ task }: { task: Task }) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const handleRemind = async () => {
+    if (!task.assigned_to || !user) return;
+    setLoading(true);
+    const { error } = await supabase.from("notifications").insert({
+      user_id: task.assigned_to,
+      title: "Cobrança de tarefa",
+      message: `Seu gerente solicitou atualização sobre: ${task.title}`,
+      type: "task_reminder",
+      reference_id: task.id,
+    });
+    setLoading(false);
+    if (error) {
+      toast({ variant: "destructive", title: "Erro ao enviar cobrança" });
+    } else {
+      toast({ title: "Cobrança enviada!" });
+    }
+  };
+
+  const handleEscalate = async () => {
+    if (!task.department_id || !user) return;
+    setLoading(true);
+    // Find coordinators linked to analysts in this department
+    const { data: links } = await supabase
+      .from("coordinator_analysts")
+      .select("coordinator_id");
+    
+    if (links && links.length > 0) {
+      const uniqueCoordinators = [...new Set(links.map(l => l.coordinator_id))];
+      const notifications = uniqueCoordinators.map(coordId => ({
+        user_id: coordId,
+        title: "Tarefa escalada",
+        message: `A tarefa "${task.title}" foi escalada para sua atenção`,
+        type: "task_escalated",
+        reference_id: task.id,
+      }));
+      await supabase.from("notifications").insert(notifications);
+    }
+    setLoading(false);
+    toast({ title: "Tarefa escalada para coordenadores!" });
+  };
+
+  return (
+    <div className="space-y-2">
+      <span className="text-sm font-medium">Ações de Gestão</span>
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" className="flex-1 gap-1.5" disabled={loading} onClick={handleRemind}>
+          <Bell className="h-3.5 w-3.5" />
+          Cobrar
+        </Button>
+        <Button size="sm" variant="outline" className="flex-1 gap-1.5" disabled={loading} onClick={handleEscalate}>
+          <ArrowUpCircle className="h-3.5 w-3.5" />
+          Escalar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 interface TaskDetailModalProps {
   task: Task | null;
   open: boolean;
@@ -45,7 +108,6 @@ interface TaskDetailModalProps {
   onEdit: (task: Task) => void;
   onRefresh: () => void;
 }
-
 export default function TaskDetailModal({ task, open, onOpenChange, members, departments, onEdit, onRefresh }: TaskDetailModalProps) {
   const { user, role } = useAuth();
   const { toast } = useToast();
