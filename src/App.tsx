@@ -21,6 +21,8 @@ const MyDayView = lazy(() => import("./components/dashboard/MyDayView"));
 const Team = lazy(() => import("./pages/Team"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Analysis = lazy(() => import("./pages/Analysis"));
+const TeamMonitoring = lazy(() => import("./pages/TeamMonitoring"));
+const AnalystDetail = lazy(() => import("./pages/AnalystDetail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +60,8 @@ const App = () => (
               <Route path="/tasks" element={<Suspense fallback={<PageLoader />}><Tasks /></Suspense>} />
               <Route path="/my-day" element={<Suspense fallback={<PageLoader />}><MyDayView /></Suspense>} />
               <Route path="/team" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><Team /></Suspense></ProtectedRoute>} />
+              <Route path="/team/monitoring" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><TeamMonitoring /></Suspense></ProtectedRoute>} />
+              <Route path="/team/monitoring/:userId" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><AnalystDetail /></Suspense></ProtectedRoute>} />
               <Route path="/analysis" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><Analysis /></Suspense></ProtectedRoute>} />
               <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
             </Route>
