@@ -52,44 +52,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileError, setProfileError] = useState(false);
   const [identityReady, setIdentityReady] = useState(false);
 
-  const fetchUserData = useCallback(async (userId: string): Promise<boolean> => {
-    try {
-      setProfileError(false);
-      setIdentityReady(false);
+  const fetchUserData = useCallback(async (userId: string, maxRetries = 2): Promise<boolean> => {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        setProfileError(false);
+        setIdentityReady(false);
 
-      const [profileRes, roleRes] = await withTimeout(
-        Promise.all([
-          supabase.from("profiles").select("*").eq("id", userId).single(),
-          supabase.from("user_roles").select("role").eq("user_id", userId).single(),
-        ]),
-        FETCH_TIMEOUT
-      );
+        const [profileRes, roleRes] = await withTimeout(
+          Promise.all([
+            supabase.from("profiles").select("*").eq("id", userId).single(),
+            supabase.from("user_roles").select("role").eq("user_id", userId).single(),
+          ]),
+          FETCH_TIMEOUT
+        );
 
-      const profileOk = !profileRes.error && profileRes.data;
-      const roleOk = !roleRes.error && roleRes.data;
+        const profileOk = !profileRes.error && profileRes.data;
+        const roleOk = !roleRes.error && roleRes.data;
 
-      if (profileOk) setProfile(profileRes.data);
-      if (roleOk) {
-        const dbRole = roleRes.data!.role;
-        const mappedRole = dbRole === "employee" ? "analyst" : dbRole;
-        setRole(mappedRole as AppRole);
-      }
+        if (profileOk) setProfile(profileRes.data);
+        if (roleOk) {
+          const dbRole = roleRes.data!.role;
+          const mappedRole = dbRole === "employee" ? "analyst" : dbRole;
+          setRole(mappedRole as AppRole);
+        }
 
-      if (!profileOk || !roleOk) {
-        console.error("Failed to load identity:", profileRes.error, roleRes.error);
+        if (!profileOk || !roleOk) {
+          console.error("Failed to load identity (attempt " + (attempt + 1) + "):", profileRes.error, roleRes.error);
+          if (attempt < maxRetries) {
+            await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+            continue;
+          }
+          setProfileError(true);
+          setIdentityReady(false);
+          return false;
+        }
+
+        setIdentityReady(true);
+        return true;
+      } catch (err) {
+        console.error("Auth data fetch failed (attempt " + (attempt + 1) + "):", err);
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+          continue;
+        }
         setProfileError(true);
         setIdentityReady(false);
         return false;
       }
-
-      setIdentityReady(true);
-      return true;
-    } catch (err) {
-      console.error("Auth data fetch failed:", err);
-      setProfileError(true);
-      setIdentityReady(false);
-      return false;
     }
+    return false;
   }, []);
 
   const retryProfile = useCallback(() => {
