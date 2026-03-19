@@ -330,7 +330,7 @@ export default function AnalystDetail() {
                     <TableCell><Badge className={statusColors[t.status] + " text-xs"}>{statusLabels[t.status]}</Badge></TableCell>
                     <TableCell className="font-medium">{t.title}</TableCell>
                     <TableCell className="text-sm">{priorityLabels[t.priority] || t.priority}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{t.due_date ? formatStoredDate(t.due_date, "dd/MM/yyyy") : "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{t.due_date ? formatStoredDate(t.due_date, "date") : "—"}</TableCell>
                   </TableRow>
                 ))}
                 {sortedTasks.length === 0 && (
