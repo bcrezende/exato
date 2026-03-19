@@ -48,7 +48,7 @@ interface DelayKpiCardsProps {
 type Period = "hoje" | "semana" | "mes";
 type ModalType = "inicio" | "conclusao" | null;
 
-export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmployee }: DelayKpiCardsProps) {
+export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmployee, referenceDate }: DelayKpiCardsProps) {
   const [delays, setDelays] = useState<DelayRecord[]>([]);
   const [period, setPeriod] = useState<Period>("semana");
   const [loading, setLoading] = useState(true);
