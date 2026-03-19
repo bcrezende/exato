@@ -125,18 +125,32 @@ function AdminManagerDashboard() {
     const todayList: Task[] = [];
     const upcoming: Task[] = [];
 
+    const isYesterday = viewDate === "yesterday";
+    const nowFake = nowAsFakeUTC();
+
     filteredTasks.forEach((t) => {
       const isCompleted = t.status === "completed";
+      const dueDay = t.due_date?.split("T")[0];
+      const startDay = t.start_date?.split("T")[0];
+
+      if (isYesterday) {
+        // Snapshot mode: only tasks with due/start on reference date
+        if (dueDay === referenceDateStr || startDay === referenceDateStr) {
+          todayList.push(t);
+        } else if (!isCompleted && t.due_date && t.due_date.split("T")[0]! < referenceDateStr) {
+          overdue.push(t);
+        }
+        return;
+      }
+
+      // Today mode (original logic)
       const isInProgress = t.status === "in_progress";
-      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowAsFakeUTC()));
+      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowFake));
 
       if (isOverdue && !isCompleted) { overdue.push(t); return; }
       if (isInProgress) { todayList.push(t); return; }
 
-      const dueDay = t.due_date?.split("T")[0];
-      const startDay = t.start_date?.split("T")[0];
-
-      if (dueDay === todayStr || startDay === todayStr) { todayList.push(t); return; }
+      if (dueDay === referenceDateStr || startDay === referenceDateStr) { todayList.push(t); return; }
 
       // Upcoming: next 3 days
       for (let i = 1; i <= 3; i++) {
