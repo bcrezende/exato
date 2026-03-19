@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState, useMemo } from "react";
+import { devError } from "@/lib/logger";
 import { nowAsFakeUTC } from "@/lib/date-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
