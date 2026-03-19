@@ -26,6 +26,7 @@ export default function Settings() {
   const [initialCompanyName, setInitialCompanyName] = useState("");
   const [initialCompanyTimezone, setInitialCompanyTimezone] = useState("America/Sao_Paulo");
   const [saving, setSaving] = useState(false);
+  const [dismissWarnings, setDismissWarnings] = useState(false);
 
   const isProfileDirty =
     profileForm.full_name !== initialProfileForm.full_name ||
