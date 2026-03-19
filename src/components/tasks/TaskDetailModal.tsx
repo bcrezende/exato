@@ -250,6 +250,10 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
               )}
             </div>
           )}
+
+          {canManage && localTask.assigned_to && localTask.status !== "completed" && (
+            <ManagementActions task={localTask} />
+          )}
         </div>
 
         {(canManage || isCreator) && (
