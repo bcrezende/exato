@@ -327,7 +327,9 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <TrendingDown className={`h-4 w-4 ${summary.delayRate > 30 ? "text-destructive" : "text-muted-foreground"}`} />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${summary.delayRate > 30 ? "text-destructive" : ""}`}>{summary.delayRate}%</div>
+            <FormulaTooltip formula="Inícios atrasados ÷ Total iniciadas × 100">
+              <div className={`text-2xl font-bold ${summary.delayRate > 30 ? "text-destructive" : ""}`}>{summary.delayRate}%</div>
+            </FormulaTooltip>
             <p className="text-xs text-muted-foreground">tarefas iniciadas com atraso</p>
             {delayedTasks.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1">Clique para ver {delayedTasks.length} tarefas →</p>

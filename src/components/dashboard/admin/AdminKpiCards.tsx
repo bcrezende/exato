@@ -63,7 +63,13 @@ export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks,
                 <c.icon className={`h-5 w-5 ${c.iconClass}`} />
               </div>
               <div>
-                <p className="text-2xl font-bold">{c.value}</p>
+                {c.label === "% Atraso Médio" ? (
+                  <FormulaTooltip formula="Tarefas atrasadas ÷ Total de tarefas × 100">
+                    <p className="text-2xl font-bold">{c.value}</p>
+                  </FormulaTooltip>
+                ) : (
+                  <p className="text-2xl font-bold">{c.value}</p>
+                )}
                 <p className="text-xs text-muted-foreground">{c.label}</p>
               </div>
             </div>

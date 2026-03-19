@@ -113,9 +113,11 @@ export default function CoordinatorCards({ tasks, profiles, coordinatorLinks, co
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">No prazo</span>
-              <span className={`font-bold ${getStatusColor(coord.onTimeRate)}`}>
-                {coord.onTimeRate}%
-              </span>
+              <FormulaTooltip formula="(Total − Atrasadas) ÷ Total × 100">
+                <span className={`font-bold ${getStatusColor(coord.onTimeRate)}`}>
+                  {coord.onTimeRate}%
+                </span>
+              </FormulaTooltip>
             </div>
             <Progress value={coord.onTimeRate} className={`h-2 ${getProgressColor(coord.onTimeRate)}`} />
 

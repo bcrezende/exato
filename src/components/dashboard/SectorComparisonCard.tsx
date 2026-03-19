@@ -99,9 +99,11 @@ export default function SectorComparisonCard({ tasks, departments }: SectorCompa
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{sector.name}</span>
                   <div className="flex items-center gap-2">
-                    <Badge variant={sector.onTimeRate >= 80 ? "secondary" : "destructive"} className="text-[10px]">
-                      {Math.round(sector.onTimeRate)}% no prazo
-                    </Badge>
+                    <FormulaTooltip formula="(Total − Atrasadas) ÷ Total × 100">
+                      <Badge variant={sector.onTimeRate >= 80 ? "secondary" : "destructive"} className="text-[10px]">
+                        {Math.round(sector.onTimeRate)}% no prazo
+                      </Badge>
+                    </FormulaTooltip>
                   </div>
                 </div>
                 <Progress

@@ -189,7 +189,9 @@ export default function PodiumCard({ tasks, timeLogs, profiles, departments, sel
                         <span className="text-xs font-medium truncate max-w-[80px] text-center mt-1">
                           {user.name.split(" ")[0]}
                         </span>
-                        <span className="text-lg font-bold">{user.totalPoints}</span>
+                        <FormulaTooltip formula="+10 concluída, +5 no prazo, −3 atrasada, +3 alta prioridade" showIcon={false}>
+                          <span className="text-lg font-bold">{user.totalPoints}</span>
+                        </FormulaTooltip>
                         <span className="text-[10px] text-muted-foreground">pts</span>
                       </div>
                       <div className={`w-full rounded-t-md ${podiumBg[realPos]} ${podiumHeights[realPos]} flex items-end justify-center pb-1`}>
