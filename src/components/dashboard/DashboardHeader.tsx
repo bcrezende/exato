@@ -1,7 +1,9 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, ChevronLeft, SlidersHorizontal, Plus, FileBarChart } from "lucide-react";
+import { CalendarIcon, Plus, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useNavigate } from "react-router-dom";
 
 type ViewDate = "today" | "yesterday";
@@ -9,9 +11,7 @@ type ViewDate = "today" | "yesterday";
 interface DashboardHeaderProps {
   today: Date;
   roleLabel: string;
-  onOpenFilters: () => void;
   onNavigateMyDay: () => void;
-  hasActiveFilters: boolean;
   viewDate: ViewDate;
   onViewDateChange: (v: ViewDate) => void;
   onOpenAnalysis?: () => void;
@@ -20,9 +20,7 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({
   today,
   roleLabel,
-  onOpenFilters,
   onNavigateMyDay,
-  hasActiveFilters,
   viewDate,
   onViewDateChange,
   onOpenAnalysis,
@@ -57,39 +55,35 @@ export default function DashboardHeader({
             Relatório
           </Button>
         )}
-        <Button
-          variant={viewDate === "yesterday" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onViewDateChange(viewDate === "yesterday" ? "today" : "yesterday")}
-          className="gap-1.5 text-xs"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          Ontem
-        </Button>
-        <Button
-          variant={viewDate === "today" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onViewDateChange("today")}
-          className="gap-1.5 text-xs"
-        >
-          <CalendarIcon className="h-3.5 w-3.5" />
-          Hoje
-        </Button>
+
+        <div className="flex items-center gap-1.5">
+          <ToggleGroup
+            type="single"
+            value={viewDate}
+            onValueChange={(v) => { if (v) onViewDateChange(v as ViewDate); }}
+            className="bg-muted rounded-md p-0.5"
+          >
+            <ToggleGroupItem
+              value="yesterday"
+              className="text-xs h-7 px-3 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-sm"
+            >
+              Ontem
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="today"
+              className="text-xs h-7 px-3 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-sm"
+            >
+              Hoje
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <Badge variant="outline" className="text-xs font-mono">
+            {format(today, "dd/MM")}
+          </Badge>
+        </div>
+
         <Button variant="ghost" size="sm" onClick={onNavigateMyDay} className="gap-1.5 text-xs">
           <CalendarIcon className="h-3.5 w-3.5" />
           Meu Dia
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onOpenFilters}
-          className="gap-1.5 relative"
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filtros
-          {hasActiveFilters && (
-            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />
-          )}
         </Button>
       </div>
     </div>
