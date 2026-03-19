@@ -21,6 +21,8 @@ const MyDayView = lazy(() => import("./components/dashboard/MyDayView"));
 const Team = lazy(() => import("./pages/Team"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Analysis = lazy(() => import("./pages/Analysis"));
+const TeamMonitoring = lazy(() => import("./pages/TeamMonitoring"));
+const AnalystDetail = lazy(() => import("./pages/AnalystDetail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
