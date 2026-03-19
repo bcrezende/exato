@@ -1,40 +1,74 @@
 
 
-## Adicionar animação suave na troca de logo do sidebar
+## Auditoria de Segurança e Hardening
 
-### Problema
-A troca entre `logo-white.png` e `logo-icon.png` ao colapsar/expandir o sidebar é abrupta e pouco profissional.
+### 1. Estado Atual — RLS já implementado corretamente
 
-### Solução
-Mostrar **ambas as logos simultaneamente** com posicionamento absoluto, controlando a visibilidade via `opacity` e `transition`. Quando colapsado, a logo completa faz fade-out e o ícone faz fade-in (e vice-versa). Isso cria uma transição suave sem flicker.
+Após auditoria completa, **todas as tabelas já possuem RLS ativado com políticas adequadas**:
 
-### Arquivo a editar
-`src/components/AppSidebar.tsx` — linhas 49-52
+| Tabela | RLS | Políticas hierárquicas |
+|---|---|---|
+| `tasks` | ✅ | Analista vê só suas, coordenador vê dos seus analistas, gerente vê do setor, admin vê tudo |
+| `profiles` | ✅ | Usuários veem perfis da mesma empresa |
+| `departments` | ✅ | Usuários veem departamentos da mesma empresa |
+| `coordinator_analysts` | ✅ | Coordenador vê seus vínculos, admin/gerente veem todos da empresa |
+| `user_roles` | ✅ | Usuários veem roles da mesma empresa |
+| `notifications` | ✅ | Só próprias |
+| `task_time_logs` | ✅ | Baseado na empresa da task |
+| `task_delays` | ✅ | Baseado na empresa da task |
+| `task_attachments` | ✅ | Hierárquico via task |
+| `task_comments` | ✅ | Hierárquico via task |
+| `invitations` | ✅ | Admin/gerente/coordenador da empresa |
+| `companies` | ✅ | Só própria empresa |
+| `company_holidays` | ✅ | Só própria empresa |
+| `recurrence_definitions` | ✅ | Só própria empresa |
+| `email_*` / `suppressed_emails` | ✅ | Só service_role |
 
-### Mudança
+### 2. Melhorias a implementar
 
-Substituir a `<div>` com a imagem única por um container relativo com ambas as logos sobrepostas:
+As políticas RLS estão sólidas. O foco será no **frontend**:
 
-```tsx
-<SidebarHeader className="p-4">
-  <div className="relative flex items-center justify-start">
-    <img
-      src={logoWhite}
-      alt="Exato"
-      className={`h-14 w-auto transition-opacity duration-300 ease-in-out ${
-        collapsed ? "opacity-0 absolute" : "opacity-100"
-      }`}
-    />
-    <img
-      src={logoIcon}
-      alt="Exato"
-      className={`h-8 w-8 object-contain transition-opacity duration-300 ease-in-out ${
-        collapsed ? "opacity-100" : "opacity-0 absolute"
-      }`}
-    />
-  </div>
-</SidebarHeader>
+#### A. Remover `console.error` que expõem detalhes internos (11 arquivos)
+
+Substituir `console.error(err)` e `console.error("...", err)` por logging silencioso ou genérico em produção. Os erros de Supabase podem conter nomes de tabelas, colunas e detalhes de RLS que não devem aparecer no console do navegador.
+
+**Abordagem**: Envolver todos os `console.error` em um helper `if (import.meta.env.DEV)` para só logar em desenvolvimento.
+
+Arquivos afetados:
+- `AuthContext.tsx` (2 ocorrências)
+- `AdminDashboard.tsx`, `ManagerDashboard.tsx`, `CoordinatorDashboard.tsx`, `ManagerCoordinatorDashboard.tsx`
+- `AnalystDetail.tsx`, `TeamMonitoring.tsx`, `Team.tsx`
+- `AIAnalysisDialog.tsx`, `Analysis.tsx`
+- `NotFound.tsx` (este pode manter, é só rota)
+
+#### B. Criar helper centralizado de logging seguro
+
+Criar `src/lib/logger.ts` com função que só loga em `DEV`:
+
+```typescript
+export function devError(...args: unknown[]) {
+  if (import.meta.env.DEV) {
+    console.error(...args);
+  }
+}
 ```
 
-A logo visível ocupa o fluxo normal; a invisível fica `absolute` para não afetar o layout. A transição de `opacity` em 300ms dá um fade suave e profissional.
+#### C. Verificar loading states
+
+Todos os dashboards e páginas já possuem loading states (skeletons/spinners) que previnem exposição de estrutura antes dos dados carregarem. Nenhuma mudança necessária.
+
+### 3. Sobre a política de `profiles` e `departments`
+
+As políticas atuais permitem que qualquer usuário da empresa veja **todos os perfis e departamentos da empresa**. Restringir isso por hierarquia **quebraria funcionalidades essenciais** como:
+- Exibir nomes de criadores/responsáveis nas tarefas
+- Dropdowns de atribuição de tarefas
+- Visualização de membros da equipe
+
+Isso é **intencional e correto** — o isolamento de dados sensíveis acontece nas tabelas de tarefas, não nos perfis.
+
+### Resumo
+
+- **RLS**: Já robusto e correto em todas as tabelas. Nenhuma mudança necessária.
+- **Frontend**: Criar logger seguro e substituir ~15 `console.error` para não vazar detalhes em produção.
+- **Loading states**: Já implementados em todas as páginas.
 
