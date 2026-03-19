@@ -150,6 +150,23 @@ export default function Settings() {
                   <Input value={profileForm.position} onChange={(e) => setProfileForm({ ...profileForm, position: e.target.value })} placeholder="Ex: Analista de Marketing" />
                 </div>
                 <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Desativar avisos de tarefas pendentes</Label>
+                    <p className="text-xs text-muted-foreground">Não exibir alerta ao iniciar uma tarefa com pendências anteriores</p>
+                  </div>
+                  <Switch
+                    checked={dismissWarnings}
+                    onCheckedChange={async (checked) => {
+                      setDismissWarnings(checked);
+                      if (user) {
+                        await supabase.from("profiles").update({ dismiss_pending_warnings: checked } as any).eq("id", user.id);
+                        toast({ title: checked ? "Avisos desativados" : "Avisos ativados" });
+                      }
+                    }}
+                  />
+                </div>
+                <Separator />
                 <Button onClick={saveProfile} disabled={saving || !isProfileDirty}>
                   <Save className="mr-2 h-4 w-4" />
                   {saving ? "Salvando..." : "Salvar Perfil"}
