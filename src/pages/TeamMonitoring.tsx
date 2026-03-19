@@ -131,7 +131,7 @@ export default function TeamMonitoring() {
 
       setAnalysts(result);
     } catch (err) {
-      console.error("Error fetching team data:", err);
+      devError("Error fetching team data:", err);
     } finally {
       setLoading(false);
     }

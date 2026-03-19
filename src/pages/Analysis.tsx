@@ -204,7 +204,7 @@ export default function Analysis() {
         fetchHistory();
       }
     } catch (e: any) {
-      console.error(e);
+      devError(e);
       toast({ title: "Erro", description: e.message || "Falha ao gerar análise.", variant: "destructive" });
     } finally {
       setLoading(false);

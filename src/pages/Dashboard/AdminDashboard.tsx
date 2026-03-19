@@ -83,7 +83,7 @@ export default function AdminDashboard() {
           setProfilesList(profilesRes.value.data as Profile[]);
         }
       } catch (err) {
-        console.error("Admin dashboard fetch error:", err);
+        devError("Admin dashboard fetch error:", err);
       } finally {
         setLoading(false);
       }

@@ -104,7 +104,7 @@ export default function CoordinatorDashboard() {
           setProfilesList(profilesRes.value.data as Profile[]);
         }
       } catch (err) {
-        console.error("Coordinator dashboard fetch error:", err);
+        devError("Coordinator dashboard fetch error:", err);
       } finally {
         setLoading(false);
       }

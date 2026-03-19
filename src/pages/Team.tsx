@@ -127,7 +127,7 @@ export default function Team() {
       body: { invitation_id: inserted.id },
     });
     if (emailError) {
-      console.error("Failed to send invite email:", emailError);
+      devError("Failed to send invite email:", emailError);
     }
     toast({ title: "Convite enviado!", description: `Email de convite enviado para ${inviteForm.email}` });
     setInviteForm({ email: "", role: "analyst", department_id: "" });

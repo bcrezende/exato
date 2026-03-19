@@ -75,7 +75,7 @@ export default function AnalystDetail() {
       setMembers(membersRes.data || []);
       setDepartments(deptsRes.data || []);
     } catch (err) {
-      console.error(err);
+      devError(err);
     } finally {
       setLoading(false);
     }

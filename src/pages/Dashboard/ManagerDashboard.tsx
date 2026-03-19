@@ -97,7 +97,7 @@ export default function ManagerDashboard() {
           setCoordinatorIds(coordIds);
         }
       } catch (err) {
-        console.error("Manager dashboard fetch error:", err);
+        devError("Manager dashboard fetch error:", err);
       } finally {
         setLoading(false);
       }

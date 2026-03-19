@@ -97,7 +97,7 @@ export default function ManagerCoordinatorDashboard() {
           setProfilesList(profilesRes.value.data as Profile[]);
         }
       } catch (err) {
-        console.error("Dashboard fetch error:", err);
+        devError("Dashboard fetch error:", err);
       } finally {
         setLoading(false);
       }
