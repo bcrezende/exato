@@ -47,8 +47,21 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <img src={collapsed ? logoIcon : logoWhite} alt="Exato" className={collapsed ? "h-8 w-8 object-contain" : "h-14 w-auto"} />
+        <div className="relative flex items-center justify-start">
+          <img
+            src={logoWhite}
+            alt="Exato"
+            className={`h-14 w-auto transition-opacity duration-300 ease-in-out ${
+              collapsed ? "opacity-0 absolute" : "opacity-100"
+            }`}
+          />
+          <img
+            src={logoIcon}
+            alt="Exato"
+            className={`h-8 w-8 object-contain transition-opacity duration-300 ease-in-out ${
+              collapsed ? "opacity-100" : "opacity-0 absolute"
+            }`}
+          />
         </div>
       </SidebarHeader>
 
