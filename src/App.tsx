@@ -23,6 +23,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Analysis = lazy(() => import("./pages/Analysis"));
 const TeamMonitoring = lazy(() => import("./pages/TeamMonitoring"));
 const AnalystDetail = lazy(() => import("./pages/AnalystDetail"));
+const Presentation = lazy(() => import("./pages/Presentation"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
