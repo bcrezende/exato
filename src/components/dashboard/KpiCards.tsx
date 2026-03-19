@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ListTodo, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
