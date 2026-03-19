@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
+import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
+import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star } from "lucide-react";
 import { format } from "date-fns";
 import { formatStoredDate } from "@/lib/date-utils";
@@ -56,6 +58,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const [executionTime, setExecutionTime] = useState<string | null>(null);
   const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
   const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
+  const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
 
   useEffect(() => {
     setLocalTask(task);
@@ -102,7 +105,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const deptName = departments.find(d => d.id === localTask.department_id)?.name || null;
   const effectiveRecurrenceType = localTask.recurrence_type !== "none" ? localTask.recurrence_type : (parentRecurrenceType || "none");
 
-  const handleStatusChange = async (newStatus: string, difficultyRating?: number) => {
+  const executeStatusChange = async (newStatus: string, difficultyRating?: number) => {
     const previousTask = localTask;
     setLocalTask({ ...localTask, status: newStatus as any });
     setStatusLoading(true);
@@ -115,6 +118,14 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
     } finally {
       setStatusLoading(false);
+    }
+  };
+
+  const handleStatusChange = (newStatus: string, difficultyRating?: number) => {
+    if (newStatus === "in_progress") {
+      checkBeforeStart(localTask.id, () => executeStatusChange(newStatus, difficultyRating));
+    } else {
+      executeStatusChange(newStatus, difficultyRating);
     }
   };
 
@@ -134,6 +145,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const difficultyLabels = ["Muito fácil", "Fácil", "Moderada", "Difícil", "Muito difícil"];
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -252,5 +264,12 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
         )}
       </DialogContent>
     </Dialog>
+    <PendingTasksAlert
+      open={isAlertOpen}
+      tasks={pendingTasks}
+      onClose={closeAlert}
+      onProceed={() => proceedAction?.()}
+    />
+    </>
   );
 }

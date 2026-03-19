@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN dismiss_pending_warnings boolean NOT NULL DEFAULT false;

@@ -10,6 +10,8 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { updateTaskStatus } from "@/lib/task-utils";
 import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
+import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
+import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -42,6 +44,7 @@ export default function MyDayView() {
   const [loading, setLoading] = useState(true);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
+  const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
 
   const fetchTasks = async () => {
     if (!user) return;
@@ -70,11 +73,10 @@ export default function MyDayView() {
 
   useEffect(() => { fetchTasks(); }, [user]);
 
-  const handleStatusChange = async (taskId: string, newStatus: "in_progress" | "completed") => {
+  const executeStatusChange = async (taskId: string, newStatus: "in_progress" | "completed") => {
     const task = tasks.find((t) => t.id === taskId);
     const previousTasks = tasks;
 
-    // Optimistic update — instant feedback
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
     if (newStatus === "in_progress") {
       setHighlightedId(taskId);
@@ -89,9 +91,16 @@ export default function MyDayView() {
       const { generatedRecurring } = await updateTaskStatus(taskId, newStatus, task);
       if (generatedRecurring) fetchTasks();
     } catch {
-      // Revert on error
       setTasks(previousTasks);
       toast.error("Erro ao atualizar status");
+    }
+  };
+
+  const handleStatusChange = (taskId: string, newStatus: "in_progress" | "completed") => {
+    if (newStatus === "in_progress") {
+      checkBeforeStart(taskId, () => executeStatusChange(taskId, newStatus));
+    } else {
+      executeStatusChange(taskId, newStatus);
     }
   };
 
@@ -219,6 +228,12 @@ export default function MyDayView() {
           ))}
         </div>
       )}
+      <PendingTasksAlert
+        open={isAlertOpen}
+        tasks={pendingTasks}
+        onClose={closeAlert}
+        onProceed={() => proceedAction?.()}
+      />
     </div>
   );
 }

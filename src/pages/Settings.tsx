@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,7 @@ export default function Settings() {
   const [initialCompanyName, setInitialCompanyName] = useState("");
   const [initialCompanyTimezone, setInitialCompanyTimezone] = useState("America/Sao_Paulo");
   const [saving, setSaving] = useState(false);
+  const [dismissWarnings, setDismissWarnings] = useState(false);
 
   const isProfileDirty =
     profileForm.full_name !== initialProfileForm.full_name ||
@@ -39,6 +41,7 @@ export default function Settings() {
       const vals = { full_name: profile.full_name || "", phone: profile.phone || "", position: profile.position || "" };
       setProfileForm(vals);
       setInitialProfileForm(vals);
+      setDismissWarnings((profile as any).dismiss_pending_warnings === true);
     }
   }, [profile]);
 
@@ -145,6 +148,23 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label>Cargo</Label>
                   <Input value={profileForm.position} onChange={(e) => setProfileForm({ ...profileForm, position: e.target.value })} placeholder="Ex: Analista de Marketing" />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Desativar avisos de tarefas pendentes</Label>
+                    <p className="text-xs text-muted-foreground">Não exibir alerta ao iniciar uma tarefa com pendências anteriores</p>
+                  </div>
+                  <Switch
+                    checked={dismissWarnings}
+                    onCheckedChange={async (checked) => {
+                      setDismissWarnings(checked);
+                      if (user) {
+                        await supabase.from("profiles").update({ dismiss_pending_warnings: checked } as any).eq("id", user.id);
+                        toast({ title: checked ? "Avisos desativados" : "Avisos ativados" });
+                      }
+                    }}
+                  />
                 </div>
                 <Separator />
                 <Button onClick={saveProfile} disabled={saving || !isProfileDirty}>

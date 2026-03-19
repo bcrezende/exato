@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus } from "@/lib/task-utils";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
+import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
+import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 import TaskCalendar from "@/components/tasks/TaskCalendar";
@@ -57,6 +59,7 @@ export default function Tasks() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
   // Sorting
   const [sortColumn, setSortColumn] = useState<string | null>("start_date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -114,7 +117,7 @@ export default function Tasks() {
     fetchTasks();
   };
 
-  const handleStatusChange = useCallback(async (taskId: string, newStatus: string) => {
+  const executeStatusChange = useCallback(async (taskId: string, newStatus: string) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
@@ -142,6 +145,14 @@ export default function Tasks() {
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
     }
   }, [tasks, toast, fetchTasks]);
+
+  const handleStatusChange = useCallback((taskId: string, newStatus: string) => {
+    if (newStatus === "in_progress") {
+      checkBeforeStart(taskId, () => executeStatusChange(taskId, newStatus));
+    } else {
+      executeStatusChange(taskId, newStatus);
+    }
+  }, [checkBeforeStart, executeStatusChange]);
 
   const getEffectiveRecurrenceType = (task: Task): string => {
     if (task.recurrence_type !== "none") return task.recurrence_type;
@@ -587,6 +598,12 @@ export default function Tasks() {
       <TaskForm open={formOpen} onOpenChange={setFormOpen} editing={editing} members={members} departments={departments} onSaved={fetchTasks} />
       <TaskDetailModal task={detailTask} open={detailOpen} onOpenChange={setDetailOpen} members={members} departments={departments} onEdit={openEdit} onRefresh={fetchTasks} />
       <TaskImportDialog open={importOpen} onOpenChange={setImportOpen} members={members} departments={departments} onImported={fetchTasks} />
+      <PendingTasksAlert
+        open={isAlertOpen}
+        tasks={pendingTasks}
+        onClose={closeAlert}
+        onProceed={() => proceedAction?.()}
+      />
     </div>
   );
 }
