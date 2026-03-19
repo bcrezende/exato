@@ -598,6 +598,12 @@ export default function Tasks() {
       <TaskForm open={formOpen} onOpenChange={setFormOpen} editing={editing} members={members} departments={departments} onSaved={fetchTasks} />
       <TaskDetailModal task={detailTask} open={detailOpen} onOpenChange={setDetailOpen} members={members} departments={departments} onEdit={openEdit} onRefresh={fetchTasks} />
       <TaskImportDialog open={importOpen} onOpenChange={setImportOpen} members={members} departments={departments} onImported={fetchTasks} />
+      <PendingTasksAlert
+        open={isAlertOpen}
+        tasks={pendingTasks}
+        onClose={closeAlert}
+        onProceed={() => proceedAction?.()}
+      />
     </div>
   );
 }
