@@ -251,7 +251,7 @@ export default function AnalystDetail() {
                     <CardContent className="p-3 flex items-center gap-3">
                       <Badge className={statusColors[t.status] + " text-xs"}>{statusLabels[t.status]}</Badge>
                       <span className="text-sm text-foreground truncate flex-1">{t.title}</span>
-                      {t.due_date && <span className="text-xs text-muted-foreground">{formatStoredDate(t.due_date, "HH:mm")}</span>}
+                      {t.due_date && <span className="text-xs text-muted-foreground">{formatStoredDate(t.due_date, "time")}</span>}
                     </CardContent>
                   </Card>
                 ))}
