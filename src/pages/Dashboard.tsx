@@ -343,7 +343,11 @@ function AdminManagerDashboard() {
 }
 
 export default function Dashboard() {
-  const { role } = useAuth();
+  const { role, identityReady } = useAuth();
+  
+  // Don't render anything until identity is confirmed
+  if (!identityReady) return <DashboardSkeleton />;
+  
   if (role === "analyst") return <MyDayView />;
   return <AdminManagerDashboard />;
 }

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,14 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { identityReady, user } = useAuth();
+
+  // Redirect when identity is fully ready (not just authenticated)
+  useEffect(() => {
+    if (user && identityReady) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, identityReady, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,10 +33,8 @@ export default function Login() {
       if (error) {
         toast({ variant: "destructive", title: "Erro ao entrar", description: error.message });
         setLoading(false);
-      } else {
-        navigate("/dashboard");
-        // Keep loading=true so the button stays in "Entrando..." state until navigation completes
       }
+      // On success, the AuthContext listener will set identityReady → useEffect redirects
     } catch {
       toast({ variant: "destructive", title: "Erro ao entrar", description: "Falha na conexão. Tente novamente." });
       setLoading(false);

@@ -10,8 +10,12 @@ interface AuthContextType {
   session: Session | null;
   profile: Tables<"profiles"> | null;
   role: AppRole | null;
+  /** True while session OR profile/role are still loading */
   loading: boolean;
+  /** True only when profile+role fetch failed (user is authenticated but identity incomplete) */
   profileError: boolean;
+  /** True when profile+role are successfully loaded */
+  identityReady: boolean;
   retryProfile: () => void;
   signOut: () => Promise<void>;
 }
@@ -23,13 +27,14 @@ const AuthContext = createContext<AuthContextType>({
   role: null,
   loading: true,
   profileError: false,
+  identityReady: false,
   retryProfile: () => {},
   signOut: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
-const FETCH_TIMEOUT = 10000; // 10s timeout for profile/role queries
+const FETCH_TIMEOUT = 12000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -45,10 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState(false);
+  const [identityReady, setIdentityReady] = useState(false);
 
-  const fetchUserData = useCallback(async (userId: string) => {
+  const fetchUserData = useCallback(async (userId: string): Promise<boolean> => {
     try {
       setProfileError(false);
+      setIdentityReady(false);
+
       const [profileRes, roleRes] = await withTimeout(
         Promise.all([
           supabase.from("profiles").select("*").eq("id", userId).single(),
@@ -56,19 +64,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ]),
         FETCH_TIMEOUT
       );
-      if (profileRes.data) setProfile(profileRes.data);
-      if (roleRes.data) {
-        const dbRole = roleRes.data.role;
-        const mappedRole = dbRole === 'employee' ? 'analyst' : dbRole;
+
+      const profileOk = !profileRes.error && profileRes.data;
+      const roleOk = !roleRes.error && roleRes.data;
+
+      if (profileOk) setProfile(profileRes.data);
+      if (roleOk) {
+        const dbRole = roleRes.data!.role;
+        const mappedRole = dbRole === "employee" ? "analyst" : dbRole;
         setRole(mappedRole as AppRole);
       }
-      if (profileRes.error && roleRes.error) {
-        console.error("Failed to load profile data:", profileRes.error, roleRes.error);
+
+      if (!profileOk || !roleOk) {
+        console.error("Failed to load identity:", profileRes.error, roleRes.error);
         setProfileError(true);
+        setIdentityReady(false);
+        return false;
       }
+
+      setIdentityReady(true);
+      return true;
     } catch (err) {
       console.error("Auth data fetch failed:", err);
       setProfileError(true);
+      setIdentityReady(false);
+      return false;
     }
   }, []);
 
@@ -82,32 +102,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth listener first (non-blocking)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (_event, newSession) => {
         if (!mounted) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          // Don't block the callback - fetch in background
-          fetchUserData(session.user.id).then(() => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+
+        if (newSession?.user) {
+          fetchUserData(newSession.user.id).then(() => {
             if (mounted) setLoading(false);
           });
         } else {
           setProfile(null);
           setRole(null);
+          setIdentityReady(false);
+          setProfileError(false);
           setLoading(false);
         }
       }
     );
 
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: initSession } }) => {
       if (!mounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchUserData(session.user.id);
+      setSession(initSession);
+      setUser(initSession?.user ?? null);
+      if (initSession?.user) {
+        await fetchUserData(initSession.user.id);
       }
       if (mounted) setLoading(false);
     }).catch(() => {
@@ -126,10 +146,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRole(null);
+    setIdentityReady(false);
+    setProfileError(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, role, loading, profileError, retryProfile, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, role, loading, profileError, identityReady, retryProfile, signOut }}>
       {children}
     </AuthContext.Provider>
   );
