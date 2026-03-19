@@ -309,7 +309,9 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
             <Timer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatDuration(summary.avgExecution)}</div>
+            <FormulaTooltip formula="Soma tempo execução ÷ Nº tarefas concluídas">
+              <div className="text-2xl font-bold">{formatDuration(summary.avgExecution)}</div>
+            </FormulaTooltip>
             <p className="text-xs text-muted-foreground">por tarefa concluída</p>
             {completedTasksWithTime.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1">Clique para ver {completedTasksWithTime.length} tarefas →</p>
