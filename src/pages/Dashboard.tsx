@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Calendar, AlertCircle, Users, Building2, BarChart3 } from "lucide-react";
 
 const LazyPerformanceAnalytics = lazy(() => import("@/components/dashboard/PerformanceAnalytics"));
 
@@ -43,12 +44,10 @@ function AdminManagerDashboard() {
   const [timeLogs, setTimeLogs] = useState<{ id: string; task_id: string; user_id: string; action: string; created_at: string }[]>([]);
   const [coordinatorAnalystIds, setCoordinatorAnalystIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("hoje");
   const [viewDate, setViewDate] = useState<"today" | "yesterday">("today");
-  
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
@@ -183,8 +182,14 @@ function AdminManagerDashboard() {
 
   const getName = (id: string | null) => (id ? profiles.get(id) || "—" : "Não atribuída");
 
-  const roleLabel = role === "admin" ? "Visão geral da empresa" : role === "coordinator" ? "Visão da coordenação" : "Visão do setor";
-  const hasActiveFilters = !!selectedEmployee || (role === "admin" && !!selectedDepartment);
+  const departmentName = departments.find(d => d.id === profile?.department_id)?.name;
+  const roleLabel = role === "admin"
+    ? "Visão Geral da Empresa"
+    : role === "manager"
+      ? `Visão do Setor — ${departmentName || "Setor"}`
+      : role === "coordinator"
+        ? "Visão da Minha Equipe"
+        : "Visão geral";
 
   if (loading) return <DashboardSkeleton />;
 
@@ -193,17 +198,12 @@ function AdminManagerDashboard() {
       <DashboardHeader
         today={today}
         roleLabel={roleLabel}
-        onOpenFilters={() => setFiltersOpen(true)}
         onNavigateMyDay={() => navigate("/my-day")}
-        hasActiveFilters={hasActiveFilters}
         viewDate={viewDate}
         onViewDateChange={setViewDate}
-        
       />
 
       <DashboardFilters
-        open={filtersOpen}
-        onOpenChange={setFiltersOpen}
         departments={departments}
         employeeOptions={employeeOptions}
         selectedDepartment={selectedDepartment}
@@ -263,16 +263,29 @@ function AdminManagerDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start">
           <TabsTrigger value="hoje" className="gap-1.5">
-            📅 Hoje
+            <Calendar className="h-3.5 w-3.5" />
+            Hoje
             {todayTotal > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[11px]">{todayTotal}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="atrasadas" className="gap-1.5">
-            ⚠️ Atrasadas
+            <AlertCircle className="h-3.5 w-3.5" />
+            Atrasadas
             {overdueTasks.length > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[11px]">{overdueTasks.length}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="equipe">🏆 Equipe</TabsTrigger>
-          {role === "admin" && <TabsTrigger value="setores">🏢 Setores</TabsTrigger>}
-          <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
+          <TabsTrigger value="equipe" className="gap-1.5">
+            <Users className="h-3.5 w-3.5" />
+            Equipe
+          </TabsTrigger>
+          {role === "admin" && (
+            <TabsTrigger value="setores" className="gap-1.5">
+              <Building2 className="h-3.5 w-3.5" />
+              Setores
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="analytics" className="gap-1.5">
+            <BarChart3 className="h-3.5 w-3.5" />
+            Analytics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="hoje" className="mt-4">

@@ -1,17 +1,8 @@
 import { Building2, User, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from "@/components/ui/sheet";
 
 interface DashboardFiltersProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   departments: { id: string; name: string }[];
   employeeOptions: { id: string; full_name: string | null }[];
   selectedDepartment: string | null;
@@ -22,8 +13,6 @@ interface DashboardFiltersProps {
 }
 
 export default function DashboardFilters({
-  open,
-  onOpenChange,
   departments,
   employeeOptions,
   selectedDepartment,
@@ -33,76 +22,83 @@ export default function DashboardFilters({
   role,
 }: DashboardFiltersProps) {
   const canChangeDepartment = role === "admin";
+  const selectedDeptName = departments.find(d => d.id === selectedDepartment)?.name;
+  const selectedEmpName = employeeOptions.find(p => p.id === selectedEmployee)?.full_name;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[320px] sm:w-[360px]">
-        <SheetHeader>
-          <SheetTitle>Filtros</SheetTitle>
-        </SheetHeader>
-
-        <div className="space-y-6 py-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              Setor
-            </label>
+    <div className="space-y-2">
+      <div className="flex items-center gap-3 flex-wrap">
+        {canChangeDepartment && (
+          <div className="flex items-center gap-1.5">
+            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
             <Select
               value={selectedDepartment ?? "all"}
               onValueChange={(v) => {
                 onDepartmentChange(v === "all" ? null : v);
                 onEmployeeChange(null);
               }}
-              disabled={!canChangeDepartment}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-8 w-[180px] text-xs">
                 <SelectValue placeholder="Todos os setores" />
               </SelectTrigger>
               <SelectContent>
-                {role === "admin" && <SelectItem value="all">Todos os setores</SelectItem>}
+                <SelectItem value="all">Todos os setores</SelectItem>
                 {departments.map((d) => (
                   <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+        )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              Analista
-            </label>
-            <Select
-              value={selectedEmployee ?? "all"}
-              onValueChange={(v) => onEmployeeChange(v === "all" ? null : v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os analistas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os analistas</SelectItem>
-                {employeeOptions.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.full_name || "Sem nome"}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <SheetFooter>
-          <Button
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => {
-              if (canChangeDepartment) onDepartmentChange(null);
-              onEmployeeChange(null);
-            }}
+        <div className="flex items-center gap-1.5">
+          <User className="h-3.5 w-3.5 text-muted-foreground" />
+          <Select
+            value={selectedEmployee ?? "all"}
+            onValueChange={(v) => onEmployeeChange(v === "all" ? null : v)}
           >
-            <X className="h-3.5 w-3.5" />
-            Limpar filtros
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+            <SelectTrigger className="h-8 w-[180px] text-xs">
+              <SelectValue placeholder="Todos os analistas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os analistas</SelectItem>
+              {employeeOptions.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.full_name || "Sem nome"}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Active filter chips */}
+      {(selectedDepartment || selectedEmployee) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {selectedDepartment && canChangeDepartment && (
+            <Badge variant="secondary" className="gap-1 text-xs pr-1">
+              <Building2 className="h-3 w-3" />
+              {selectedDeptName}
+              <button
+                onClick={() => { onDepartmentChange(null); onEmployeeChange(null); }}
+                className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {selectedEmployee && (
+            <Badge variant="secondary" className="gap-1 text-xs pr-1">
+              <User className="h-3 w-3" />
+              {selectedEmpName || "Sem nome"}
+              <button
+                onClick={() => onEmployeeChange(null)}
+                className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

@@ -221,6 +221,14 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
             <p className="text-xs text-muted-foreground">
               {lateStartCount} tarefa{lateStartCount !== 1 ? "s" : ""} {periodLabel}
             </p>
+            {periodTaskCount > 0 && (
+              <p className={`text-xs font-medium mt-1 ${
+                (lateStartCount / periodTaskCount) * 100 > 20 ? "text-destructive" :
+                (lateStartCount / periodTaskCount) * 100 >= 10 ? "text-yellow-500" : "text-green-500"
+              }`}>
+                ({((lateStartCount / periodTaskCount) * 100).toFixed(1)}% do total)
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -239,6 +247,14 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
             <p className="text-xs text-muted-foreground">
               {lateCompletionCount} tarefa{lateCompletionCount !== 1 ? "s" : ""} {periodLabel}
             </p>
+            {periodTaskCount > 0 && (
+              <p className={`text-xs font-medium mt-1 ${
+                (lateCompletionCount / periodTaskCount) * 100 > 20 ? "text-destructive" :
+                (lateCompletionCount / periodTaskCount) * 100 >= 10 ? "text-yellow-500" : "text-green-500"
+              }`}>
+                ({((lateCompletionCount / periodTaskCount) * 100).toFixed(1)}% do total)
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
