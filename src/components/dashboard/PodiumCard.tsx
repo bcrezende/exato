@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award } from "lucide-react";
+import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 import { subDays } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 
