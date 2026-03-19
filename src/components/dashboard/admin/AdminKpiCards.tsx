@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, ListTodo, AlertTriangle, TrendingDown } from "lucide-react";
+import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 
 interface AdminKpiCardsProps {
   activeSectors: number;
