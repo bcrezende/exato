@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, LogOut } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,8 +9,9 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, role, loading, profileError, retryProfile } = useAuth();
+  const { user, role, loading, profileError, identityReady, retryProfile, signOut } = useAuth();
 
+  // Still loading session or profile
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -19,20 +20,33 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     );
   }
 
+  // No user at all
   if (!user) return <Navigate to="/login" replace />;
 
-  if (profileError) {
+  // User exists but profile/role failed to load
+  if (profileError || !identityReady) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">
-        <p className="text-muted-foreground">Erro ao carregar dados do perfil.</p>
-        <Button variant="outline" onClick={retryProfile} className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Tentar novamente
-        </Button>
+        <p className="text-muted-foreground">
+          {profileError
+            ? "Erro ao carregar dados do perfil. O servidor pode estar temporariamente indisponível."
+            : "Carregando dados do perfil..."}
+        </p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={retryProfile} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+          <Button variant="ghost" onClick={signOut} className="gap-2">
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
+        </div>
       </div>
     );
   }
 
+  // Role-based access control
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     return <Navigate to="/dashboard" replace />;
   }
