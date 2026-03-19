@@ -58,6 +58,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const [executionTime, setExecutionTime] = useState<string | null>(null);
   const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
   const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
+  const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
 
   useEffect(() => {
     setLocalTask(task);
