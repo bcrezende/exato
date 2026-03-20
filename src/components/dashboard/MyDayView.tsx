@@ -93,8 +93,14 @@ export default function MyDayView() {
     toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
 
     try {
-      const { generatedRecurring } = await updateTaskStatus(taskId, newStatus, task);
-      if (generatedRecurring) fetchTasks();
+      const { isRecurring, parentId } = await updateTaskStatus(taskId, newStatus, task);
+      if (isRecurring && parentId) {
+        const effectiveType = task?.recurrence_type && task.recurrence_type !== "none"
+          ? task.recurrence_type
+          : tasks.find(t => t.id === task?.recurrence_parent_id)?.recurrence_type || "none";
+        setPendingRecurrence({ parentId, recurrenceType: effectiveType });
+        setShowRecurrenceConfirm(true);
+      }
     } catch {
       setTasks(previousTasks);
       toast.error("Erro ao atualizar status");
