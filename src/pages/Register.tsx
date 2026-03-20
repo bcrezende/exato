@@ -61,7 +61,7 @@ export default function Register() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
-          <img src={logoDark} alt="Exato" className="h-24 w-auto" />
+          <img src={logoDark} alt="Exato" className="h-24 w-auto" width={96} height={96} fetchPriority="high" />
           <p className="text-muted-foreground">Crie sua conta de administrador</p>
         </div>
         <Card>
