@@ -67,7 +67,7 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       try {
         const results = await Promise.allSettled([
-          supabase.from("tasks").select("id,title,description,status,priority,due_date,start_date,assigned_to,created_by,department_id,company_id,recurrence_type,recurrence_parent_id,estimated_minutes,difficulty_rating,created_at,updated_at").order("due_date", { ascending: true }),
+          supabase.from("tasks").select("*").order("due_date", { ascending: true }),
           supabase.from("profiles").select("id, full_name, department_id"),
           supabase.from("departments").select("id, name").order("name"),
           supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }),
