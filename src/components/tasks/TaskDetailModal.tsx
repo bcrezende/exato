@@ -149,9 +149,16 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
     setLocalTask({ ...localTask, status: newStatus as any });
     setStatusLoading(true);
     try {
-      await updateTaskStatus(localTask.id, newStatus as any, previousTask, difficultyRating);
+      const { isRecurring, parentId } = await updateTaskStatus(localTask.id, newStatus as any, previousTask, difficultyRating);
       toast({ title: "Status atualizado!" });
       onRefresh();
+      if (isRecurring && parentId) {
+        const effectiveType = previousTask.recurrence_type !== "none"
+          ? previousTask.recurrence_type
+          : parentRecurrenceType || "none";
+        setPendingRecurrence({ parentId, recurrenceType: effectiveType });
+        setShowRecurrenceConfirm(true);
+      }
     } catch {
       setLocalTask(previousTask);
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
