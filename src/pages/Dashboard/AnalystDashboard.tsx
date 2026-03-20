@@ -146,7 +146,7 @@ export default function AnalystDashboard() {
   /* fetch tasks for period */
   const fetchTasks = useCallback(async () => {
     if (!user) return;
-    const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description";
+    const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id";
     const { data } = await supabase
       .from("tasks")
       .select(TASK_COLS)
