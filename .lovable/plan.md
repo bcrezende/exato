@@ -1,36 +1,85 @@
 
 
-## Adicionar Campo "Justificativa" na Edição de Tarefas
+## Confirmação antes de gerar tarefa recorrente
 
 ### Objetivo
-Permitir que o usuário justifique atrasos ou demoras ao editar uma tarefa. O campo aparece apenas no modo de edição (não na criação).
+Ao concluir uma tarefa recorrente, em vez de gerar automaticamente a próxima instância, exibir um dialog perguntando ao usuário se deseja gerar. O texto será contextual: "amanhã" para diária, "semana que vem" para semanal, etc.
 
-### Mudanças necessárias
+### Abordagem
 
-#### 1. Banco de dados — nova coluna `justification`
-Migration SQL:
-```sql
-ALTER TABLE public.tasks ADD COLUMN justification text;
+A mudança é puramente no **frontend**. A Edge Function continua igual — apenas deixamos de chamá-la automaticamente e passamos a chamá-la só após confirmação.
+
+#### 1. Modificar `updateTaskStatus` em `src/lib/task-utils.ts`
+- **Separar** a geração de recorrência da função principal
+- A função passa a retornar `{ error, isRecurring }` em vez de chamar a Edge Function diretamente
+- Criar nova função exportada `generateNextRecurrence(parentId: string)` que faz o invoke da Edge Function
+
+#### 2. Criar componente `RecurrenceConfirmDialog` em `src/components/tasks/RecurrenceConfirmDialog.tsx`
+- Dialog simples com:
+  - Título: "Gerar próxima tarefa?"
+  - Mensagem contextual baseada no `recurrence_type`: "Deseja gerar a próxima tarefa para **amanhã**?" / "**semana que vem**" / "**mês que vem**" / "**ano que vem**"
+  - Para tipos customizados, usar o label da `recurrence_definition` (ex: "a cada 2 dias")
+  - Botões: "Não gerar" e "Gerar tarefa"
+
+#### 3. Atualizar os 4 locais que chamam `updateTaskStatus` para completar
+
+Todos seguem o mesmo padrão — após `updateTaskStatus` retornar `isRecurring: true`, abrir o dialog de confirmação:
+
+| Arquivo | Mudança |
+|---------|---------|
+| `TaskDetailModal.tsx` | Adicionar state para o dialog, abrir após conclusão de recorrente |
+| `Tasks.tsx` | Idem — no `executeStatusChange` |
+| `MyDayView.tsx` | Idem |
+| `AnalystDashboard.tsx` | Idem |
+
+Em cada local:
+- Adicionar states: `showRecurrenceConfirm`, `pendingRecurrenceParentId`, `pendingRecurrenceType`
+- Após `updateTaskStatus` retornar `isRecurring: true`, setar esses states para abrir o dialog
+- No callback de confirmação, chamar `generateNextRecurrence(parentId)`
+- No callback de cancelamento, apenas fechar o dialog (tarefa fica concluída, mas sem gerar a próxima)
+
+### Mapeamento de texto contextual
+
+```typescript
+function getRecurrenceTimeLabel(recurrenceType: string, definitions?: RecurrenceDefinition[]): string {
+  const def = definitions?.find(d => d.key === recurrenceType);
+  if (def) {
+    if (def.interval_unit === "day") return def.interval_value === 1 ? "amanhã" : `em ${def.interval_value} dias`;
+    if (def.interval_unit === "week") return def.interval_value === 1 ? "semana que vem" : `em ${def.interval_value} semanas`;
+    if (def.interval_unit === "month") return def.interval_value === 1 ? "mês que vem" : `em ${def.interval_value} meses`;
+    if (def.interval_unit === "year") return def.interval_value === 1 ? "ano que vem" : `em ${def.interval_value} anos`;
+  }
+  // Fallback para tipos legacy
+  switch (recurrenceType) {
+    case "daily": return "amanhã";
+    case "weekly": return "semana que vem";
+    case "monthly": return "mês que vem";
+    case "yearly": return "ano que vem";
+    default: return "no próximo período";
+  }
+}
 ```
-
-#### 2. `TaskForm.tsx` — adicionar campo no formulário de edição
-- Adicionar `justification` ao estado do form (`getInitialForm` e `form`)
-- Renderizar um `Textarea` com label "Justificativa" **somente quando `editing` não é null**
-- Incluir `justification` no payload de `handleSave`
-
-#### 3. `TaskDetailModal.tsx` — exibir justificativa
-- Se `localTask.justification` existir, mostrar na seção de detalhes com ícone e label "Justificativa:"
 
 ### Arquivos
 
 | Ação | Arquivo |
 |------|---------|
-| Migration | Nova coluna `justification` na tabela `tasks` |
-| Editar | `src/components/tasks/TaskForm.tsx` |
+| Editar | `src/lib/task-utils.ts` — separar geração em função própria |
+| Criar | `src/components/tasks/RecurrenceConfirmDialog.tsx` |
 | Editar | `src/components/tasks/TaskDetailModal.tsx` |
+| Editar | `src/pages/Tasks.tsx` |
+| Editar | `src/components/dashboard/MyDayView.tsx` |
+| Editar | `src/pages/Dashboard/AnalystDashboard.tsx` |
 
-### Comportamento
-- Campo opcional, sem validação obrigatória
-- Visível apenas na edição, não na criação de tarefas
-- Exibido no modal de detalhes quando preenchido
+### Fluxo final
+
+```text
+Usuário clica "Concluir" → Seleciona dificuldade → Tarefa marcada como concluída
+  ↓
+É recorrente? 
+  → Sim → Abre dialog "Deseja gerar a próxima tarefa para amanhã?"
+            → "Gerar tarefa" → Chama Edge Function → Próxima instância criada
+            → "Não gerar" → Fecha dialog, nenhuma instância criada
+  → Não → Fluxo normal, sem dialog
+```
 
