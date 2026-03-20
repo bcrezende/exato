@@ -8,10 +8,12 @@ import { Play, CheckCircle, Clock, ListTodo, AlertTriangle, PartyPopper } from "
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { updateTaskStatus } from "@/lib/task-utils";
+import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
+import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -45,6 +47,9 @@ export default function MyDayView() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
   const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
+  const { definitions } = useRecurrenceDefinitions();
+  const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
+  const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
 
   const fetchTasks = async () => {
     if (!user) return;
@@ -88,8 +93,14 @@ export default function MyDayView() {
     toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
 
     try {
-      const { generatedRecurring } = await updateTaskStatus(taskId, newStatus, task);
-      if (generatedRecurring) fetchTasks();
+      const { isRecurring, parentId } = await updateTaskStatus(taskId, newStatus, task);
+      if (isRecurring && parentId) {
+        const effectiveType = task?.recurrence_type && task.recurrence_type !== "none"
+          ? task.recurrence_type
+          : tasks.find(t => t.id === task?.recurrence_parent_id)?.recurrence_type || "none";
+        setPendingRecurrence({ parentId, recurrenceType: effectiveType });
+        setShowRecurrenceConfirm(true);
+      }
     } catch {
       setTasks(previousTasks);
       toast.error("Erro ao atualizar status");
@@ -233,6 +244,28 @@ export default function MyDayView() {
         tasks={pendingTasks}
         onClose={closeAlert}
         onProceed={() => proceedAction?.()}
+      />
+      <RecurrenceConfirmDialog
+        open={showRecurrenceConfirm}
+        recurrenceType={pendingRecurrence?.recurrenceType || ""}
+        definitions={definitions}
+        onConfirm={async () => {
+          setShowRecurrenceConfirm(false);
+          if (pendingRecurrence?.parentId) {
+            try {
+              await generateNextRecurrence(pendingRecurrence.parentId);
+              toast.success("Próxima tarefa gerada!");
+              fetchTasks();
+            } catch {
+              toast.error("Erro ao gerar próxima tarefa");
+            }
+          }
+          setPendingRecurrence(null);
+        }}
+        onCancel={() => {
+          setShowRecurrenceConfirm(false);
+          setPendingRecurrence(null);
+        }}
       />
     </div>
   );

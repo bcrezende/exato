@@ -4,9 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { format, subDays, startOfWeek, startOfMonth, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { updateTaskStatus } from "@/lib/task-utils";
+import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
+import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admin/AdminPeriodToggle";
 import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
@@ -135,6 +137,9 @@ export default function AnalystDashboard() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
   const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
+  const { definitions } = useRecurrenceDefinitions();
+  const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
+  const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
 
   const dateRange = useMemo(() => getDateRange(period), [period]);
 
@@ -210,8 +215,14 @@ export default function AnalystDashboard() {
     }
     toast.success(newStatus === "in_progress" ? "Tarefa iniciada!" : "Tarefa concluída!");
     try {
-      const { generatedRecurring } = await updateTaskStatus(taskId, newStatus, task);
-      if (generatedRecurring) { fetchTasks(); fetchUpcoming(); }
+      const { isRecurring, parentId } = await updateTaskStatus(taskId, newStatus, task);
+      if (isRecurring && parentId) {
+        const effectiveType = task?.recurrence_type && task.recurrence_type !== "none"
+          ? task.recurrence_type
+          : allTasks.find(t => t.id === task?.recurrence_parent_id)?.recurrence_type || "none";
+        setPendingRecurrence({ parentId, recurrenceType: effectiveType });
+        setShowRecurrenceConfirm(true);
+      }
     } catch {
       setAllTasks(prev);
       toast.error("Erro ao atualizar status");
@@ -474,6 +485,29 @@ export default function AnalystDashboard() {
         tasks={pendingTasks}
         onClose={closeAlert}
         onProceed={() => proceedAction?.()}
+      />
+      <RecurrenceConfirmDialog
+        open={showRecurrenceConfirm}
+        recurrenceType={pendingRecurrence?.recurrenceType || ""}
+        definitions={definitions}
+        onConfirm={async () => {
+          setShowRecurrenceConfirm(false);
+          if (pendingRecurrence?.parentId) {
+            try {
+              await generateNextRecurrence(pendingRecurrence.parentId);
+              toast.success("Próxima tarefa gerada!");
+              fetchTasks();
+              fetchUpcoming();
+            } catch {
+              toast.error("Erro ao gerar próxima tarefa");
+            }
+          }
+          setPendingRecurrence(null);
+        }}
+        onCancel={() => {
+          setShowRecurrenceConfirm(false);
+          setPendingRecurrence(null);
+        }}
       />
     </div>
   );

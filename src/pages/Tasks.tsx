@@ -17,10 +17,11 @@ import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { toDisplayDate, formatStoredDate, getTodayRange, nowAsFakeUTC } from "@/lib/date-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { updateTaskStatus } from "@/lib/task-utils";
+import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
+import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 import TaskCalendar from "@/components/tasks/TaskCalendar";
@@ -60,6 +61,8 @@ export default function Tasks() {
   const [successId, setSuccessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
+  const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
+  const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
   // Sorting
   const [sortColumn, setSortColumn] = useState<string | null>("start_date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -133,13 +136,16 @@ export default function Tasks() {
     }
 
     try {
-      const { generatedRecurring } = await updateTaskStatus(taskId, newStatus as any, task);
-      if (generatedRecurring) {
-        toast({ title: "Status atualizado! Próxima recorrência gerada." });
-      } else {
-        toast({ title: "Status atualizado!" });
-      }
+      const { isRecurring, parentId } = await updateTaskStatus(taskId, newStatus as any, task);
+      toast({ title: "Status atualizado!" });
       await fetchTasks();
+      if (isRecurring && parentId) {
+        const effectiveType = task.recurrence_type !== "none"
+          ? task.recurrence_type
+          : tasks.find(t => t.id === task.recurrence_parent_id)?.recurrence_type || "none";
+        setPendingRecurrence({ parentId, recurrenceType: effectiveType });
+        setShowRecurrenceConfirm(true);
+      }
     } catch {
       setTasks(previousTasks);
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
@@ -603,6 +609,28 @@ export default function Tasks() {
         tasks={pendingTasks}
         onClose={closeAlert}
         onProceed={() => proceedAction?.()}
+      />
+      <RecurrenceConfirmDialog
+        open={showRecurrenceConfirm}
+        recurrenceType={pendingRecurrence?.recurrenceType || ""}
+        definitions={definitions}
+        onConfirm={async () => {
+          setShowRecurrenceConfirm(false);
+          if (pendingRecurrence?.parentId) {
+            try {
+              await generateNextRecurrence(pendingRecurrence.parentId);
+              toast({ title: "Próxima tarefa gerada!" });
+              fetchTasks();
+            } catch {
+              toast({ variant: "destructive", title: "Erro ao gerar próxima tarefa" });
+            }
+          }
+          setPendingRecurrence(null);
+        }}
+        onCancel={() => {
+          setShowRecurrenceConfirm(false);
+          setPendingRecurrence(null);
+        }}
       />
     </div>
   );

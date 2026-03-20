@@ -6,10 +6,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { updateTaskStatus } from "@/lib/task-utils";
+import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
+import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
 import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { formatStoredDate } from "@/lib/date-utils";
@@ -85,8 +86,10 @@ interface TaskDetailModalProps {
 export default function TaskDetailModal({ task, open, onOpenChange, members, departments, onEdit, onRefresh }: TaskDetailModalProps) {
   const { user, role } = useAuth();
   const { toast } = useToast();
-  const { getLabel } = useRecurrenceDefinitions();
+  const { getLabel, definitions } = useRecurrenceDefinitions();
   const [localTask, setLocalTask] = useState<Task | null>(task);
+  const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
+  const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const canManage = role === "admin" || role === "manager" || role === "coordinator";
   const isCreator = localTask?.created_by === user?.id;
@@ -146,9 +149,16 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
     setLocalTask({ ...localTask, status: newStatus as any });
     setStatusLoading(true);
     try {
-      await updateTaskStatus(localTask.id, newStatus as any, previousTask, difficultyRating);
+      const { isRecurring, parentId } = await updateTaskStatus(localTask.id, newStatus as any, previousTask, difficultyRating);
       toast({ title: "Status atualizado!" });
       onRefresh();
+      if (isRecurring && parentId) {
+        const effectiveType = previousTask.recurrence_type !== "none"
+          ? previousTask.recurrence_type
+          : parentRecurrenceType || "none";
+        setPendingRecurrence({ parentId, recurrenceType: effectiveType });
+        setShowRecurrenceConfirm(true);
+      }
     } catch {
       setLocalTask(previousTask);
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
@@ -315,6 +325,28 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
       tasks={pendingTasks}
       onClose={closeAlert}
       onProceed={() => proceedAction?.()}
+    />
+    <RecurrenceConfirmDialog
+      open={showRecurrenceConfirm}
+      recurrenceType={pendingRecurrence?.recurrenceType || ""}
+      definitions={definitions}
+      onConfirm={async () => {
+        setShowRecurrenceConfirm(false);
+        if (pendingRecurrence?.parentId) {
+          try {
+            await generateNextRecurrence(pendingRecurrence.parentId);
+            toast({ title: "Próxima tarefa gerada!" });
+            onRefresh();
+          } catch {
+            toast({ variant: "destructive", title: "Erro ao gerar próxima tarefa" });
+          }
+        }
+        setPendingRecurrence(null);
+      }}
+      onCancel={() => {
+        setShowRecurrenceConfirm(false);
+        setPendingRecurrence(null);
+      }}
     />
     </>
   );
