@@ -136,13 +136,16 @@ export default function Tasks() {
     }
 
     try {
-      const { generatedRecurring } = await updateTaskStatus(taskId, newStatus as any, task);
-      if (generatedRecurring) {
-        toast({ title: "Status atualizado! Próxima recorrência gerada." });
-      } else {
-        toast({ title: "Status atualizado!" });
-      }
+      const { isRecurring, parentId } = await updateTaskStatus(taskId, newStatus as any, task);
+      toast({ title: "Status atualizado!" });
       await fetchTasks();
+      if (isRecurring && parentId) {
+        const effectiveType = task.recurrence_type !== "none"
+          ? task.recurrence_type
+          : tasks.find(t => t.id === task.recurrence_parent_id)?.recurrence_type || "none";
+        setPendingRecurrence({ parentId, recurrenceType: effectiveType });
+        setShowRecurrenceConfirm(true);
+      }
     } catch {
       setTasks(previousTasks);
       toast({ variant: "destructive", title: "Erro ao atualizar status" });
