@@ -64,13 +64,9 @@ function ManagementActions({ task }: { task: Task }) {
     <div className="space-y-2">
       <span className="text-sm font-medium">Ações de Gestão</span>
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" className="flex-1 gap-1.5" disabled={loading} onClick={handleRemind}>
+        <Button size="sm" variant="outline" className="w-full gap-1.5" disabled={loading} onClick={handleRemind}>
           <Bell className="h-3.5 w-3.5" />
           Cobrar
-        </Button>
-        <Button size="sm" variant="outline" className="flex-1 gap-1.5" disabled={loading} onClick={handleEscalate}>
-          <ArrowUpCircle className="h-3.5 w-3.5" />
-          Escalar
         </Button>
       </div>
     </div>
