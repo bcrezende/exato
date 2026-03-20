@@ -1,56 +1,29 @@
 
 
-## Correção: Edge Function Não Inicia (Boot Error)
+## Permitir Analistas Editarem Tarefas Atribuídas a Eles
 
 ### Problema
 
-Os logs da Edge Function mostram:
-
-```
-worker boot error: Uncaught SyntaxError: Identifier 'durationMs' has already been declared at line 266
-```
-
-A função não consegue iniciar, retorna erro no preflight OPTIONS, e o browser mostra erro de CORS.
-
-### Causa Raiz
-
-O bloco `if (weekdays)` (linha 228) nunca é fechado com `}` antes do código de intervalo padrão (linha 317+). A estrutura atual:
-
-```text
-for (parent of parentTasks) {
-  if (def && def.weekdays) {        // linha 228
-    const durationMs = ...          // linha 232 ← primeira declaração
-    ...weekday loops...
-    continue;                       // linha 315
-    // código morto mas MESMO escopo:
-    const durationMs = ...          // linha 334 ← DUPLICATA → CRASH
-  }                                 // linha 425
-}                                   // linha 426
-```
-
-Ambas as declarações `const durationMs` estão no mesmo bloco, causando o SyntaxError.
+No `TaskDetailModal`, os botões "Editar" e "Excluir" só aparecem quando `canManage || isCreator` (linha 311). Analistas que receberam tarefas de gestores não são criadores nem gestores, então não veem o botão de editar.
 
 ### Correção
 
-Fechar o `if` logo após o `continue` (linha 315), para que o código de intervalo fique em escopo separado:
+**Arquivo:** `src/components/tasks/TaskDetailModal.tsx`
 
-```text
-for (parent of parentTasks) {
-  if (def && def.weekdays) {        // linha 228
-    const durationMs = ...          // OK
-    ...weekday loops...
-    continue;                       // pula para próximo parent
-  }                                 // ← ADICIONAR } AQUI
+1. Alterar a condição da linha 311 de:
+   ```typescript
+   {(canManage || isCreator) && (
+   ```
+   Para:
+   ```typescript
+   {(canManage || isCreator || isAssigned) && (
+   ```
 
-  // Fluxo de intervalo (escopo separado)
-  const durationMs = ...            // OK, escopo diferente
-  ...
-}
-```
+2. Para manter segurança, mostrar apenas o botão "Editar" para analistas atribuídos (sem "Excluir"), já que a exclusão por analistas não-criadores pode não ser desejada. A lógica ficaria:
+   - Botão **Editar**: visível para `canManage || isCreator || isAssigned`
+   - Botão **Excluir**: visível apenas para `canManage || isCreator` (mantém como está)
 
-### Arquivo
+### Nota sobre RLS
 
-| Arquivo | Mudança |
-|---|---|
-| `supabase/functions/generate-recurring-tasks/index.ts` | Adicionar `}` após `continue;` (linha 315) e remover o `}` extra na linha 425 |
+A policy UPDATE da tabela `tasks` já permite `assigned_to = auth.uid()`, então o backend já aceita a atualização. Só falta liberar o botão no frontend.
 
