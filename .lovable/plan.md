@@ -1,46 +1,25 @@
 
 
-## Apresentação HTML da Plataforma Exato
+## Desativar pg_cron
 
-### O que será criado
-Uma página HTML standalone (single-file) com apresentação profissional em slides, estilo pitch deck, para apresentar a plataforma Exato a empresas. A página será adicionada ao projeto como `src/pages/Presentation.tsx` com rota `/presentation`.
+### Estado atual
+Existe **1 cron job** ativo:
 
-### Estrutura dos Slides (10 slides)
+| Job ID | Nome | Frequência | Função |
+|--------|------|------------|--------|
+| 5 | `generate-recurring-tasks` | A cada 6 horas | Marca tarefas como overdue + gera instâncias recorrentes |
 
-1. **Capa** — Logo Exato, tagline "Gestão de tarefas inteligente para equipes que entregam resultados"
-2. **O Problema** — Falta de visibilidade, atrasos não rastreados, gestão manual
-3. **A Solução** — Plataforma Exato com visão geral das funcionalidades
-4. **Dashboards por Papel** — Admin, Gerente, Coordenador, Analista — cada um vê o que precisa
-5. **Gestão de Tarefas** — Kanban, Lista, Calendário, importação em massa, recorrência
-6. **Monitoramento de Equipe** — Ranking, status de atividade, detalhamento por analista
-7. **Análise com IA** — Insights automáticos, histórico de análises, recomendações
-8. **Segurança** — RLS por papel, logging seguro, dados isolados por empresa
-9. **Diferenciais** — Tooltips de fórmulas, notificações, convites, feriados, temas dark/light
-10. **CTA / Contato** — Call to action final
+### Ação
+Executar SQL para remover o job:
 
-### Abordagem técnica
+```sql
+SELECT cron.unschedule('generate-recurring-tasks');
+```
 
-- **Componente React** com navegação por teclado (setas) e clique
-- **Fullscreen** via botão
-- **Design**: Paleta da plataforma (primary azul `hsl(221,83%,53%)`, fundo escuro `hsl(222,47%,11%)`, branco)
-- **Fontes**: Space Grotesk (títulos) + Inter (corpo) — já importadas no projeto
-- **Animações**: Fade-in nos elementos ao trocar slide
-- **Responsivo**: Escala proporcional para qualquer tela
-- **Barra de progresso** no rodapé
-- **Thumbnails** lateral opcional
+### Impacto
+- **Tarefas recorrentes**: Ainda serão geradas **on-demand** quando um usuário concluir uma tarefa (via `task-utils.ts` → Edge Function com `parentId`). Apenas a geração automática a cada 6h para.
+- **Marcação de overdue**: Tarefas pendentes **não serão mais marcadas como overdue automaticamente**. Só serão marcadas se alguém completar uma tarefa recorrente e a Edge Function rodar sem `parentId`.
 
-### Arquivos
-
-| Ação | Arquivo |
-|------|---------|
-| Criar | `src/pages/Presentation.tsx` |
-| Editar | `src/App.tsx` (adicionar rota `/presentation` pública) |
-
-### Detalhes visuais por slide
-
-- Slides ímpares: fundo escuro com texto claro (premium feel)
-- Slides pares: fundo claro com cards e ícones coloridos
-- Ícones Lucide para cada funcionalidade
-- Grid cards para features (2x2 ou 3x2)
-- Números grandes (48-72px) para estatísticas de impacto
+### Arquivo
+Nenhum arquivo do projeto precisa ser editado — apenas o SQL acima no banco.
 
