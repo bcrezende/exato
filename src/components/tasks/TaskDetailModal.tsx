@@ -10,7 +10,7 @@ import { updateTaskStatus } from "@/lib/task-utils";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
-import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, ArrowUpCircle, FileText } from "lucide-react";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { formatStoredDate } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
@@ -59,40 +59,14 @@ function ManagementActions({ task }: { task: Task }) {
     }
   };
 
-  const handleEscalate = async () => {
-    if (!task.department_id || !user) return;
-    setLoading(true);
-    // Find coordinators linked to analysts in this department
-    const { data: links } = await supabase
-      .from("coordinator_analysts")
-      .select("coordinator_id");
-    
-    if (links && links.length > 0) {
-      const uniqueCoordinators = [...new Set(links.map(l => l.coordinator_id))];
-      const notifications = uniqueCoordinators.map(coordId => ({
-        user_id: coordId,
-        title: "Tarefa escalada",
-        message: `A tarefa "${task.title}" foi escalada para sua atenção`,
-        type: "task_escalated",
-        reference_id: task.id,
-      }));
-      await supabase.from("notifications").insert(notifications);
-    }
-    setLoading(false);
-    toast({ title: "Tarefa escalada para coordenadores!" });
-  };
 
   return (
     <div className="space-y-2">
       <span className="text-sm font-medium">Ações de Gestão</span>
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" className="flex-1 gap-1.5" disabled={loading} onClick={handleRemind}>
+        <Button size="sm" variant="outline" className="w-full gap-1.5" disabled={loading} onClick={handleRemind}>
           <Bell className="h-3.5 w-3.5" />
           Cobrar
-        </Button>
-        <Button size="sm" variant="outline" className="flex-1 gap-1.5" disabled={loading} onClick={handleEscalate}>
-          <ArrowUpCircle className="h-3.5 w-3.5" />
-          Escalar
         </Button>
       </div>
     </div>
