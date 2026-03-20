@@ -610,6 +610,28 @@ export default function Tasks() {
         onClose={closeAlert}
         onProceed={() => proceedAction?.()}
       />
+      <RecurrenceConfirmDialog
+        open={showRecurrenceConfirm}
+        recurrenceType={pendingRecurrence?.recurrenceType || ""}
+        definitions={definitions}
+        onConfirm={async () => {
+          setShowRecurrenceConfirm(false);
+          if (pendingRecurrence?.parentId) {
+            try {
+              await generateNextRecurrence(pendingRecurrence.parentId);
+              toast({ title: "Próxima tarefa gerada!" });
+              fetchTasks();
+            } catch {
+              toast({ variant: "destructive", title: "Erro ao gerar próxima tarefa" });
+            }
+          }
+          setPendingRecurrence(null);
+        }}
+        onCancel={() => {
+          setShowRecurrenceConfirm(false);
+          setPendingRecurrence(null);
+        }}
+      />
     </div>
   );
 }

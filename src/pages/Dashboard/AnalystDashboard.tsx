@@ -483,6 +483,29 @@ export default function AnalystDashboard() {
         onClose={closeAlert}
         onProceed={() => proceedAction?.()}
       />
+      <RecurrenceConfirmDialog
+        open={showRecurrenceConfirm}
+        recurrenceType={pendingRecurrence?.recurrenceType || ""}
+        definitions={definitions}
+        onConfirm={async () => {
+          setShowRecurrenceConfirm(false);
+          if (pendingRecurrence?.parentId) {
+            try {
+              await generateNextRecurrence(pendingRecurrence.parentId);
+              toast.success("Próxima tarefa gerada!");
+              fetchTasks();
+              fetchUpcoming();
+            } catch {
+              toast.error("Erro ao gerar próxima tarefa");
+            }
+          }
+          setPendingRecurrence(null);
+        }}
+        onCancel={() => {
+          setShowRecurrenceConfirm(false);
+          setPendingRecurrence(null);
+        }}
+      />
     </div>
   );
 }
