@@ -6,10 +6,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { updateTaskStatus } from "@/lib/task-utils";
+import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
+import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
 import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { formatStoredDate } from "@/lib/date-utils";
