@@ -499,8 +499,23 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
               </div>
             </div>
             {errors.due_date && <p className="text-xs text-destructive">{errors.due_date}</p>}
-          </div>
+           </div>
         </div>
+
+          {/* Justificativa (only when editing) */}
+          {editing && (
+            <div className="space-y-2">
+              <Label>Justificativa</Label>
+              <Textarea
+                value={form.justification || ""}
+                onChange={(e) => setForm({ ...form, justification: e.target.value })}
+                placeholder="Justifique atrasos ou demoras, se necessário..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground">Opcional — use para justificar atrasos ou demoras</p>
+            </div>
+          )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSave}>{editing ? "Salvar" : "Criar"}</Button>
