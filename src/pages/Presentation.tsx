@@ -35,7 +35,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import logoDark from "@/assets/logo-dark.png";
+import logoDark from "@/assets/logo-dark-optimized.webp";
 import logoWhite from "@/assets/logo-white.png";
 
 const SLIDE_W = 1920;
