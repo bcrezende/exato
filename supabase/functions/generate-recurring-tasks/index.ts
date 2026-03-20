@@ -252,9 +252,11 @@ Deno.serve(async (req) => {
 
       const wdSource = weekdayLatest?.[0] || parent;
 
-      for (const wd of def.weekdays) {
+      let weekdayCreated = false;
+      for (let weekOffset = 0; weekOffset < 2; weekOffset++) {
+        for (const wd of def.weekdays) {
           const candidate = new Date(weekStart);
-          candidate.setUTCDate(candidate.getUTCDate() + wd);
+          candidate.setUTCDate(candidate.getUTCDate() + (weekOffset * 7) + wd);
           candidate.setUTCHours(startHour, startMin, 0, 0);
 
           // Skip past
@@ -302,11 +304,15 @@ Deno.serve(async (req) => {
             }
           } else {
             createdCount++;
-            console.log(`Created weekday instance for parent ${parent.id}: day=${wd}`);
+            weekdayCreated = true;
+            console.log(`Created weekday instance for parent ${parent.id}: day=${wd}, weekOffset=${weekOffset}`);
           }
+
+          if (singleParentId && weekdayCreated) break;
         }
-        continue;
+        if (singleParentId && weekdayCreated) break;
       }
+      continue;
 
       // Standard interval-based logic
       const { data: latestInstances } = await supabase
