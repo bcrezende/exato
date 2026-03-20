@@ -86,8 +86,10 @@ interface TaskDetailModalProps {
 export default function TaskDetailModal({ task, open, onOpenChange, members, departments, onEdit, onRefresh }: TaskDetailModalProps) {
   const { user, role } = useAuth();
   const { toast } = useToast();
-  const { getLabel } = useRecurrenceDefinitions();
+  const { getLabel, definitions } = useRecurrenceDefinitions();
   const [localTask, setLocalTask] = useState<Task | null>(task);
+  const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
+  const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const canManage = role === "admin" || role === "manager" || role === "coordinator";
   const isCreator = localTask?.created_by === user?.id;
