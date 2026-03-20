@@ -186,7 +186,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
 
     const assignedTo = isAnalyst ? user.id : (form.assigned_to || null);
 
-    const payload = {
+    const payload: any = {
       title: form.title.trim(),
       description: form.description.trim() || null,
       assigned_to: assignedTo,
@@ -199,6 +199,10 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       department_id: departmentId,
       estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes, 10) : null,
     };
+
+    if (editing) {
+      payload.justification = form.justification?.trim() || null;
+    }
 
     if (editing) {
       const { error } = await supabase.from("tasks").update(payload).eq("id", editing.id);
