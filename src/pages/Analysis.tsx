@@ -99,12 +99,12 @@ export default function Analysis() {
       };
       const startDate = startMap[period].toISOString();
 
-      let tasksQuery = supabase.from("tasks").select("*").gte("created_at", startDate);
+      let tasksQuery = supabase.from("tasks").select("id, title, status, priority, due_date, start_date, assigned_to, department_id, estimated_minutes, created_at").gte("created_at", startDate);
       if (sectorId !== "all") tasksQuery = tasksQuery.eq("department_id", sectorId);
       if (employeeId !== "all") tasksQuery = tasksQuery.eq("assigned_to", employeeId);
       const { data: tasks } = await tasksQuery;
 
-      const { data: timeLogs } = await supabase.from("task_time_logs").select("*").gte("created_at", startDate);
+      const { data: timeLogs } = await supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").gte("created_at", startDate);
 
       const taskList = tasks || [];
       const logList = timeLogs || [];

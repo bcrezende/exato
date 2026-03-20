@@ -96,12 +96,13 @@ export default function TeamMonitoring() {
 
       // Fetch profiles and tasks in parallel
       const [profilesRes, tasksRes] = await Promise.all([
-        supabase.from("profiles").select("*").in("id", analystIds),
+        supabase.from("profiles").select("id, full_name, avatar_url, department_id, position, company_id, created_at, updated_at, phone, dismiss_pending_warnings").in("id", analystIds),
         supabase
           .from("tasks")
           .select("id, status, assigned_to")
           .eq("company_id", companyId)
-          .in("assigned_to", analystIds),
+          .in("assigned_to", analystIds)
+          .in("status", ["pending", "in_progress", "overdue"]),
       ]);
 
       const profiles = profilesRes.data || [];

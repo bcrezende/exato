@@ -58,8 +58,9 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
 
   useEffect(() => {
     const fetchData = async () => {
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
       const [{ data: delayData }, { data: profileData }] = await Promise.all([
-        supabase.from("task_delays").select("*").order("created_at", { ascending: true }),
+        supabase.from("task_delays").select("id, task_id, user_id, log_type, scheduled_time, actual_time, delay_minutes, created_at").gte("created_at", ninetyDaysAgo).order("created_at", { ascending: true }),
         supabase.from("profiles").select("id, full_name"),
       ]);
       if (delayData) setDelays(delayData as unknown as DelayRecord[]);

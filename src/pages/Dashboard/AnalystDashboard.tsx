@@ -146,9 +146,10 @@ export default function AnalystDashboard() {
   /* fetch tasks for period */
   const fetchTasks = useCallback(async () => {
     if (!user) return;
+    const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id";
     const { data } = await supabase
       .from("tasks")
-      .select("*")
+      .select(TASK_COLS)
       .eq("assigned_to", user.id)
       .or(`status.eq.overdue,and(start_date.gte.${dateRange.start},start_date.lte.${dateRange.end}),and(due_date.gte.${dateRange.start},due_date.lte.${dateRange.end})`)
       .order("start_date", { ascending: true, nullsFirst: false });
@@ -170,7 +171,7 @@ export default function AnalystDashboard() {
     const tomorrow = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0));
     const { data } = await supabase
       .from("tasks")
-      .select("*")
+      .select("id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id")
       .eq("assigned_to", user.id)
       .in("status", ["pending", "in_progress"])
       .gte("start_date", tomorrow.toISOString())

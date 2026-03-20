@@ -54,9 +54,11 @@ export default function ManagerCoordinatorDashboard() {
     setDetailOpen(true);
   };
 
+  const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id" as const;
+
   const handleRefresh = () => {
-    supabase.from("tasks").select("*").order("due_date", { ascending: true }).then(({ data }) => {
-      if (data) setTasks(data);
+    supabase.from("tasks").select(TASK_COLS).order("due_date", { ascending: true }).then(({ data }) => {
+      if (data) setTasks(data as unknown as Task[]);
     });
   };
 
@@ -65,10 +67,10 @@ export default function ManagerCoordinatorDashboard() {
     const fetchData = async () => {
       try {
         const results = await Promise.allSettled([
-          supabase.from("tasks").select("*").order("due_date", { ascending: true }),
+          supabase.from("tasks").select(TASK_COLS).order("due_date", { ascending: true }),
           supabase.from("profiles").select("id, full_name, department_id"),
           supabase.from("departments").select("id, name").order("name"),
-          supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }),
+          supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }).gte("created_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
         ]);
 
         const [tasksRes, profilesRes, depsRes, logsRes] = results;

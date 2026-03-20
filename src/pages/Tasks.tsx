@@ -87,11 +87,13 @@ export default function Tasks() {
     return count;
   }, [filterStatus, filterDepartment, filterAssignee, filterRecurrence, filterDate]);
 
+  const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id" as const;
+
   const fetchTasks = async () => {
-    let query = supabase.from("tasks").select("*").order("created_at", { ascending: false });
+    let query = supabase.from("tasks").select(TASK_COLS).order("created_at", { ascending: false });
     if (role === "analyst" && user) query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
     const { data } = await query;
-    if (data) setTasks(data);
+    if (data) setTasks(data as unknown as Task[]);
     setLoading(false);
   };
 

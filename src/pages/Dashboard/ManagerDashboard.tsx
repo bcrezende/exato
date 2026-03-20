@@ -54,8 +54,10 @@ export default function ManagerDashboard() {
   const [activeTab, setActiveTab] = useState("geral");
 
   const handleTaskClick = (task: Task) => { setSelectedTask(task); setDetailOpen(true); };
+  const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id" as const;
+
   const handleRefresh = () => {
-    supabase.from("tasks").select("*").order("due_date", { ascending: true }).then(({ data }) => { if (data) setTasks(data); });
+    supabase.from("tasks").select(TASK_COLS).eq("department_id", departmentId!).order("due_date", { ascending: true }).then(({ data }) => { if (data) setTasks(data as unknown as Task[]); });
   };
 
   useEffect(() => {
@@ -63,10 +65,10 @@ export default function ManagerDashboard() {
     const fetchData = async () => {
       try {
         const results = await Promise.allSettled([
-          supabase.from("tasks").select("*").eq("department_id", departmentId).order("due_date", { ascending: true }),
+          supabase.from("tasks").select(TASK_COLS).eq("department_id", departmentId).order("due_date", { ascending: true }),
           supabase.from("profiles").select("id, full_name, department_id").eq("department_id", departmentId),
           supabase.from("departments").select("id, name").order("name"),
-          supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }),
+          supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }).gte("created_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
           supabase.from("coordinator_analysts").select("coordinator_id, analyst_id"),
           supabase.from("user_roles").select("user_id, role").eq("role", "coordinator"),
         ]);

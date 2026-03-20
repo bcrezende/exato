@@ -59,13 +59,13 @@ export default function AIAnalysisDialog({ departments, profiles }: Props) {
       const startDate = startMap[period].toISOString();
 
       // Fetch tasks
-      let tasksQuery = supabase.from("tasks").select("*").gte("created_at", startDate);
+      let tasksQuery = supabase.from("tasks").select("id, title, status, priority, due_date, start_date, assigned_to, department_id, estimated_minutes, created_at").gte("created_at", startDate);
       if (sectorId !== "all") tasksQuery = tasksQuery.eq("department_id", sectorId);
       if (employeeId !== "all") tasksQuery = tasksQuery.eq("assigned_to", employeeId);
       const { data: tasks } = await tasksQuery;
 
       // Fetch time logs
-      let logsQuery = supabase.from("task_time_logs").select("*").gte("created_at", startDate);
+      let logsQuery = supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").gte("created_at", startDate);
       const { data: timeLogs } = await logsQuery;
 
       const taskList = tasks || [];
