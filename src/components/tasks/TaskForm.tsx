@@ -525,6 +525,7 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
       recurrence_type: task.recurrence_type,
       department_id: task.department_id || "",
       estimated_minutes: (task as any).estimated_minutes ? String((task as any).estimated_minutes) : "",
+      justification: (task as any).justification || "",
     };
   }
   return {
