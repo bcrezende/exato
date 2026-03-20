@@ -308,14 +308,16 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
           )}
         </div>
 
-        {(canManage || isCreator) && (
+        {(canManage || isCreator || isAssigned) && (
           <DialogFooter className="gap-2">
             <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); onEdit(localTask); }}>
               <Pencil className="mr-2 h-4 w-4" /> Editar
             </Button>
-            <Button variant="destructive" size="sm" onClick={handleDelete}>
-              <Trash2 className="mr-2 h-4 w-4" /> Excluir
-            </Button>
+            {(canManage || isCreator) && (
+              <Button variant="destructive" size="sm" onClick={handleDelete}>
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              </Button>
+            )}
           </DialogFooter>
         )}
       </DialogContent>
