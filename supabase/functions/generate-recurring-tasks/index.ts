@@ -423,6 +423,7 @@ Deno.serve(async (req) => {
         console.log(`Created instance for parent ${parent.id}: ${parent.title} — ${newStart.toISOString()}`);
       }
     }
+    }
 
     return new Response(
       JSON.stringify({ message: "Recurring tasks processed", created: createdCount, overdue: overdueCount }),
