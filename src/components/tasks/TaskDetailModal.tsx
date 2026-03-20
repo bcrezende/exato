@@ -59,28 +59,6 @@ function ManagementActions({ task }: { task: Task }) {
     }
   };
 
-  const handleEscalate = async () => {
-    if (!task.department_id || !user) return;
-    setLoading(true);
-    // Find coordinators linked to analysts in this department
-    const { data: links } = await supabase
-      .from("coordinator_analysts")
-      .select("coordinator_id");
-    
-    if (links && links.length > 0) {
-      const uniqueCoordinators = [...new Set(links.map(l => l.coordinator_id))];
-      const notifications = uniqueCoordinators.map(coordId => ({
-        user_id: coordId,
-        title: "Tarefa escalada",
-        message: `A tarefa "${task.title}" foi escalada para sua atenção`,
-        type: "task_escalated",
-        reference_id: task.id,
-      }));
-      await supabase.from("notifications").insert(notifications);
-    }
-    setLoading(false);
-    toast({ title: "Tarefa escalada para coordenadores!" });
-  };
 
   return (
     <div className="space-y-2">
