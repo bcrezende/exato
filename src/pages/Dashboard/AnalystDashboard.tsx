@@ -137,6 +137,9 @@ export default function AnalystDashboard() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
   const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
+  const { definitions } = useRecurrenceDefinitions();
+  const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
+  const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
 
   const dateRange = useMemo(() => getDateRange(period), [period]);
 
