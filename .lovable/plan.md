@@ -1,56 +1,56 @@
 
 
-## Correção: Recorrências Personalizadas Não Respeitadas
+## Correção: Edição de tarefa recorrente mostra "Nenhuma"
 
-### Problema Identificado
+### Problema
 
-A Edge Function `generate-recurring-tasks` tem um bug na condição que decide qual fluxo de geração usar. A lógica de **weekdays** (dias da semana específicos) só é ativada quando `interval_unit === "week"` (linha 228):
+Quando uma tarefa recorrente é concluída, o sistema gera uma instância filha com `recurrence_type: "none"` e `recurrence_parent_id` apontando para a tarefa pai. Ao editar essa instância, `getInitialForm` lê diretamente `task.recurrence_type` ("none") sem resolver o tipo real do pai.
 
-```text
-if (def && def.weekdays && def.weekdays.length > 0 && def.interval_unit === "week")
+O `TaskDetailModal` já resolve isso corretamente com `effectiveRecurrenceType`, mas o `TaskForm` não.
+
+### Correção
+
+**Arquivo:** `src/components/tasks/TaskForm.tsx`
+
+1. Na função `getInitialForm`, quando a task tem `recurrence_parent_id` e `recurrence_type === "none"`, manter "none" no form (comportamento correto para instâncias filhas que não devem alterar a recorrência do ciclo).
+
+**Porém**, o problema real pode ser outro: tarefas **pai** (que definem o ciclo) também estão aparecendo como "none"? Preciso verificar os dados.
+
+Olhando os dados do banco na network request, vejo que as tarefas pai como "CARTA FRETE" têm `recurrence_type: "daily"` e as filhas têm `recurrence_type: "none"` com `recurrence_parent_id` preenchido.
+
+**A correção correta é:** ao abrir o form para edição de uma instância filha, resolver o `recurrence_type` do pai para exibir corretamente.
+
+### Implementação
+
+**Arquivo:** `src/components/tasks/TaskForm.tsx`
+
+1. Adicionar um `useEffect` que, quando `editing` tem `recurrence_parent_id` e `recurrence_type === "none"`, busca o `recurrence_type` do pai no banco e atualiza o campo `recurrence_type` do form.
+
+2. Isso replica a mesma lógica já usada no `TaskDetailModal` (linhas que buscam `parentRecurrenceType`).
+
+### Mudança concreta
+
+```typescript
+// Novo useEffect após o existente na linha 84-89
+useEffect(() => {
+  if (open && editing && editing.recurrence_type === "none" && editing.recurrence_parent_id) {
+    supabase
+      .from("tasks")
+      .select("recurrence_type")
+      .eq("id", editing.recurrence_parent_id)
+      .single()
+      .then(({ data }) => {
+        if (data?.recurrence_type && data.recurrence_type !== "none") {
+          setForm(prev => ({ ...prev, recurrence_type: data.recurrence_type }));
+        }
+      });
+  }
+}, [open, editing]);
 ```
-
-Porém, **todas as recorrências personalizadas** do banco estão com `interval_unit = "day"`:
-
-| Recorrência | weekdays | interval_unit | Resultado |
-|---|---|---|---|
-| Segunda e Quarta | [1, 3] | **day** | ❌ Cai no fluxo errado |
-| Terça e Sexta | [2, 5] | **day** | ❌ Cai no fluxo errado |
-| Diária sem Sáb/Dom | [1,2,3,4,5,6] | **day** | ❌ Cai no fluxo errado |
-| Diária com Sábado | [1,2,3,4,5,6] | **day** | ❌ Cai no fluxo errado |
-| 3x Na semana | [3, 4, 5] | **day** | ❌ Cai no fluxo errado |
-
-Como caem no **fluxo padrão** (interval-based), o sistema:
-1. Avança N dias em vez de respeitar os weekdays específicos
-2. Usa `adjustToValidDay` que apenas pula para frente, não garante que caia num dos dias definidos
-3. Gera no máximo 1 task por ciclo, quando deveria gerar uma para cada weekday da semana
-
-Isso explica por que "Monitoramento de Lançamentos" (diaria_sem_sabado_e_domingo) funciona parcialmente — ele avança 1 dia e depois `adjustToValidDay` pula fins de semana — mas recorrências como "segunda_e_quarta" falham porque avançar 2 dias de segunda dá quarta, mas de quarta dá sexta (errado).
-
-### Plano de Correção
-
-#### 1. Corrigir a condição de entrada do fluxo weekday
-
-Alterar a linha 228 de:
-```
-if (def && def.weekdays && def.weekdays.length > 0 && def.interval_unit === "week")
-```
-Para:
-```
-if (def && def.weekdays && def.weekdays.length > 0)
-```
-
-Isso garante que qualquer definição com weekdays use o fluxo correto, independente de `interval_unit`.
-
-#### 2. Arquivo a editar
-
-| Arquivo | Mudança |
-|---|---|
-| `supabase/functions/generate-recurring-tasks/index.ts` | Remover `&& def.interval_unit === "week"` da condição (linha 228) |
 
 ### Impacto
 
-- Todas as 6 recorrências personalizadas passam a funcionar corretamente
-- Recorrências do sistema (daily, weekly, monthly, yearly) não são afetadas (não têm weekdays definidos, então a condição continua false para elas)
-- Nenhuma mudança no frontend necessária
+- Instâncias filhas de recorrência exibem o tipo correto no form de edição
+- Tarefas sem recorrência continuam mostrando "Nenhuma"
+- Nenhuma mudança no fluxo de salvamento
 
