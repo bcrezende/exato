@@ -89,6 +89,21 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
   }, [editing, open]);
 
   useEffect(() => {
+    if (open && editing && editing.recurrence_type === "none" && editing.recurrence_parent_id) {
+      supabase
+        .from("tasks")
+        .select("recurrence_type")
+        .eq("id", editing.recurrence_parent_id)
+        .single()
+        .then(({ data }) => {
+          if (data?.recurrence_type && data.recurrence_type !== "none") {
+            setForm(prev => ({ ...prev, recurrence_type: data.recurrence_type }));
+          }
+        });
+    }
+  }, [open, editing]);
+
+  useEffect(() => {
     if (form.start_date && form.due_date) {
       const diff = new Date(form.due_date).getTime() - new Date(form.start_date).getTime();
       if (diff > 0) {
