@@ -69,8 +69,10 @@ export default function CoordinatorDashboard() {
   const [activeTab, setActiveTab] = useState("geral");
 
   const handleTaskClick = (task: Task) => { setSelectedTask(task); setDetailOpen(true); };
+  const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description" as const;
+
   const handleRefresh = () => {
-    supabase.from("tasks").select("*").order("due_date", { ascending: true }).then(({ data }) => { if (data) setTasks(data); });
+    supabase.from("tasks").select(TASK_COLS).order("due_date", { ascending: true }).then(({ data }) => { if (data) setTasks(data as unknown as Task[]); });
   };
 
   useEffect(() => {
