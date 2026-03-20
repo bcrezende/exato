@@ -171,7 +171,7 @@ export default function AnalystDashboard() {
     const tomorrow = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0));
     const { data } = await supabase
       .from("tasks")
-      .select("id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description")
+      .select("id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id")
       .eq("assigned_to", user.id)
       .in("status", ["pending", "in_progress"])
       .gte("start_date", tomorrow.toISOString())

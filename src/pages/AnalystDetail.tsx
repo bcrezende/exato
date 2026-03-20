@@ -68,8 +68,8 @@ export default function AnalystDetail() {
       const [analystRes, tasksRes, membersRes, deptsRes] = await Promise.all([
         supabase.from("profiles").select("id, full_name, avatar_url, department_id, position, company_id, created_at, updated_at, phone, dismiss_pending_warnings").eq("id", userId!).single(),
         supabase.from("tasks").select(TASK_COLS).eq("company_id", companyId).eq("assigned_to", userId!),
-        supabase.from("profiles").select("id, full_name, department_id").eq("company_id", companyId),
-        supabase.from("departments").select("id, name, company_id").eq("company_id", companyId),
+        supabase.from("profiles").select("id, full_name, avatar_url, department_id, position, company_id, created_at, updated_at, phone, dismiss_pending_warnings").eq("company_id", companyId),
+        supabase.from("departments").select("id, name, company_id, created_at").eq("company_id", companyId),
       ]);
       setAnalyst(analystRes.data);
       setTasks(tasksRes.data || []);

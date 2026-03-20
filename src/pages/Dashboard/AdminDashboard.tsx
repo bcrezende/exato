@@ -56,7 +56,7 @@ export default function AdminDashboard() {
     setDetailOpen(true);
   };
 
-  const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description" as const;
+  const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id" as const;
 
   const handleRefresh = () => {
     supabase.from("tasks").select(TASK_COLS).order("due_date", { ascending: true }).then(({ data }) => {
