@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus } from "lucide-react";
-import logoDark from "@/assets/logo-dark.png";
+import logoDark from "@/assets/logo-dark-optimized.webp";
 
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
@@ -101,7 +101,7 @@ export default function AcceptInvite() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
-          <img src={logoDark} alt="Exato" className="h-24 w-auto" />
+          <img src={logoDark} alt="Exato" className="h-24 w-auto" width={96} height={96} fetchPriority="high" />
           <p className="text-muted-foreground">
             Você foi convidado para <strong>{(invitation as any).companies?.name}</strong>
           </p>
