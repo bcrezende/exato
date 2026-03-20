@@ -538,5 +538,6 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
     recurrence_type: "none",
     department_id: isAdmin ? "" : (currentProfile?.department_id || ""),
     estimated_minutes: "",
+    justification: "",
   };
 }

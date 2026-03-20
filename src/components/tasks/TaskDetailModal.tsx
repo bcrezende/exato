@@ -265,6 +265,12 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                 <span>Tempo de execução: <span className="text-foreground font-medium">{executionTime}</span></span>
               </div>
             )}
+            {extTask.justification && (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <FileText className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Justificativa: <span className="text-foreground font-medium">{extTask.justification}</span></span>
+              </div>
+            )}
           </div>
 
           {isAssigned && (
