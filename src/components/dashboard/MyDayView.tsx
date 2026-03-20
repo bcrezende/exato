@@ -8,10 +8,12 @@ import { Play, CheckCircle, Clock, ListTodo, AlertTriangle, PartyPopper } from "
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { updateTaskStatus } from "@/lib/task-utils";
+import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
+import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
+import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
