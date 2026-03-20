@@ -313,6 +313,7 @@ Deno.serve(async (req) => {
         if (singleParentId && weekdayCreated) break;
       }
       continue;
+      }
 
       // Standard interval-based logic
       const { data: latestInstances } = await supabase
