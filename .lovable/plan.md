@@ -1,25 +1,36 @@
 
 
-## Desativar pg_cron
+## Adicionar Campo "Justificativa" na Edição de Tarefas
 
-### Estado atual
-Existe **1 cron job** ativo:
+### Objetivo
+Permitir que o usuário justifique atrasos ou demoras ao editar uma tarefa. O campo aparece apenas no modo de edição (não na criação).
 
-| Job ID | Nome | Frequência | Função |
-|--------|------|------------|--------|
-| 5 | `generate-recurring-tasks` | A cada 6 horas | Marca tarefas como overdue + gera instâncias recorrentes |
+### Mudanças necessárias
 
-### Ação
-Executar SQL para remover o job:
-
+#### 1. Banco de dados — nova coluna `justification`
+Migration SQL:
 ```sql
-SELECT cron.unschedule('generate-recurring-tasks');
+ALTER TABLE public.tasks ADD COLUMN justification text;
 ```
 
-### Impacto
-- **Tarefas recorrentes**: Ainda serão geradas **on-demand** quando um usuário concluir uma tarefa (via `task-utils.ts` → Edge Function com `parentId`). Apenas a geração automática a cada 6h para.
-- **Marcação de overdue**: Tarefas pendentes **não serão mais marcadas como overdue automaticamente**. Só serão marcadas se alguém completar uma tarefa recorrente e a Edge Function rodar sem `parentId`.
+#### 2. `TaskForm.tsx` — adicionar campo no formulário de edição
+- Adicionar `justification` ao estado do form (`getInitialForm` e `form`)
+- Renderizar um `Textarea` com label "Justificativa" **somente quando `editing` não é null**
+- Incluir `justification` no payload de `handleSave`
 
-### Arquivo
-Nenhum arquivo do projeto precisa ser editado — apenas o SQL acima no banco.
+#### 3. `TaskDetailModal.tsx` — exibir justificativa
+- Se `localTask.justification` existir, mostrar na seção de detalhes com ícone e label "Justificativa:"
+
+### Arquivos
+
+| Ação | Arquivo |
+|------|---------|
+| Migration | Nova coluna `justification` na tabela `tasks` |
+| Editar | `src/components/tasks/TaskForm.tsx` |
+| Editar | `src/components/tasks/TaskDetailModal.tsx` |
+
+### Comportamento
+- Campo opcional, sem validação obrigatória
+- Visível apenas na edição, não na criação de tarefas
+- Exibido no modal de detalhes quando preenchido
 
