@@ -1,56 +1,48 @@
 
 
-## Correção: Edição de tarefa recorrente mostra "Nenhuma"
+## Correção: Recorrências Personalizadas Não Geram Próxima Instância
 
-### Problema
+### Problema Identificado
 
-Quando uma tarefa recorrente é concluída, o sistema gera uma instância filha com `recurrence_type: "none"` e `recurrence_parent_id` apontando para a tarefa pai. Ao editar essa instância, `getInitialForm` lê diretamente `task.recurrence_type` ("none") sem resolver o tipo real do pai.
+O fluxo de weekdays na Edge Function **só procura na semana atual**. Quando o usuário completa uma tarefa (ex: "Terça e Sexta" numa sexta às 15h), a função:
 
-O `TaskDetailModal` já resolve isso corretamente com `effectiveRecurrenceType`, mas o `TaskForm` não.
+1. Calcula `weekStart` = domingo da semana atual (15/mar)
+2. Itera os weekdays `[2, 5]` (terça e sexta) desta semana
+3. Terça 17/mar → já passou → `skip`
+4. Sexta 20/mar 08:00 → `08:00 < 15:25 (agora)` → `skip`
+5. **Resultado: 0 instâncias criadas**
+
+A função nunca olha para a **próxima semana**, então após completar a tarefa, nada é gerado.
 
 ### Correção
 
-**Arquivo:** `src/components/tasks/TaskForm.tsx`
+**Arquivo:** `supabase/functions/generate-recurring-tasks/index.ts`
 
-1. Na função `getInitialForm`, quando a task tem `recurrence_parent_id` e `recurrence_type === "none"`, manter "none" no form (comportamento correto para instâncias filhas que não devem alterar a recorrência do ciclo).
+Alterar o loop de weekdays para iterar sobre **2 semanas** (semana atual + próxima semana), e parar após criar **1 instância** (quando chamado com `singleParentId`). Quando chamado pelo cron (sem `singleParentId`), continua gerando para toda a semana atual + próxima.
 
-**Porém**, o problema real pode ser outro: tarefas **pai** (que definem o ciclo) também estão aparecendo como "none"? Preciso verificar os dados.
-
-Olhando os dados do banco na network request, vejo que as tarefas pai como "CARTA FRETE" têm `recurrence_type: "daily"` e as filhas têm `recurrence_type: "none"` com `recurrence_parent_id` preenchido.
-
-**A correção correta é:** ao abrir o form para edição de uma instância filha, resolver o `recurrence_type` do pai para exibir corretamente.
-
-### Implementação
-
-**Arquivo:** `src/components/tasks/TaskForm.tsx`
-
-1. Adicionar um `useEffect` que, quando `editing` tem `recurrence_parent_id` e `recurrence_type === "none"`, busca o `recurrence_type` do pai no banco e atualiza o campo `recurrence_type` do form.
-
-2. Isso replica a mesma lógica já usada no `TaskDetailModal` (linhas que buscam `parentRecurrenceType`).
-
-### Mudança concreta
-
-```typescript
-// Novo useEffect após o existente na linha 84-89
-useEffect(() => {
-  if (open && editing && editing.recurrence_type === "none" && editing.recurrence_parent_id) {
-    supabase
-      .from("tasks")
-      .select("recurrence_type")
-      .eq("id", editing.recurrence_parent_id)
-      .single()
-      .then(({ data }) => {
-        if (data?.recurrence_type && data.recurrence_type !== "none") {
-          setForm(prev => ({ ...prev, recurrence_type: data.recurrence_type }));
-        }
-      });
+```text
+Antes:
+  for (const wd of def.weekdays) {
+    candidate = weekStart + wd dias
+    if (candidate < now) continue;  // ← pula tudo que já passou
+    ...
   }
-}, [open, editing]);
+
+Depois:
+  for (let weekOffset = 0; weekOffset < 2; weekOffset++) {
+    for (const wd of def.weekdays) {
+      candidate = weekStart + (weekOffset * 7) + wd dias
+      if (candidate < now) continue;
+      // ... gera instância
+      if (singleParentId) break; // para no primeiro
+    }
+    if (singleParentId && creou) break;
+  }
 ```
 
 ### Impacto
 
-- Instâncias filhas de recorrência exibem o tipo correto no form de edição
-- Tarefas sem recorrência continuam mostrando "Nenhuma"
-- Nenhuma mudança no fluxo de salvamento
+- Recorrências personalizadas com weekdays (segunda_e_quarta, terca_e_sexta, 3x_na_semana, etc.) passam a gerar a próxima instância corretamente
+- Recorrências do sistema (daily, weekly, monthly) não são afetadas (usam o fluxo de intervalo)
+- A lógica de deduplicação existente previne instâncias duplicadas
 
