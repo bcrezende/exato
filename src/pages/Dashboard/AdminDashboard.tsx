@@ -69,10 +69,10 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       try {
         const results = await Promise.allSettled([
-          supabase.from("tasks").select("*").order("due_date", { ascending: true }),
+          supabase.from("tasks").select(TASK_COLS).order("due_date", { ascending: true }),
           supabase.from("profiles").select("id, full_name, department_id"),
           supabase.from("departments").select("id, name").order("name"),
-          supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }),
+          supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }).gte("created_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
         ]);
         const [tasksRes, profilesRes, depsRes, logsRes] = results;
         if (tasksRes.status === "fulfilled" && tasksRes.value.data) setTasks(tasksRes.value.data);

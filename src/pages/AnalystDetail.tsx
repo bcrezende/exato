@@ -64,11 +64,12 @@ export default function AnalystDetail() {
     setLoading(true);
     try {
       const companyId = myProfile!.company_id!;
+      const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id";
       const [analystRes, tasksRes, membersRes, deptsRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", userId!).single(),
-        supabase.from("tasks").select("*").eq("company_id", companyId).eq("assigned_to", userId!),
-        supabase.from("profiles").select("*").eq("company_id", companyId),
-        supabase.from("departments").select("*").eq("company_id", companyId),
+        supabase.from("profiles").select("id, full_name, avatar_url, department_id, position, company_id, created_at, updated_at, phone, dismiss_pending_warnings").eq("id", userId!).single(),
+        supabase.from("tasks").select(TASK_COLS).eq("company_id", companyId).eq("assigned_to", userId!),
+        supabase.from("profiles").select("id, full_name, department_id").eq("company_id", companyId),
+        supabase.from("departments").select("id, name, company_id").eq("company_id", companyId),
       ]);
       setAnalyst(analystRes.data);
       setTasks(tasksRes.data || []);

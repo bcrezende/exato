@@ -61,7 +61,7 @@ export default function MyDayView() {
     const todayEnd = `${y}-${m}-${d}T23:59:59.999+00:00`;
     const { data } = await supabase
       .from("tasks")
-      .select("*")
+      .select("id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description")
       .eq("assigned_to", user.id)
       .or(`status.eq.overdue,and(start_date.gte.${todayStart},start_date.lte.${todayEnd}),and(due_date.gte.${todayStart},due_date.lte.${todayEnd})`)
       .order("start_date", { ascending: true, nullsFirst: false });

@@ -37,7 +37,7 @@ export default function HolidaySettings() {
     if (!profile?.company_id) return;
     const { data } = await supabase
       .from("company_holidays")
-      .select("*")
+      .select("id, company_id, name, holiday_date, is_recurring, created_at")
       .eq("company_id", profile.company_id)
       .order("holiday_date", { ascending: true });
     if (data) setHolidays(data as Holiday[]);

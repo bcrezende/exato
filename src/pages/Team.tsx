@@ -49,17 +49,17 @@ export default function Team() {
   const fetchData = async () => {
     if (!currentProfile?.company_id) return;
 
-    let membersQuery = supabase.from("profiles").select("*").eq("company_id", currentProfile.company_id);
+    let membersQuery = supabase.from("profiles").select("id, full_name, avatar_url, company_id, department_id, phone, position, created_at, updated_at, dismiss_pending_warnings").eq("company_id", currentProfile.company_id);
     if (role === "manager" && currentProfile.department_id) {
       membersQuery = membersQuery.eq("department_id", currentProfile.department_id);
     }
 
     const [membersRes, deptsRes, invitesRes, rolesRes, linksRes] = await Promise.all([
       membersQuery,
-      supabase.from("departments").select("*").eq("company_id", currentProfile.company_id),
-      supabase.from("invitations").select("*").eq("company_id", currentProfile.company_id).is("accepted_at", null),
-      supabase.from("user_roles").select("*"),
-      supabase.from("coordinator_analysts").select("*").eq("company_id", currentProfile.company_id),
+      supabase.from("departments").select("id, name, company_id, created_at").eq("company_id", currentProfile.company_id),
+      supabase.from("invitations").select("id, email, role, department_id, token, created_at, accepted_at, company_id, invited_by").eq("company_id", currentProfile.company_id).is("accepted_at", null),
+      supabase.from("user_roles").select("id, user_id, role"),
+      supabase.from("coordinator_analysts").select("id, coordinator_id, analyst_id, company_id").eq("company_id", currentProfile.company_id),
     ]);
 
     let coordAnalystIds: Set<string> | null = null;
