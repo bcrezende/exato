@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
       const nowLocalFakeUtc = new Date(Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second")));
 
       // For weekday-based recurrences
-      if (def && def.weekdays && def.weekdays.length > 0 && def.interval_unit === "week") {
+      if (def && def.weekdays && def.weekdays.length > 0) {
         // Since dates are fake UTC, we work directly with UTC methods
         const parentStart = parent.start_date ? new Date(parent.start_date) : nowLocalFakeUtc;
         const parentEnd = parent.due_date ? new Date(parent.due_date) : null;
