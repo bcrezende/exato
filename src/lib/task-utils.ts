@@ -4,8 +4,9 @@ import type { Tables } from "@/integrations/supabase/types";
 type Task = Tables<"tasks">;
 
 /**
- * Updates a task status and, if the task is a recurring instance being completed,
- * triggers the edge function to immediately generate the next instance.
+ * Updates a task status. No longer auto-generates recurring tasks.
+ * Returns `isRecurring: true` when the completed task is recurring,
+ * so the caller can prompt the user before generating the next instance.
  */
 export async function updateTaskStatus(
   taskId: string,
@@ -15,7 +16,6 @@ export async function updateTaskStatus(
 ) {
   const previousStatus = task?.status;
 
-  // 1. Essential: update status in DB
   const updatePayload: Record<string, unknown> = { status: newStatus };
   if (newStatus === "completed" && difficultyRating) {
     updatePayload.difficulty_rating = difficultyRating;
@@ -27,11 +27,8 @@ export async function updateTaskStatus(
 
   if (error) throw error;
 
-  // 2. Fire-and-forget secondary operations (time log + recurring generation)
-  const secondaryOps: Promise<unknown>[] = [];
-
+  // Fire-and-forget: time log
   if (newStatus === "in_progress" || newStatus === "completed") {
-    // Use getSession (reads from local cache) instead of getUser (network call)
     const { data: { session } } = await supabase.auth.getSession();
     const userId = session?.user?.id;
     if (userId) {
@@ -41,36 +38,32 @@ export async function updateTaskStatus(
       } else {
         action = "completed";
       }
-      secondaryOps.push(
-        Promise.resolve(supabase.from("task_time_logs").insert({
-          task_id: taskId,
-          user_id: userId,
-          action,
-        }))
-      );
+      supabase.from("task_time_logs").insert({
+        task_id: taskId,
+        user_id: userId,
+        action,
+      }).then(() => {});
     }
   }
 
-  let generatedRecurring = false;
-  if (
+  // Check if recurring — return flag instead of auto-generating
+  const isRecurring =
     newStatus === "completed" &&
-    (task?.recurrence_parent_id || (task?.recurrence_type && task.recurrence_type !== "none"))
-  ) {
-    const parentId = task?.recurrence_parent_id || taskId;
-    secondaryOps.push(
-      supabase.functions.invoke("generate-recurring-tasks", {
-        body: { parentId }
-      }).then(({ error: fnError }) => {
-        if (fnError) throw new Error(`Edge function error: ${fnError.message || fnError}`);
-        generatedRecurring = true;
-      })
-    );
-  }
+    !!(task?.recurrence_parent_id || (task?.recurrence_type && task.recurrence_type !== "none"));
 
-  // Don't block on secondary ops — fire them in parallel
-  if (secondaryOps.length > 0) {
-    await Promise.all(secondaryOps);
-  }
+  const parentId = isRecurring
+    ? (task?.recurrence_parent_id || taskId)
+    : null;
 
-  return { error: null, generatedRecurring };
+  return { error: null, isRecurring, parentId };
+}
+
+/**
+ * Generates the next recurring task instance by invoking the Edge Function.
+ */
+export async function generateNextRecurrence(parentId: string) {
+  const { error } = await supabase.functions.invoke("generate-recurring-tasks", {
+    body: { parentId },
+  });
+  if (error) throw new Error(`Edge function error: ${error.message || error}`);
 }
