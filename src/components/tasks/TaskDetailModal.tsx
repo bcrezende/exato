@@ -10,7 +10,7 @@ import { updateTaskStatus } from "@/lib/task-utils";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
-import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, ArrowUpCircle } from "lucide-react";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, ArrowUpCircle, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { formatStoredDate } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
@@ -263,6 +263,12 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Timer className="h-4 w-4 shrink-0" />
                 <span>Tempo de execução: <span className="text-foreground font-medium">{executionTime}</span></span>
+              </div>
+            )}
+            {extTask.justification && (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <FileText className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Justificativa: <span className="text-foreground font-medium">{extTask.justification}</span></span>
               </div>
             )}
           </div>

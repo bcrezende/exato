@@ -626,6 +626,7 @@ export type Database = {
           due_date: string | null
           estimated_minutes: number | null
           id: string
+          justification: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id: string | null
           recurrence_type: string
@@ -645,6 +646,7 @@ export type Database = {
           due_date?: string | null
           estimated_minutes?: number | null
           id?: string
+          justification?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id?: string | null
           recurrence_type?: string
@@ -664,6 +666,7 @@ export type Database = {
           due_date?: string | null
           estimated_minutes?: number | null
           id?: string
+          justification?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           recurrence_parent_id?: string | null
           recurrence_type?: string

@@ -186,7 +186,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
 
     const assignedTo = isAnalyst ? user.id : (form.assigned_to || null);
 
-    const payload = {
+    const payload: any = {
       title: form.title.trim(),
       description: form.description.trim() || null,
       assigned_to: assignedTo,
@@ -199,6 +199,10 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
       department_id: departmentId,
       estimated_minutes: form.estimated_minutes ? parseInt(form.estimated_minutes, 10) : null,
     };
+
+    if (editing) {
+      payload.justification = form.justification?.trim() || null;
+    }
 
     if (editing) {
       const { error } = await supabase.from("tasks").update(payload).eq("id", editing.id);
@@ -495,8 +499,23 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
               </div>
             </div>
             {errors.due_date && <p className="text-xs text-destructive">{errors.due_date}</p>}
-          </div>
+           </div>
         </div>
+
+          {/* Justificativa (only when editing) */}
+          {editing && (
+            <div className="space-y-2">
+              <Label>Justificativa</Label>
+              <Textarea
+                value={form.justification || ""}
+                onChange={(e) => setForm({ ...form, justification: e.target.value })}
+                placeholder="Justifique atrasos ou demoras, se necessário..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground">Opcional — use para justificar atrasos ou demoras</p>
+            </div>
+          )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSave}>{editing ? "Salvar" : "Criar"}</Button>
@@ -521,6 +540,7 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
       recurrence_type: task.recurrence_type,
       department_id: task.department_id || "",
       estimated_minutes: (task as any).estimated_minutes ? String((task as any).estimated_minutes) : "",
+      justification: (task as any).justification || "",
     };
   }
   return {
@@ -533,5 +553,6 @@ function getInitialForm(task: Task | null, isAdmin: boolean, currentProfile: Tab
     recurrence_type: "none",
     department_id: isAdmin ? "" : (currentProfile?.department_id || ""),
     estimated_minutes: "",
+    justification: "",
   };
 }
