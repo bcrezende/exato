@@ -313,6 +313,7 @@ Deno.serve(async (req) => {
         if (singleParentId && weekdayCreated) break;
       }
       continue;
+      }
 
       // Standard interval-based logic
       const { data: latestInstances } = await supabase
@@ -422,7 +423,6 @@ Deno.serve(async (req) => {
         createdCount++;
         console.log(`Created instance for parent ${parent.id}: ${parent.title} — ${newStart.toISOString()}`);
       }
-    }
     }
 
     return new Response(
