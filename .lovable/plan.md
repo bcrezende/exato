@@ -1,29 +1,61 @@
 
 
-## Permitir Analistas Editarem Tarefas Atribuídas a Eles
+## Plano de Exportação do Banco de Dados
 
-### Problema
+### Resumo do Banco
 
-No `TaskDetailModal`, os botões "Editar" e "Excluir" só aparecem quando `canManage || isCreator` (linha 311). Analistas que receberam tarefas de gestores não são criadores nem gestores, então não veem o botão de editar.
+| Tabela | Registros |
+|---|---|
+| companies | 4 |
+| departments | 7 |
+| profiles | 21 |
+| user_roles | 21 |
+| coordinator_analysts | 3 |
+| recurrence_definitions | 27 |
+| tasks | 264 |
+| task_delays | 160 |
+| task_time_logs | 321 |
+| notifications | 591 |
+| invitations | 21 |
+| analysis_history | 3 |
+| email_send_log | 45 |
+| email_send_state | 1 |
+| company_holidays | 0 |
+| task_attachments | 0 |
+| task_comments | 0 |
+| suppressed_emails | 0 |
+| email_unsubscribe_tokens | 0 |
 
-### Correção
+### O que será exportado
 
-**Arquivo:** `src/components/tasks/TaskDetailModal.tsx`
+**1. Arquivo SQL de esquema** (`schema.sql`)
+- Enums: `app_role`, `delay_log_type`, `interval_unit`, `task_priority`, `task_status`
+- Todas as 19 tabelas com colunas, defaults, constraints
+- Todas as funções (14 funções)
+- Todos os triggers
+- Todas as RLS policies
+- Índices e unique constraints
 
-1. Alterar a condição da linha 311 de:
-   ```typescript
-   {(canManage || isCreator) && (
-   ```
-   Para:
-   ```typescript
-   {(canManage || isCreator || isAssigned) && (
-   ```
+**2. Arquivos CSV de dados** (um por tabela com registros)
+- 13 tabelas com dados (exclui tabelas vazias)
+- Exportados com headers para fácil importação
 
-2. Para manter segurança, mostrar apenas o botão "Editar" para analistas atribuídos (sem "Excluir"), já que a exclusão por analistas não-criadores pode não ser desejada. A lógica ficaria:
-   - Botão **Editar**: visível para `canManage || isCreator || isAssigned`
-   - Botão **Excluir**: visível apenas para `canManage || isCreator` (mantém como está)
+### Execução
 
-### Nota sobre RLS
+Vou gerar tudo via scripts que:
+1. Extraem o DDL completo (CREATE TYPE, CREATE TABLE, CREATE FUNCTION, CREATE POLICY)
+2. Exportam cada tabela com dados como CSV via `psql COPY`
+3. Geram um script `import.sql` com comandos `COPY FROM` na ordem correta (respeitando foreign keys)
 
-A policy UPDATE da tabela `tasks` já permite `assigned_to = auth.uid()`, então o backend já aceita a atualização. Só falta liberar o botão no frontend.
+### Entregáveis
+
+Todos os arquivos em `/mnt/documents/`:
+- `schema.sql` - esquema completo pronto para executar
+- `import_data.sql` - script de importação dos CSVs
+- `data/` - pasta com CSVs de cada tabela
+- `README.md` - instruções de como importar no novo projeto
+
+### Limitação importante
+
+Os dados da tabela `profiles` referenciam `auth.users` (que é gerenciada pelo sistema de autenticação). Os usuários precisarão se registrar novamente no novo projeto, e os IDs serão diferentes. Fornecerei instruções sobre como lidar com isso.
 
