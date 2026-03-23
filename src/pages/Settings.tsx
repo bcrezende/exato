@@ -139,6 +139,8 @@ export default function Settings() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                <AvatarUpload />
+                <Separator />
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Nome Completo</Label>
