@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarDays, Download } from "lucide-react";
+import ImportBrazilHolidaysDialog from "./ImportBrazilHolidaysDialog";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -32,7 +33,7 @@ export default function HolidaySettings() {
   const [editing, setEditing] = useState<Holiday | null>(null);
   const [form, setForm] = useState({ name: "", holiday_date: "", is_recurring: true });
   const [saving, setSaving] = useState(false);
-
+  const [importOpen, setImportOpen] = useState(false);
   const fetchHolidays = async () => {
     if (!profile?.company_id) return;
     const { data } = await supabase
@@ -120,9 +121,14 @@ export default function HolidaySettings() {
             </CardTitle>
             <CardDescription>Cadastre feriados para que tarefas recorrentes os pulem automaticamente</CardDescription>
           </div>
-          <Button onClick={openCreate} size="sm">
-            <Plus className="mr-2 h-4 w-4" /> Novo Feriado
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setImportOpen(true)} size="sm" variant="outline">
+              <Download className="mr-2 h-4 w-4" /> Importar Feriados BR
+            </Button>
+            <Button onClick={openCreate} size="sm">
+              <Plus className="mr-2 h-4 w-4" /> Novo Feriado
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -200,6 +206,13 @@ export default function HolidaySettings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ImportBrazilHolidaysDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        existingDates={holidays.map((h) => h.holiday_date)}
+        onImported={fetchHolidays}
+      />
     </Card>
   );
 }
