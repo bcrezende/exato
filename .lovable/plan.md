@@ -1,25 +1,60 @@
 
 
-## Fix: Mostrar opção de remarcar data para todos os tipos de tarefa
+## Separar fluxo do modal "Não Feita" por tipo de tarefa
 
-### Diagnóstico
+### O que muda
 
-A tarefa "teste" do dia 22/03 tem `recurrence_type: "daily"`, então o modal detecta como recorrente e mostra apenas:
-1. Gerar próxima ocorrência
-2. Apenas marcar como não feita
+O modal terá dois fluxos distintos:
 
-A opção **"Remarcar para nova data"** só aparece para tarefas não-recorrentes. Tarefas recorrentes não têm essa opção.
+**Tarefa SEM recorrência:**
+- Pergunta: "Quando deseja alterar o prazo final da tarefa?"
+- Mostra calendário para selecionar nova data
+- Botão "Apenas marcar como não feita" como alternativa
+- Sem RadioGroup — fluxo simplificado com calendário direto + link/botão secundário para "apenas marcar"
 
-### Correção
+**Tarefa COM recorrência:**
+- Ação direta: "Gerar próxima ocorrência"
+- Sem opções extras, sem calendário
+- Confirmar gera a próxima ocorrência automaticamente
 
-Unificar as opções no `NotDoneActionModal` para que **todos os tipos de tarefa** tenham acesso à opção de remarcar:
+### Arquivo
 
-**Arquivo:** `src/components/tasks/NotDoneActionModal.tsx`
-
-| Cenário | Opções |
+| Arquivo | Mudança |
 |---|---|
-| Recorrente | Gerar próxima ocorrência · Remarcar para nova data · Apenas marcar como não feita |
-| Sem recorrência | Remarcar para nova data · Apenas marcar como não feita |
+| `src/components/tasks/NotDoneActionModal.tsx` | Bifurcar o conteúdo do modal com `isRecurring`: recorrente mostra apenas texto + confirmar (gera próxima); não-recorrente mostra calendário para nova data + opção de apenas marcar |
 
-Remover a bifurcação `isRecurring ? (...) : (...)` e usar um único `RadioGroup` com as 3 opções, onde "Gerar próxima ocorrência" só aparece se `isRecurring`.
+### UI proposta
+
+**Sem recorrência:**
+```
+Tarefa Não Feita
+─────────────────
+[título da tarefa]
+📅 Vencimento: 22/03/2026
+
+Quando deseja alterar o prazo final da tarefa?
+[📅 Selecionar nova data ▾]
+
+ou
+
+☐ Apenas marcar como não feita
+
+[Cancelar] [Confirmar]
+```
+
+**Com recorrência:**
+```
+Tarefa Não Feita
+─────────────────
+[título da tarefa]
+📅 Vencimento: 22/03/2026
+
+Esta tarefa será marcada como não feita e a próxima
+ocorrência será gerada automaticamente.
+
+💬 Motivo (opcional)
+[___________________]
+
+[Cancelar] [Confirmar]
+```
 
