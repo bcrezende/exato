@@ -1,50 +1,33 @@
 
 
-## Drill-down nos Cards de Métricas — Tarefas por Card
+## Calendários em PT-BR
 
-### Visão Geral
+### Problema
+O componente `Calendar` (react-day-picker) exibe meses e dias da semana em inglês por padrão.
 
-Ao clicar em um dos 5 cards do `AdminOverviewCards`, a tab "Visão Geral" exibe uma tabela com as tarefas correspondentes ao card clicado.
+### Solução
+Adicionar `locale={ptBR}` do `date-fns` como default no componente `Calendar`. Isso traduz automaticamente todos os calendários do projeto (date pickers no AdminDashboard, TaskForm, AIAnalysisDialog, etc.).
 
-### Implementação
+### Arquivo
 
-**1. Estado no `AdminDashboard.tsx`**
+**`src/components/ui/calendar.tsx`**
+- Importar `ptBR` de `date-fns/locale`
+- Passar `locale={ptBR}` como prop default no `DayPicker`, permitindo override via props
 
-- Novo state: `overviewFilter: "total" | "onTime" | "lateStart" | "lateCompletion" | "notCompleted" | null`
-- Ao clicar num card, seta o filtro e muda `activeTab` para `"geral"`
-- Passar `onCardClick` como prop para `AdminOverviewCards`
+```tsx
+import { ptBR } from "date-fns/locale";
 
-**2. Atualizar `AdminOverviewCards.tsx`**
+function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+  return (
+    <DayPicker
+      locale={ptBR}
+      showOutsideDays={showOutsideDays}
+      // ... rest unchanged
+      {...props}
+    />
+  );
+}
+```
 
-- Aceitar nova prop `onCardClick?: (filter: string) => void` e `activeFilter?: string | null`
-- Cada card recebe `onClick={() => onCardClick?.(filterKey)}`
-- Card ativo ganha borda/destaque visual (`ring-2 ring-primary`)
-- Cursor pointer nos cards
-
-**3. Filtrar tarefas na tab "Visão Geral"**
-
-Lógica de filtragem baseada no `overviewFilter`:
-- `total` → todas as `periodTasks`
-- `onTime` → completed sem delays (início ou conclusão)
-- `lateStart` → tarefas com `inicio_atrasado` nos `periodDelays`
-- `lateCompletion` → tarefas com `conclusao_atrasada` nos `periodDelays`
-- `notCompleted` → `status !== 'completed'` e `due_date < hoje`
-
-**4. Tabela de tarefas na tab "Visão Geral"**
-
-Quando `overviewFilter` está ativo, renderizar uma tabela simples com:
-- Título (clicável → abre `TaskDetailModal`)
-- Responsável (nome do profile)
-- Status (badge colorido)
-- Prazo (data formatada)
-- Prioridade
-
-Quando nenhum card está selecionado, manter a mensagem atual.
-
-### Arquivos
-
-| Arquivo | Mudança |
-|---|---|
-| `src/components/dashboard/admin/AdminOverviewCards.tsx` | Adicionar `onCardClick`, `activeFilter`, cursor e destaque |
-| `src/pages/Dashboard/AdminDashboard.tsx` | State `overviewFilter`, lógica de filtragem, tabela na tab Geral |
+Uma única mudança, um único arquivo. Todos os calendários do projeto passam a exibir em português.
 
