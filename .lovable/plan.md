@@ -1,106 +1,38 @@
 
 
-## Sistema Completo de "Tarefas Não Feitas"
+## Correção dos Bugs de Filtro por Período no AdminDashboard
 
-### 1. Migração SQL
+### Problema Raiz
 
-**1.1** Adicionar `not_done` ao enum `task_status`:
-```sql
-ALTER TYPE task_status ADD VALUE 'not_done';
-```
+Três bugs trabalham juntos para gerar resultados incorretos:
 
-**1.2** Criar tabela `task_not_done_logs` com índices e RLS:
-- Colunas: `id`, `task_id` (FK tasks), `user_id` (FK profiles), `reason`, `auto_generated`, `original_due_date`, `next_action`, `created_at`
-- RLS: usuários da mesma empresa podem ver (via join com tasks), inserir/atualizar próprios logs
-- Admins/managers/coordinators podem ver todos da empresa
+1. **Tarefas `in_progress` sem filtro de data** — A lógica de `periodTasks` inclui TODAS as tarefas com status `in_progress`, ignorando completamente o período selecionado. Isso traz tarefas do dia 23/03 quando o filtro é "ontem" (22/03).
 
-### 2. Edge Function `mark-not-done-daily`
+2. **"Não Concluídas" usa data errada** — Tanto no `AdminOverviewCards` quanto no `drillDownTasks`, o cálculo de "Não Concluídas" compara contra `new Date()` (hoje, tempo real) em vez do fim do período selecionado (`periodEndISO`).
 
-**Arquivo:** `supabase/functions/mark-not-done-daily/index.ts`
+### Correções
 
-- Busca tarefas `pending`/`in_progress` com `due_date < hoje` (por empresa, respeitando timezone)
-- Atualiza status para `not_done`
-- Insere log em `task_not_done_logs` com `auto_generated = true`
-- CORS headers incluídos
+**Arquivo: `src/pages/Dashboard/AdminDashboard.tsx`**
 
-**Config:** Adicionar `verify_jwt = false` no `supabase/config.toml`
+- **`periodTasks`** (linha 136): Remover a condição `if (t.status === "in_progress") return true`. Tarefas in_progress só devem aparecer se suas datas (start_date ou due_date) caírem dentro do período.
+- **`drillDownTasks`** (linha 190/199): Trocar `const todayISO = new Date().toISOString()` por `periodEndISO` na condição de "notCompleted".
 
-**Cron:** SQL com `pg_cron` para executar às 23:59 diariamente
+**Arquivo: `src/components/dashboard/admin/AdminOverviewCards.tsx`**
 
-### 3. Atualizar Código Existente
+- Adicionar prop `periodEndISO: string` ao componente
+- No cálculo de `notCompleted`, trocar `todayISO` (derivado de `today`) por `periodEndISO`
 
-**Todos os locais que referenciam status de tarefas:**
+### Resultado Esperado
+
+Filtrando por "Ontem" (22/03/2026) + usuário específico:
+- Só aparecem tarefas cujo `start_date` ou `due_date` caiam em 22/03
+- "Não Concluídas" só conta tarefas com prazo vencido dentro do período selecionado
+- Tarefas do dia 23/03 não aparecem
+
+### Arquivos Afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Tasks.tsx` | Adicionar `not_done` nos `statusLabels`, `statusColors`, kanban columns, filtros |
-| `src/pages/Dashboard/AnalystDashboard.tsx` | Incluir `not_done` nos labels/badges |
-| `src/pages/Dashboard/AdminDashboard.tsx` | Incluir `not_done` nos cálculos e labels |
-| `src/components/tasks/TaskDetailModal.tsx` | Suportar `not_done` no badge e ações |
-| `src/lib/task-utils.ts` | Adicionar função `markTaskAsNotDone` |
-
-### 4. Novos Componentes
-
-**4.1 `NotDoneActionModal`** — `src/components/tasks/NotDoneActionModal.tsx`
-
-Modal que aparece ao marcar manualmente ou resolver uma tarefa `not_done`:
-- Título da tarefa e data de vencimento
-- Se recorrente: radio "Gerar próxima ocorrência" / "Apenas marcar"
-- Se não recorrente: DatePicker para remarcar
-- Campo de motivo (opcional)
-- Botões Cancelar / Confirmar
-
-**4.2 `PendingNotDoneModal`** — `src/components/tasks/PendingNotDoneModal.tsx`
-
-Modal obrigatório (não dismissível) que aparece ao entrar no app:
-- Lista tarefas com status `not_done` e `next_action = 'Aguardando ação do usuário'`
-- Para cada tarefa: botões "Remarcar" (abre DatePicker inline), "Concluir com atraso", ou "Gerar próxima" (se recorrente)
-- Só fecha quando todas as pendências forem resolvidas
-
-**4.3 Botão "Não feita"** — integrado nos cards/linhas de Tasks.tsx
-
-- Visível quando `status === 'pending' || 'in_progress'` e `due_date <= hoje`
-- Abre `NotDoneActionModal`
-
-### 5. Hook `usePendingNotDone`
-
-**Arquivo:** `src/hooks/usePendingNotDone.ts`
-
-```typescript
-interface UsePendingNotDoneReturn {
-  notDoneTasks: Task[];
-  isLoading: boolean;
-  showModal: boolean;
-  resolveTask: (taskId: string, action: 'reschedule' | 'complete_late' | 'generate_next', params?) => Promise<void>;
-  refetch: () => void;
-}
-```
-
-- Busca tarefas `not_done` do usuário com logs pendentes ao montar
-- `resolveTask` atualiza status, log e opcionalmente reagenda ou gera recorrência
-
-### 6. Integração no Fluxo
-
-**`src/App.tsx` ou `src/components/AppLayout.tsx`:**
-- Usar `usePendingNotDone` no layout protegido
-- Renderizar `PendingNotDoneModal` quando `showModal === true`
-- Modal bloqueia interação até resolver todas as pendências
-
-### 7. Resumo de Arquivos
-
-| Arquivo | Ação |
-|---|---|
-| Migration SQL | Enum `not_done` + tabela `task_not_done_logs` + RLS |
-| `supabase/functions/mark-not-done-daily/index.ts` | Nova edge function |
-| `supabase/config.toml` | Adicionar config da function |
-| SQL insert (pg_cron) | Agendar cron job 23:59 |
-| `src/lib/task-utils.ts` | Função `markTaskAsNotDone` |
-| `src/hooks/usePendingNotDone.ts` | Novo hook |
-| `src/components/tasks/NotDoneActionModal.tsx` | Novo modal de ação |
-| `src/components/tasks/PendingNotDoneModal.tsx` | Novo modal obrigatório |
-| `src/pages/Tasks.tsx` | Labels, cores, botão, kanban column |
-| `src/pages/Dashboard/AnalystDashboard.tsx` | Labels e stats |
-| `src/pages/Dashboard/AdminDashboard.tsx` | Labels e cálculos |
-| `src/components/tasks/TaskDetailModal.tsx` | Badge e ações not_done |
-| `src/components/AppLayout.tsx` | Montar PendingNotDoneModal |
+| `src/pages/Dashboard/AdminDashboard.tsx` | Remover inclusão incondicional de `in_progress`; usar `periodEndISO` no drilldown |
+| `src/components/dashboard/admin/AdminOverviewCards.tsx` | Nova prop `periodEndISO`; corrigir cálculo de não concluídas |
 
