@@ -11,14 +11,16 @@ import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog"
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admin/AdminPeriodToggle";
+import AdminOverviewCards, { type OverviewFilter } from "@/components/dashboard/admin/AdminOverviewCards";
 import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Play, CheckCircle, Clock, AlertTriangle, PartyPopper,
-  ListTodo, CalendarDays, CheckCheck, AlertCircle, ArrowRight
+  ListTodo, CalendarDays, CheckCheck, AlertCircle, ArrowRight, BarChart3
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer
@@ -26,6 +28,13 @@ import {
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
+
+interface DelayRecord {
+  id: string;
+  task_id: string;
+  log_type: string;
+  created_at: string;
+}
 
 /* ── helpers ── */
 function formatTime(dateStr: string | null) {
