@@ -250,7 +250,7 @@ export default function Tasks() {
     return sortDirection === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
   };
 
-  const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
+  const kanbanColumns = ["pending", "in_progress", "completed", "overdue", "not_done"] as const;
 
   const handleDragEnd = useCallback(async (result: DropResult) => {
     const { destination, draggableId } = result;
