@@ -198,15 +198,25 @@ export default function AnalystDashboard() {
 
   useEffect(() => { fetchTasks(); fetchUpcoming(); }, [fetchTasks, fetchUpcoming]);
 
-  /* fetch delays */
+  /* fetch delays + members/departments */
   useEffect(() => {
-    if (!user) return;
+    if (!user || !profile?.company_id) return;
     supabase
       .from("task_delays")
       .select("id,task_id,log_type,created_at")
       .eq("user_id", user.id)
       .then(({ data }) => { if (data) setDelays(data); });
-  }, [user]);
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("company_id", profile.company_id)
+      .then(({ data }) => { if (data) setMembers(data); });
+    supabase
+      .from("departments")
+      .select("*")
+      .eq("company_id", profile.company_id)
+      .then(({ data }) => { if (data) setDepartments(data); });
+  }, [user, profile?.company_id]);
 
   /* period delays filtered */
   const periodDelays = useMemo(() =>
