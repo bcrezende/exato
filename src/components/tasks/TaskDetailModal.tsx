@@ -259,6 +259,8 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
             )}
           </div>
 
+          <TaskAttachments taskId={localTask.id} />
+
           {isAssigned && (
             <div className="space-y-2">
               <span className="text-sm font-medium">Atualizar Status</span>
