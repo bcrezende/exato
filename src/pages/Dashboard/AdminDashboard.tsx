@@ -186,7 +186,7 @@ export default function AdminDashboard() {
 
   const drillDownTasks = useMemo(() => {
     if (!overviewFilter) return [];
-    const todayISO = new Date().toISOString();
+    const cutoffISO = periodEndISO;
     const lateStartIds = new Set(periodDelays.filter(d => d.log_type === "inicio_atrasado").map(d => d.task_id));
     const lateCompletionIds = new Set(periodDelays.filter(d => d.log_type === "conclusao_atrasada").map(d => d.task_id));
 
