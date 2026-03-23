@@ -10,7 +10,7 @@ import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admi
 import AdminKpiCards from "@/components/dashboard/admin/AdminKpiCards";
 import AdminSectorCards from "@/components/dashboard/admin/AdminSectorCards";
 import AdminUserRanking from "@/components/dashboard/admin/AdminUserRanking";
-import AdminOverviewCards from "@/components/dashboard/admin/AdminOverviewCards";
+import AdminOverviewCards, { type OverviewFilter } from "@/components/dashboard/admin/AdminOverviewCards";
 import DelayKpiCards from "@/components/dashboard/DelayKpiCards";
 import SectorComparisonCard from "@/components/dashboard/SectorComparisonCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
