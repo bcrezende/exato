@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Clock, AlertTriangle, XCircle, ListTodo } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, XCircle, ListTodo, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -13,7 +13,7 @@ interface DelayRecord {
   created_at: string;
 }
 
-export type OverviewFilter = "total" | "onTime" | "lateStart" | "lateCompletion" | "notCompleted";
+export type OverviewFilter = "total" | "onTime" | "inProgress" | "lateStart" | "lateCompletion" | "notCompleted";
 
 interface AdminOverviewCardsProps {
   periodTasks: Task[];
@@ -39,6 +39,8 @@ export default function AdminOverviewCards({ periodTasks, periodDelays, periodEn
       t => !lateStartTaskIds.has(t.id) && !lateCompletionTaskIds.has(t.id)
     ).length;
 
+    const inProgress = periodTasks.filter(t => t.status === "in_progress").length;
+
     const lateStarts = lateStartTaskIds.size;
     const lateCompletions = lateCompletionTaskIds.size;
 
@@ -46,19 +48,20 @@ export default function AdminOverviewCards({ periodTasks, periodDelays, periodEn
       t => t.status !== "completed" && t.due_date && t.due_date < periodEndISO
     ).length;
 
-    return { totalTasks, onTime, lateStarts, lateCompletions, notCompleted };
+    return { totalTasks, onTime, inProgress, lateStarts, lateCompletions, notCompleted };
   }, [periodTasks, periodDelays, periodEndISO]);
 
   const cards: { label: string; value: number; icon: typeof ListTodo; color: string; filterKey: OverviewFilter }[] = [
     { label: "Total de Tarefas", value: metrics.totalTasks, icon: ListTodo, color: "text-primary", filterKey: "total" },
     { label: "Feitas no Prazo", value: metrics.onTime, icon: CheckCircle2, color: "text-emerald-500", filterKey: "onTime" },
+    { label: "Em Andamento", value: metrics.inProgress, icon: PlayCircle, color: "text-blue-500", filterKey: "inProgress" },
     { label: "Início Atrasado", value: metrics.lateStarts, icon: Clock, color: "text-amber-500", filterKey: "lateStart" },
     { label: "Conclusão Atrasada", value: metrics.lateCompletions, icon: AlertTriangle, color: "text-orange-500", filterKey: "lateCompletion" },
     { label: "Não Concluídas", value: metrics.notCompleted, icon: XCircle, color: "text-destructive", filterKey: "notCompleted" },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
       {cards.map((card) => (
         <Card
           key={card.label}
