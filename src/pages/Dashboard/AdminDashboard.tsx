@@ -417,7 +417,7 @@ export default function AdminDashboard() {
           {activeTab === "analytics" && (
             <Suspense fallback={<Skeleton className="h-[400px] w-full rounded-lg" />}>
               <LazyPerformanceAnalytics
-                tasks={tasks}
+                tasks={periodTasks}
                 timeLogs={timeLogs}
                 departments={departments}
                 selectedDepartment={selectedDepartment}
