@@ -1,30 +1,31 @@
 
 
-## Fix: Campo "Recorrência" duplicado no TaskForm
+## Ajustar Dashboards do Manager e Coordinator igual ao Admin
 
-### Problema
+### O que falta em ambos
 
-O formulário tem **dois blocos** que renderizam o seletor de Recorrência:
+Comparando com o Admin, os dashboards do Manager e Coordinator não possuem:
 
-1. **Linha 328-348** — dentro do bloco `!isAnalyst` → `else` de `isAdmin` (ou seja, exibido para **manager** e **coordinator**)
-2. **Linha 367-387** — exibido para `isAdmin || isCoordinator || isAnalyst`
+1. **Overview Cards** (6 cards clicáveis: Total, No Prazo, Em Andamento, Início Atrasado, Conclusão Atrasada, Não Concluídas)
+2. **Tabela drill-down** na aba "Visão Geral" ao clicar nos cards
+3. **Fetch de `task_delays`** necessário para calcular início/conclusão atrasada
+4. **Botão Editar funcional** no modal de tarefa (ambos têm `onEdit={() => {}}`)
 
-Para o **coordinator**, ambas as condições são verdadeiras, então o campo aparece duas vezes. O mesmo aconteceria se um manager fosse adicionado à segunda condição no futuro.
+### Mudanças por arquivo
 
-### Correção
+| Arquivo | Mudanças |
+|---|---|
+| `src/pages/Dashboard/ManagerDashboard.tsx` | 1) Importar `AdminOverviewCards`, `TaskForm`, `Table` components. 2) Adicionar states: `delays`, `overviewFilter`, `editingTask`. 3) Fetch `task_delays` junto com os outros dados. 4) Calcular `periodDelays`, `periodEndISO`, `drillDownTasks`. 5) Renderizar `AdminOverviewCards` entre os KPIs e as Tabs. 6) Na aba "Visão Geral", mostrar tabela drill-down quando `overviewFilter` ativo (antes do conteúdo existente). 7) Implementar `onEdit` real + `TaskForm`. |
+| `src/pages/Dashboard/CoordinatorDashboard.tsx` | Mesmas mudanças: 1) Importar `AdminOverviewCards`, `TaskForm`, `Table` components. 2) States: `delays`, `overviewFilter`, `editingTask`. 3) Fetch `task_delays`. 4) Calcular `periodDelays`, `periodEndISO`, `drillDownTasks`. 5) `AdminOverviewCards` entre KPIs e Tabs. 6) Drill-down table na "Visão Geral". 7) `onEdit` real + `TaskForm`. Adicionar aba "Analytics" que o coordinator não tem. |
 
-**Arquivo:** `src/components/tasks/TaskForm.tsx`
+### Detalhes técnicos
 
-- **Linha 328**: Alterar a condição do `else` para mostrar Recorrência apenas para **manager** (que não aparece no segundo bloco):
-  - Trocar de `) : (` para `) : isManager ? (` e fechar com `) : null}`
-  - Isso garante que o primeiro bloco de Recorrência só apareça para managers
-  - O segundo bloco (linha 367) já cobre admin, coordinator e analyst corretamente
-
-### Resultado
-
-Cada role verá o campo Recorrência exatamente **uma vez**:
-- **Admin**: bloco 2 (linhas 367-387)
-- **Manager**: bloco 1 (linhas 328-348), ao lado do Responsável
-- **Coordinator**: bloco 2 (linhas 367-387)
-- **Analyst**: bloco 2 (linhas 367-387)
+- Reutilizar `AdminOverviewCards` existente (aceita `periodTasks`, `periodDelays`, `periodEndISO`)
+- Fetch delays: `supabase.from("task_delays").select("id, task_id, user_id, log_type, created_at")`
+  - Manager: filtrar por tasks do departamento
+  - Coordinator: filtrar por tasks da equipe
+- `periodEndISO` calculado com `endOfDay(referenceDate).toISOString()`
+- `drillDownTasks` segue a mesma lógica do Admin (switch por `overviewFilter`)
+- Tabela drill-down: Título, Responsável, Início, Prazo, Status (clicável para abrir modal)
+- `TaskForm` com `editing={editingTask}` e `onSaved` que refaz fetch
 
