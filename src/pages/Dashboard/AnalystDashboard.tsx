@@ -10,6 +10,7 @@ import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
+import TaskForm from "@/components/tasks/TaskForm";
 import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admin/AdminPeriodToggle";
 import AdminOverviewCards, { type OverviewFilter } from "@/components/dashboard/admin/AdminOverviewCards";
 import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
