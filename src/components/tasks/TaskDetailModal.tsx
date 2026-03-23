@@ -12,6 +12,7 @@ import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
 import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText } from "lucide-react";
+import TaskAttachments from "@/components/tasks/TaskAttachments";
 import { format } from "date-fns";
 import { formatStoredDate } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
@@ -257,6 +258,8 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
               </div>
             )}
           </div>
+
+          <TaskAttachments taskId={localTask.id} />
 
           {isAssigned && (
             <div className="space-y-2">

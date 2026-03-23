@@ -478,24 +478,33 @@ export type Database = {
         Row: {
           created_at: string
           file_name: string
+          file_size: number | null
+          file_type: string | null
           file_url: string
           id: string
+          storage_path: string | null
           task_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
           file_name: string
+          file_size?: number | null
+          file_type?: string | null
           file_url: string
           id?: string
+          storage_path?: string | null
           task_id: string
           user_id: string
         }
         Update: {
           created_at?: string
           file_name?: string
+          file_size?: number | null
+          file_type?: string | null
           file_url?: string
           id?: string
+          storage_path?: string | null
           task_id?: string
           user_id?: string
         }
