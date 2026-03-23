@@ -55,6 +55,8 @@ export function NotificationBell() {
         },
         (payload) => {
           setNotifications((prev) => [payload.new as Notification, ...prev]);
+          setJustArrived(true);
+          setTimeout(() => setJustArrived(false), 3000);
         }
       )
       .subscribe();
