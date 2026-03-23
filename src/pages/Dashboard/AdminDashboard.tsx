@@ -54,6 +54,7 @@ export default function AdminDashboard() {
   const [deptSearch, setDeptSearch] = useState("");
   const [empSearch, setEmpSearch] = useState("");
   const [activeTab, setActiveTab] = useState("geral");
+  const [overviewFilter, setOverviewFilter] = useState<OverviewFilter | null>(null);
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
