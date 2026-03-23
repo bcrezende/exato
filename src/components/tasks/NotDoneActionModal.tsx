@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarIcon, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -28,8 +28,8 @@ interface NotDoneActionModalProps {
 
 export default function NotDoneActionModal({ task, open, onOpenChange, onConfirm }: NotDoneActionModalProps) {
   const [reason, setReason] = useState("");
-  const [action, setAction] = useState<"generate_next" | "reschedule" | "just_mark">("just_mark");
   const [newDate, setNewDate] = useState<Date | undefined>();
+  const [justMark, setJustMark] = useState(false);
   const [loading, setLoading] = useState(false);
 
   if (!task) return null;
@@ -39,6 +39,15 @@ export default function NotDoneActionModal({ task, open, onOpenChange, onConfirm
   const handleConfirm = async () => {
     setLoading(true);
     try {
+      let action: "generate_next" | "reschedule" | "just_mark";
+      if (isRecurring) {
+        action = "generate_next";
+      } else if (justMark || !newDate) {
+        action = "just_mark";
+      } else {
+        action = "reschedule";
+      }
+
       await onConfirm({
         taskId: task.id,
         reason: reason || undefined,
@@ -46,13 +55,15 @@ export default function NotDoneActionModal({ task, open, onOpenChange, onConfirm
         newDueDate: action === "reschedule" && newDate ? newDate.toISOString() : undefined,
       });
       setReason("");
-      setAction("just_mark");
       setNewDate(undefined);
+      setJustMark(false);
       onOpenChange(false);
     } finally {
       setLoading(false);
     }
   };
+
+  const canConfirmNonRecurring = justMark || !!newDate;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -74,29 +85,40 @@ export default function NotDoneActionModal({ task, open, onOpenChange, onConfirm
             )}
           </div>
 
-          <p className="text-sm text-muted-foreground">O que deseja fazer?</p>
+          {isRecurring ? (
+            /* ── Recurring flow ── */
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Esta tarefa será marcada como não feita e a próxima ocorrência será gerada automaticamente.
+              </p>
 
-          <div className="space-y-2">
-            <RadioGroup value={action} onValueChange={(v) => setAction(v as any)}>
-              {isRecurring && (
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="generate_next" id="gen" />
-                  <Label htmlFor="gen">Gerar próxima ocorrência</Label>
-                </div>
-              )}
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="reschedule" id="resched" />
-                <Label htmlFor="resched">Remarcar para nova data</Label>
+              <div className="space-y-1.5">
+                <Label>💬 Motivo (opcional)</Label>
+                <Textarea
+                  placeholder="Descreva o motivo..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={2}
+                />
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="just_mark" id="mark" />
-                <Label htmlFor="mark">Apenas marcar como não feita</Label>
-              </div>
-            </RadioGroup>
-            {action === "reschedule" && (
+            </div>
+          ) : (
+            /* ── Non-recurring flow ── */
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Quando deseja alterar o prazo final da tarefa?
+              </p>
+
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !newDate && "text-muted-foreground")}>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !newDate && "text-muted-foreground"
+                    )}
+                    disabled={justMark}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {newDate ? format(newDate, "dd/MM/yyyy") : "Selecionar nova data"}
                   </Button>
@@ -112,18 +134,32 @@ export default function NotDoneActionModal({ task, open, onOpenChange, onConfirm
                   />
                 </PopoverContent>
               </Popover>
-            )}
-          </div>
 
-          <div className="space-y-1.5">
-            <Label>💬 Motivo (opcional)</Label>
-            <Textarea
-              placeholder="Descreva o motivo..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={2}
-            />
-          </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="just-mark"
+                  checked={justMark}
+                  onCheckedChange={(v) => {
+                    setJustMark(!!v);
+                    if (v) setNewDate(undefined);
+                  }}
+                />
+                <Label htmlFor="just-mark" className="text-sm cursor-pointer">
+                  Apenas marcar como não feita
+                </Label>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>💬 Motivo (opcional)</Label>
+                <Textarea
+                  placeholder="Descreva o motivo..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2">
@@ -132,7 +168,7 @@ export default function NotDoneActionModal({ task, open, onOpenChange, onConfirm
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={loading || (action === "reschedule" && !newDate)}
+            disabled={loading || (!isRecurring && !canConfirmNonRecurring)}
           >
             {loading ? "Processando..." : "Confirmar"}
           </Button>
