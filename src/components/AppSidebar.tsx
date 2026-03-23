@@ -1,9 +1,10 @@
-import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound } from "lucide-react";
+import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound, Sun, Moon } from "lucide-react";
 import logoWhite from "@/assets/logo-white.png";
 import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   Sidebar,
   SidebarContent,
