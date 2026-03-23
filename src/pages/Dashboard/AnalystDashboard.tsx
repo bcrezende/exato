@@ -152,7 +152,7 @@ export default function AnalystDashboard() {
       .from("tasks")
       .select(TASK_COLS)
       .eq("assigned_to", user.id)
-      .or(`status.eq.overdue,and(start_date.gte.${dateRange.start},start_date.lte.${dateRange.end}),and(due_date.gte.${dateRange.start},due_date.lte.${dateRange.end})`)
+      .or(`status.eq.overdue,status.eq.not_done,and(start_date.gte.${dateRange.start},start_date.lte.${dateRange.end}),and(due_date.gte.${dateRange.start},due_date.lte.${dateRange.end})`)
       .order("start_date", { ascending: true, nullsFirst: false });
     if (data) {
       data.sort((a, b) => {
