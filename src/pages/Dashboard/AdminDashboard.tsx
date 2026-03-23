@@ -389,8 +389,8 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="setores" className="mt-4 space-y-5">
-          <SectorComparisonCard tasks={filteredTasks} departments={departments} />
-          <AdminSectorCards tasks={filteredTasks} departments={departments} profiles={profilesList} />
+          <SectorComparisonCard tasks={periodTasks} departments={departments} />
+          <AdminSectorCards tasks={periodTasks} departments={departments} profiles={profilesList} />
         </TabsContent>
 
         <TabsContent value="usuarios" className="mt-4">
