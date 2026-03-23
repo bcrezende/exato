@@ -1,14 +1,15 @@
 import { lazy, Suspense, useEffect, useState, useMemo } from "react";
 import { devError } from "@/lib/logger";
-import { nowAsFakeUTC } from "@/lib/date-utils";
+import { nowAsFakeUTC, formatStoredDate } from "@/lib/date-utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, subDays, startOfDay, startOfWeek, startOfMonth, addDays } from "date-fns";
+import { format, subDays, startOfDay, startOfWeek, startOfMonth, addDays, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admin/AdminPeriodToggle";
+import AdminOverviewCards, { type OverviewFilter } from "@/components/dashboard/admin/AdminOverviewCards";
 import KpiCards from "@/components/dashboard/KpiCards";
 import DelayKpiCards from "@/components/dashboard/DelayKpiCards";
 import TodayProgress from "@/components/dashboard/TodayProgress";
@@ -18,19 +19,23 @@ import RiskRadar from "@/components/dashboard/RiskRadar";
 import CoordinatorCards from "@/components/dashboard/manager/CoordinatorCards";
 import AnalystRankingTable from "@/components/dashboard/manager/AnalystRankingTable";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
+import TaskForm from "@/components/tasks/TaskForm";
 import AIAnalysisDialog from "@/components/dashboard/AIAnalysisDialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { LayoutDashboard, Users, AlertCircle, BarChart3, UserCheck, Search, X, Building2 } from "lucide-react";
 
 const LazyPerformanceAnalytics = lazy(() => import("@/components/dashboard/PerformanceAnalytics"));
 
 type Task = Tables<"tasks">;
 type Profile = { id: string; full_name: string | null; department_id: string | null };
+type DelayRecord = { id: string; task_id: string; user_id: string; log_type: string; created_at: string };
 
 export default function ManagerDashboard() {
   const { user, profile } = useAuth();
@@ -44,9 +49,12 @@ export default function ManagerDashboard() {
   const [timeLogs, setTimeLogs] = useState<{ id: string; task_id: string; user_id: string; action: string; created_at: string }[]>([]);
   const [coordinatorLinks, setCoordinatorLinks] = useState<{ coordinator_id: string; analyst_id: string }[]>([]);
   const [coordinatorIds, setCoordinatorIds] = useState<string[]>([]);
+  const [delays, setDelays] = useState<DelayRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [overviewFilter, setOverviewFilter] = useState<OverviewFilter | null>(null);
 
   const [period, setPeriod] = useState<AdminPeriod>("today");
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
@@ -71,13 +79,15 @@ export default function ManagerDashboard() {
           supabase.from("task_time_logs").select("id, task_id, user_id, action, created_at").order("created_at", { ascending: true }).gte("created_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
           supabase.from("coordinator_analysts").select("coordinator_id, analyst_id"),
           supabase.from("user_roles").select("user_id, role").eq("role", "coordinator"),
+          supabase.from("task_delays").select("id, task_id, user_id, log_type, created_at").order("created_at", { ascending: true }),
         ]);
 
-        const [tasksRes, profilesRes, depsRes, logsRes, linksRes, rolesRes] = results;
+        const [tasksRes, profilesRes, depsRes, logsRes, linksRes, rolesRes, delaysRes] = results;
 
         if (tasksRes.status === "fulfilled" && tasksRes.value.data) setTasks(tasksRes.value.data);
         if (depsRes.status === "fulfilled" && depsRes.value.data) setDepartments(depsRes.value.data);
         if (logsRes.status === "fulfilled" && logsRes.value.data) setTimeLogs(logsRes.value.data);
+        if (delaysRes.status === "fulfilled" && delaysRes.value.data) setDelays(delaysRes.value.data as DelayRecord[]);
 
         if (profilesRes.status === "fulfilled" && profilesRes.value.data) {
           const map = new Map<string, string>();
@@ -90,7 +100,6 @@ export default function ManagerDashboard() {
           setCoordinatorLinks(linksRes.value.data);
         }
 
-        // Find coordinators in this department
         if (rolesRes.status === "fulfilled" && rolesRes.value.data && profilesRes.status === "fulfilled" && profilesRes.value.data) {
           const deptProfileIds = new Set((profilesRes.value.data as Profile[]).map(p => p.id));
           const coordIds = rolesRes.value.data
@@ -119,6 +128,8 @@ export default function ManagerDashboard() {
   }, [period]);
 
   const referenceDateStr = format(referenceDate, "yyyy-MM-dd");
+  const periodEndISO = endOfDay(referenceDate).toISOString();
+  const periodStartISO = periodStart.toISOString();
 
   const filteredTasks = useMemo(() => {
     if (!selectedEmployee) return tasks;
@@ -137,6 +148,12 @@ export default function ManagerDashboard() {
       return false;
     });
   }, [filteredTasks, periodStart, referenceDate]);
+
+  const periodDelays = useMemo(() => {
+    return delays.filter(d =>
+      d.created_at >= periodStartISO && d.created_at <= periodEndISO
+    );
+  }, [delays, periodStartISO, periodEndISO]);
 
   const { overdueTasks, todayTasks, upcomingTasks } = useMemo(() => {
     const overdue: Task[] = [];
@@ -177,7 +194,6 @@ export default function ManagerDashboard() {
 
   const departmentName = departments.find(d => d.id === departmentId)?.name || "Setor";
 
-  // KPI: productivity (inverse of delay rate)
   const sectorProductivity = useMemo(() => {
     const total = periodTasks.length;
     if (total === 0) return 100;
@@ -186,6 +202,31 @@ export default function ManagerDashboard() {
   }, [periodTasks]);
 
   const inProgressCount = periodTasks.filter(t => t.status === "in_progress").length;
+
+  const handleOverviewCardClick = (filter: OverviewFilter) => {
+    setOverviewFilter(prev => prev === filter ? null : filter);
+    setActiveTab("geral");
+  };
+
+  const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada", not_done: "Não Feita" };
+  const statusColors: Record<string, string> = { pending: "bg-muted text-muted-foreground", in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200", completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200", overdue: "bg-destructive/10 text-destructive", not_done: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200" };
+
+  const drillDownTasks = useMemo(() => {
+    if (!overviewFilter) return [];
+    const cutoffISO = periodEndISO;
+    const lateStartIds = new Set(periodDelays.filter(d => d.log_type === "inicio_atrasado").map(d => d.task_id));
+    const lateCompletionIds = new Set(periodDelays.filter(d => d.log_type === "conclusao_atrasada").map(d => d.task_id));
+
+    switch (overviewFilter) {
+      case "total": return periodTasks;
+      case "onTime": return periodTasks.filter(t => t.status === "completed" && !lateStartIds.has(t.id) && !lateCompletionIds.has(t.id));
+      case "inProgress": return periodTasks.filter(t => t.status === "in_progress");
+      case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
+      case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
+      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoffISO);
+      default: return [];
+    }
+  }, [overviewFilter, periodTasks, periodDelays, periodEndISO]);
 
   if (loading) return <DashboardSkeleton />;
 
@@ -275,6 +316,15 @@ export default function ManagerDashboard() {
         })}
       </div>
 
+      {/* Overview Cards */}
+      <AdminOverviewCards
+        periodTasks={periodTasks}
+        periodDelays={periodDelays}
+        periodEndISO={periodEndISO}
+        onCardClick={handleOverviewCardClick}
+        activeFilter={overviewFilter}
+      />
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start">
@@ -302,6 +352,42 @@ export default function ManagerDashboard() {
         </TabsList>
 
         <TabsContent value="geral" className="mt-4 space-y-5">
+          {/* Drill-down table */}
+          {overviewFilter && drillDownTasks.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Início</TableHead>
+                    <TableHead>Prazo</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {drillDownTasks.map(task => (
+                    <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleTaskClick(task)}>
+                      <TableCell className="font-medium">{task.title}</TableCell>
+                      <TableCell>{getName(task.assigned_to)}</TableCell>
+                      <TableCell className="text-sm">{formatStoredDate(task.start_date, "datetime")}</TableCell>
+                      <TableCell className="text-sm">{formatStoredDate(task.due_date, "datetime")}</TableCell>
+                      <TableCell>
+                        <Badge className={cn("text-xs", statusColors[task.status])} variant="outline">
+                          {statusLabels[task.status] || task.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : overviewFilter ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Nenhuma tarefa encontrada para este filtro.
+            </p>
+          ) : null}
+
           <TeamSummaryCard profiles={employeeOptions} todayTasks={todayTasks} />
           <KpiCards
             todayTotal={todayTotal}
@@ -404,8 +490,17 @@ export default function ManagerDashboard() {
         onOpenChange={setDetailOpen}
         members={profilesList as any}
         departments={departments as any}
-        onEdit={() => {}}
+        onEdit={(task) => { setDetailOpen(false); setSelectedTask(null); setEditingTask(task); }}
         onRefresh={handleRefresh}
+      />
+
+      <TaskForm
+        open={!!editingTask}
+        onOpenChange={(open) => { if (!open) setEditingTask(null); }}
+        editing={editingTask}
+        members={profilesList as any}
+        departments={departments as any}
+        onSaved={() => { setEditingTask(null); handleRefresh(); }}
       />
 
       <AIAnalysisDialog departments={departments as any} profiles={profilesList as any} />
