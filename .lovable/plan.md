@@ -1,61 +1,74 @@
 
 
-## Plano de Exportação do Banco de Dados
+## Aprimoramento da Análise de IA
 
-### Resumo do Banco
+### Visão Geral
 
-| Tabela | Registros |
+Quatro melhorias na página `/analysis`: período personalizado com date picker, comparativo entre períodos, exportação em PDF, e seleção de tipo/foco da análise.
+
+---
+
+### 1. Período Personalizado (Date Range Picker)
+
+**Arquivo:** `src/pages/Analysis.tsx`
+
+- Adicionar opção "Personalizado" ao select de período
+- Quando selecionado, exibir dois date pickers (De/Até) usando `Popover` + `Calendar` do Shadcn
+- O `startDate` e `endDate` substituem o cálculo fixo do `startMap`
+
+**Arquivo:** `src/components/dashboard/AIAnalysisDialog.tsx`
+- Mesma lógica aplicada ao dialog de análise rápida nos dashboards
+
+---
+
+### 2. Comparativo entre Períodos
+
+**Arquivo:** `src/pages/Analysis.tsx`
+
+- Adicionar toggle/checkbox "Comparar com período anterior"
+- Quando ativo, buscar dados do período anterior equivalente (ex: se selecionou última semana, buscar a semana antes dela)
+- Enviar ambos os conjuntos de métricas para a Edge Function
+- A IA gera análise comparativa com evolução percentual
+
+**Arquivo:** `supabase/functions/generate-analysis/index.ts`
+- Ajustar o prompt para receber métricas de dois períodos (`currentMetrics` e `previousMetrics`)
+- Quando `previousMetrics` estiver presente, o prompt instrui a IA a comparar e destacar evoluções
+
+---
+
+### 3. Tipo/Foco da Análise
+
+**Arquivo:** `src/pages/Analysis.tsx`
+
+- Novo select com 4 opções de foco:
+  - **Produtividade** (default) - foco em taxas de conclusão e eficiência
+  - **Gargalos** - foco em atrasos, tarefas lentas e desvios de estimativa
+  - **Equipe** - comparativo entre analistas, ranking de performance
+  - **Riscos** - previsão de problemas baseada em tendências
+
+**Arquivo:** `supabase/functions/generate-analysis/index.ts`
+- Receber campo `analysisType` nos filtros
+- Ajustar system prompt com instruções específicas para cada tipo de foco
+
+---
+
+### 4. Exportar Análise em PDF
+
+**Arquivo:** `src/pages/Analysis.tsx`
+
+- Botão "Exportar PDF" visível quando há resultado
+- Usar biblioteca client-side (html2pdf.js ou react-pdf) para converter o conteúdo Markdown renderizado em PDF
+- Incluir cabeçalho com filtros aplicados (período, setor, analista, tipo) e data de geração
+- Instalar dependência: `html2pdf.js` (leve, converte DOM para PDF)
+
+---
+
+### Resumo de Arquivos
+
+| Arquivo | Mudanças |
 |---|---|
-| companies | 4 |
-| departments | 7 |
-| profiles | 21 |
-| user_roles | 21 |
-| coordinator_analysts | 3 |
-| recurrence_definitions | 27 |
-| tasks | 264 |
-| task_delays | 160 |
-| task_time_logs | 321 |
-| notifications | 591 |
-| invitations | 21 |
-| analysis_history | 3 |
-| email_send_log | 45 |
-| email_send_state | 1 |
-| company_holidays | 0 |
-| task_attachments | 0 |
-| task_comments | 0 |
-| suppressed_emails | 0 |
-| email_unsubscribe_tokens | 0 |
-
-### O que será exportado
-
-**1. Arquivo SQL de esquema** (`schema.sql`)
-- Enums: `app_role`, `delay_log_type`, `interval_unit`, `task_priority`, `task_status`
-- Todas as 19 tabelas com colunas, defaults, constraints
-- Todas as funções (14 funções)
-- Todos os triggers
-- Todas as RLS policies
-- Índices e unique constraints
-
-**2. Arquivos CSV de dados** (um por tabela com registros)
-- 13 tabelas com dados (exclui tabelas vazias)
-- Exportados com headers para fácil importação
-
-### Execução
-
-Vou gerar tudo via scripts que:
-1. Extraem o DDL completo (CREATE TYPE, CREATE TABLE, CREATE FUNCTION, CREATE POLICY)
-2. Exportam cada tabela com dados como CSV via `psql COPY`
-3. Geram um script `import.sql` com comandos `COPY FROM` na ordem correta (respeitando foreign keys)
-
-### Entregáveis
-
-Todos os arquivos em `/mnt/documents/`:
-- `schema.sql` - esquema completo pronto para executar
-- `import_data.sql` - script de importação dos CSVs
-- `data/` - pasta com CSVs de cada tabela
-- `README.md` - instruções de como importar no novo projeto
-
-### Limitação importante
-
-Os dados da tabela `profiles` referenciam `auth.users` (que é gerenciada pelo sistema de autenticação). Os usuários precisarão se registrar novamente no novo projeto, e os IDs serão diferentes. Fornecerei instruções sobre como lidar com isso.
+| `src/pages/Analysis.tsx` | Date range picker, toggle comparativo, select de tipo, botão PDF |
+| `src/components/dashboard/AIAnalysisDialog.tsx` | Date range picker, select de tipo |
+| `supabase/functions/generate-analysis/index.ts` | Prompts por tipo, suporte a métricas comparativas |
+| `package.json` | Adicionar `html2pdf.js` |
 
