@@ -308,6 +308,7 @@ export default function AdminDashboard() {
         totalTasks={periodTasks.length}
         overdueTasks={overdueTasks.length}
         avgDelayRate={avgDelayRate}
+        period={period}
       />
 
       {/* Overview Cards */}

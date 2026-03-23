@@ -7,9 +7,13 @@ interface AdminKpiCardsProps {
   totalTasks: number;
   overdueTasks: number;
   avgDelayRate: number;
+  period: string;
 }
 
-export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks, avgDelayRate }: AdminKpiCardsProps) {
+export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks, avgDelayRate, period }: AdminKpiCardsProps) {
+  const overdueLabel = period === "today" ? "Atrasadas Hoje"
+    : period === "yesterday" ? "Atrasadas Ontem"
+    : "Atrasadas no Período";
   const delayColor = avgDelayRate < 10
     ? "text-green-600 dark:text-green-400"
     : avgDelayRate <= 20
@@ -38,7 +42,7 @@ export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks,
       bgClass: "bg-primary/10",
     },
     {
-      label: "Atrasadas Hoje",
+      label: overdueLabel,
       value: overdueTasks,
       icon: AlertTriangle,
       iconClass: "text-destructive",
