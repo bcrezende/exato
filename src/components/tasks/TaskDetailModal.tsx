@@ -340,6 +340,30 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
       onClose={closeAlert}
       onProceed={() => proceedAction?.()}
     />
+    <NotDoneActionModal
+      task={localTask}
+      open={showNotDone}
+      onOpenChange={setShowNotDone}
+      onConfirm={async ({ taskId, reason, action, newDueDate }) => {
+        if (!user) return;
+        await markTaskAsNotDone({
+          taskId,
+          userId: user.id,
+          reason,
+          originalDueDate: localTask.due_date || new Date().toISOString(),
+          nextAction: action,
+          newDueDate,
+        });
+        if (action === "generate_next") {
+          const parentId = localTask.recurrence_parent_id || localTask.id;
+          await genNext(parentId);
+          toast({ title: "Próxima tarefa gerada!" });
+        }
+        setLocalTask({ ...localTask, status: action === "reschedule" ? "pending" as any : "not_done" as any });
+        toast({ title: "Tarefa marcada como não feita" });
+        onRefresh();
+      }}
+    />
     <RecurrenceConfirmDialog
       open={showRecurrenceConfirm}
       recurrenceType={pendingRecurrence?.recurrenceType || ""}
