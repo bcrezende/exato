@@ -15,6 +15,7 @@ import DelayKpiCards from "@/components/dashboard/DelayKpiCards";
 import SectorComparisonCard from "@/components/dashboard/SectorComparisonCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import AIAnalysisDialog from "@/components/dashboard/AIAnalysisDialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
