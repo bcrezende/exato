@@ -355,7 +355,7 @@ export default function AdminDashboard() {
                     <TableHead>Responsável</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Prazo</TableHead>
-                    <TableHead>Prioridade</TableHead>
+                    
                   </TableRow>
                 </TableHeader>
                 <TableBody>
