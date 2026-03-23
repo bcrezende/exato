@@ -1,60 +1,40 @@
 
 
-## Separar fluxo do modal "Não Feita" por tipo de tarefa
+## Adicionar Overview Cards e Tabela Drill-Down ao Dashboard do Analista
 
 ### O que muda
 
-O modal terá dois fluxos distintos:
+O dashboard do analista ganhará os mesmos **6 cards clicáveis** do admin (adaptados para dados individuais) e uma **aba "Visão Geral"** com tabela drill-down, mantendo o checklist interativo existente.
 
-**Tarefa SEM recorrência:**
-- Pergunta: "Quando deseja alterar o prazo final da tarefa?"
-- Mostra calendário para selecionar nova data
-- Botão "Apenas marcar como não feita" como alternativa
-- Sem RadioGroup — fluxo simplificado com calendário direto + link/botão secundário para "apenas marcar"
+### Estrutura proposta
 
-**Tarefa COM recorrência:**
-- Ação direta: "Gerar próxima ocorrência"
-- Sem opções extras, sem calendário
-- Confirmar gera a próxima ocorrência automaticamente
+```text
+┌─ Header + PeriodToggle ─────────────────────────┐
+├─ KPIs (4 cards existentes - mantidos) ──────────┤
+├─ Overview Cards (6 cards clicáveis) ────────────┤
+│  Total │ No Prazo │ Em Andamento │ Início      │
+│        │          │              │ Atrasado    │
+│  Conclusão Atrasada │ Não Concluídas            │
+├─ Tabs ──────────────────────────────────────────┤
+│  [Visão Geral] [Hoje] [Próximos] [Concluídas]  │
+│  [Atrasadas]                                     │
+│                                                  │
+│  Visão Geral: tabela drill-down ao clicar card  │
+│  Hoje: donut + checklist (existente)             │
+└──────────────────────────────────────────────────┘
+```
 
-### Arquivo
+### Arquivos e mudanças
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/tasks/NotDoneActionModal.tsx` | Bifurcar o conteúdo do modal com `isRecurring`: recorrente mostra apenas texto + confirmar (gera próxima); não-recorrente mostra calendário para nova data + opção de apenas marcar |
+| `src/pages/Dashboard/AnalystDashboard.tsx` | 1) Buscar `task_delays` do usuário para calcular início/conclusão atrasada. 2) Adicionar `AdminOverviewCards` com dados filtrados pelo analista. 3) Adicionar aba "Visão Geral" como primeira tab, com tabela drill-down (título, horário início, prazo, status). 4) Reorganizar tabs: Visão Geral → Hoje → Próximos → Concluídas → Atrasadas. |
 
-### UI proposta
+### Detalhes técnicos
 
-**Sem recorrência:**
-```
-Tarefa Não Feita
-─────────────────
-[título da tarefa]
-📅 Vencimento: 22/03/2026
-
-Quando deseja alterar o prazo final da tarefa?
-[📅 Selecionar nova data ▾]
-
-ou
-
-☐ Apenas marcar como não feita
-
-[Cancelar] [Confirmar]
-```
-
-**Com recorrência:**
-```
-Tarefa Não Feita
-─────────────────
-[título da tarefa]
-📅 Vencimento: 22/03/2026
-
-Esta tarefa será marcada como não feita e a próxima
-ocorrência será gerada automaticamente.
-
-💬 Motivo (opcional)
-[___________________]
-
-[Cancelar] [Confirmar]
-```
+- Reutilizar o componente `AdminOverviewCards` existente (já aceita `periodTasks`, `periodDelays`, `periodEndISO`)
+- Buscar delays do analista: `supabase.from("task_delays").select(...).eq("user_id", user.id)`
+- Calcular `periodDelays` filtrando pelo período selecionado
+- Na aba "Visão Geral", replicar a lógica de `drillDownTasks` do admin (filtrar por `overviewFilter` usando os delays)
+- Tabela com colunas: Título, Início, Prazo, Status (sem coluna "Responsável" pois é sempre o próprio analista)
 
