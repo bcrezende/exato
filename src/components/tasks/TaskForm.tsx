@@ -325,7 +325,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
                   </Select>
                   {errors.department_id && <p className="text-xs text-destructive">{errors.department_id}</p>}
                 </div>
-              ) : (
+              ) : isManager ? (
                 <div className="space-y-2">
                   <Label>Recorrência <span className="text-destructive">*</span></Label>
                   <Select value={form.recurrence_type} onValueChange={(v) => setForm({ ...form, recurrence_type: v })}>
@@ -345,7 +345,7 @@ export default function TaskForm({ open, onOpenChange, editing, members, departm
                     <p className="text-xs text-muted-foreground">Pula feriados</p>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
           )}
 
