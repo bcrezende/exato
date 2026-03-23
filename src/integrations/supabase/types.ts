@@ -582,6 +582,47 @@ export type Database = {
           },
         ]
       }
+      task_not_done_logs: {
+        Row: {
+          auto_generated: boolean | null
+          created_at: string | null
+          id: string
+          next_action: string | null
+          original_due_date: string
+          reason: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          auto_generated?: boolean | null
+          created_at?: string | null
+          id?: string
+          next_action?: string | null
+          original_due_date: string
+          reason?: string | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          auto_generated?: boolean | null
+          created_at?: string | null
+          id?: string
+          next_action?: string | null
+          original_due_date?: string
+          reason?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_not_done_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_time_logs: {
         Row: {
           action: string
@@ -788,7 +829,12 @@ export type Database = {
       delay_log_type: "inicio_atrasado" | "conclusao_atrasada"
       interval_unit: "day" | "week" | "month" | "year"
       task_priority: "low" | "medium" | "high"
-      task_status: "pending" | "in_progress" | "completed" | "overdue"
+      task_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "overdue"
+        | "not_done"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -920,7 +966,13 @@ export const Constants = {
       delay_log_type: ["inicio_atrasado", "conclusao_atrasada"],
       interval_unit: ["day", "week", "month", "year"],
       task_priority: ["low", "medium", "high"],
-      task_status: ["pending", "in_progress", "completed", "overdue"],
+      task_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "overdue",
+        "not_done",
+      ],
     },
   },
 } as const
