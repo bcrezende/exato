@@ -176,6 +176,31 @@ export default function AdminDashboard() {
 
   const getName = (id: string | null) => (id ? profiles.get(id) || "—" : "Não atribuída");
 
+  const handleOverviewCardClick = (filter: OverviewFilter) => {
+    setOverviewFilter(prev => prev === filter ? null : filter);
+    setActiveTab("geral");
+  };
+
+  const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
+  const statusColors: Record<string, string> = { pending: "bg-muted text-muted-foreground", in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200", completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200", overdue: "bg-destructive/10 text-destructive" };
+  const priorityLabels: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta" };
+
+  const drillDownTasks = useMemo(() => {
+    if (!overviewFilter) return [];
+    const todayISO = new Date().toISOString();
+    const lateStartIds = new Set(periodDelays.filter(d => d.log_type === "inicio_atrasado").map(d => d.task_id));
+    const lateCompletionIds = new Set(periodDelays.filter(d => d.log_type === "conclusao_atrasada").map(d => d.task_id));
+
+    switch (overviewFilter) {
+      case "total": return periodTasks;
+      case "onTime": return periodTasks.filter(t => t.status === "completed" && !lateStartIds.has(t.id) && !lateCompletionIds.has(t.id));
+      case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
+      case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
+      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.due_date && t.due_date < todayISO);
+      default: return [];
+    }
+  }, [overviewFilter, periodTasks, periodDelays]);
+
   // Filtered dropdowns
   const filteredDepts = departments.filter(d => d.name.toLowerCase().includes(deptSearch.toLowerCase()));
   const filteredEmps = employeeOptions.filter(p => (p.full_name || "").toLowerCase().includes(empSearch.toLowerCase()));
