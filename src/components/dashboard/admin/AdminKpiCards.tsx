@@ -42,7 +42,7 @@ export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks,
       bgClass: "bg-primary/10",
     },
     {
-      label: "Atrasadas Hoje",
+      label: overdueLabel,
       value: overdueTasks,
       icon: AlertTriangle,
       iconClass: "text-destructive",
