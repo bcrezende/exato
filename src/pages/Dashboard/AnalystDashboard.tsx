@@ -153,6 +153,9 @@ export default function AnalystDashboard() {
   const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
   const [delays, setDelays] = useState<DelayRecord[]>([]);
   const [overviewFilter, setOverviewFilter] = useState<OverviewFilter | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [members, setMembers] = useState<Tables<"profiles">[]>([]);
+  const [departments, setDepartments] = useState<Tables<"departments">[]>([]);
 
   const dateRange = useMemo(() => getDateRange(period), [period]);
 
