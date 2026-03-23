@@ -246,6 +246,7 @@ export default function AnalystDashboard() {
     { name: "Em andamento", value: stats.inProgress, color: STATUS_COLORS.in_progress },
     { name: "Pendentes", value: stats.pending, color: STATUS_COLORS.pending },
     { name: "Atrasadas", value: stats.overdue, color: STATUS_COLORS.overdue },
+    { name: "Não feitas", value: stats.notDone, color: STATUS_COLORS.not_done },
   ].filter(d => d.value > 0), [stats]);
 
   /* upcoming days grouped */
