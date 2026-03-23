@@ -7,6 +7,7 @@ interface AdminKpiCardsProps {
   totalTasks: number;
   overdueTasks: number;
   avgDelayRate: number;
+  period: string;
 }
 
 export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks, avgDelayRate }: AdminKpiCardsProps) {
