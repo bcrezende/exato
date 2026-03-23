@@ -12,9 +12,12 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, RefreshCw, CalendarDays, Save } from "lucide-react";
+import { User, Building, RefreshCw, CalendarDays, Save, Sun, Moon, Monitor } from "lucide-react";
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
 import HolidaySettings from "@/components/settings/HolidaySettings";
+import AvatarUpload from "@/components/settings/AvatarUpload";
+import { useTheme } from "@/contexts/ThemeContext";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function Settings() {
   const { user, role, profile } = useAuth();
