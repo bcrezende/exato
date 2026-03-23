@@ -595,10 +595,19 @@ export default function AnalystDashboard() {
         task={selectedTask}
         open={!!selectedTask}
         onOpenChange={(open) => { if (!open) setSelectedTask(null); }}
-        members={[]}
-        departments={[]}
-        onEdit={() => {}}
+        members={members}
+        departments={departments}
+        onEdit={(t) => { setSelectedTask(null); setEditingTask(t); }}
         onRefresh={() => { fetchTasks(); fetchUpcoming(); }}
+      />
+
+      <TaskForm
+        open={!!editingTask}
+        onOpenChange={(open) => { if (!open) setEditingTask(null); }}
+        editing={editingTask}
+        members={members}
+        departments={departments}
+        onSaved={() => { setEditingTask(null); fetchTasks(); fetchUpcoming(); }}
       />
 
       <PendingTasksAlert
