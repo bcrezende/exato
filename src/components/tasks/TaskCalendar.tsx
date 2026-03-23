@@ -19,6 +19,8 @@ const statusCalendarColors: Record<string, { bg: string; border: string; text: s
 };
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const ROW_H = 56; // px per hour
+const MIN_CARD_H = 18; // minimum card height in px
 
 function useCurrentTime() {
   const [now, setNow] = useState(new Date());
