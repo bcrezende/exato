@@ -389,13 +389,13 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="setores" className="mt-4 space-y-5">
-          <SectorComparisonCard tasks={filteredTasks} departments={departments} />
-          <AdminSectorCards tasks={filteredTasks} departments={departments} profiles={profilesList} />
+          <SectorComparisonCard tasks={periodTasks} departments={departments} />
+          <AdminSectorCards tasks={periodTasks} departments={departments} profiles={profilesList} />
         </TabsContent>
 
         <TabsContent value="usuarios" className="mt-4">
           <AdminUserRanking
-            tasks={tasks}
+            tasks={periodTasks}
             timeLogs={timeLogs}
             profiles={profilesList}
             departments={departments}
@@ -406,7 +406,7 @@ export default function AdminDashboard() {
 
         <TabsContent value="atrasos" className="mt-4">
           <DelayKpiCards
-            tasks={filteredTasks}
+            tasks={periodTasks}
             selectedDepartment={selectedDepartment}
             selectedEmployee={selectedEmployee}
             referenceDate={periodEnd}
@@ -417,7 +417,7 @@ export default function AdminDashboard() {
           {activeTab === "analytics" && (
             <Suspense fallback={<Skeleton className="h-[400px] w-full rounded-lg" />}>
               <LazyPerformanceAnalytics
-                tasks={tasks}
+                tasks={periodTasks}
                 timeLogs={timeLogs}
                 departments={departments}
                 selectedDepartment={selectedDepartment}
