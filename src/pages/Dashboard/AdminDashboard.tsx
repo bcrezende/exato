@@ -313,7 +313,7 @@ export default function AdminDashboard() {
       <AdminOverviewCards
         periodTasks={periodTasks}
         periodDelays={periodDelays}
-        today={new Date()}
+        periodEndISO={periodEndISO}
         onCardClick={handleOverviewCardClick}
         activeFilter={overviewFilter}
       />

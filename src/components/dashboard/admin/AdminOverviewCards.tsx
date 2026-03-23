@@ -47,7 +47,7 @@ export default function AdminOverviewCards({ periodTasks, periodDelays, periodEn
     ).length;
 
     return { totalTasks, onTime, lateStarts, lateCompletions, notCompleted };
-  }, [periodTasks, periodDelays, today]);
+  }, [periodTasks, periodDelays, periodEndISO]);
 
   const cards: { label: string; value: number; icon: typeof ListTodo; color: string; filterKey: OverviewFilter }[] = [
     { label: "Total de Tarefas", value: metrics.totalTasks, icon: ListTodo, color: "text-primary", filterKey: "total" },
