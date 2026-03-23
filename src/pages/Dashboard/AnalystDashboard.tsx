@@ -536,6 +536,7 @@ const statusBadge: Record<string, { label: string; variant: "default" | "seconda
   in_progress: { label: "Em andamento", variant: "default" },
   completed: { label: "Concluída", variant: "secondary" },
   overdue: { label: "Atrasada", variant: "destructive" },
+  not_done: { label: "Não feita", variant: "destructive" },
 };
 
 function TaskRow({

@@ -396,7 +396,7 @@ export default function Tasks() {
       {/* Kanban View */}
       {viewMode === "kanban" && (
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5 stagger-fade-in">
             {kanbanColumns.map((status) => {
               const columnTasks = filtered.filter((t) => {
                 if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending");

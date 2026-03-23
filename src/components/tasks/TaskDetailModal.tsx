@@ -20,13 +20,14 @@ type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
-const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
+const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada", not_done: "Não Feita" };
 
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
   in_progress: "bg-primary/10 text-primary",
   completed: "bg-success/10 text-success",
   overdue: "bg-destructive/10 text-destructive",
+  not_done: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
 };
 
 function formatDuration(ms: number): string {
