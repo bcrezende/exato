@@ -404,8 +404,8 @@ export default function Tasks() {
                 if (status === "in_progress") return t.status === "in_progress";
                 return t.status === status;
               });
-              const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : "bg-destructive";
-              const isOverdueColumn = status === "overdue";
+              const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : status === "not_done" ? "bg-orange-500" : "bg-destructive";
+              const isOverdueColumn = status === "overdue" || status === "not_done";
               return (
                 <div key={status} className="space-y-2">
                   <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2">
