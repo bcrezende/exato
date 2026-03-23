@@ -280,7 +280,7 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
   }, [tasks, weekStart.getTime()]);
 
   return (
-    <div className="overflow-auto max-h-[600px]">
+    <div className="overflow-auto max-h-[600px] relative">
       <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b sticky top-0 bg-card z-10">
         <div className="border-r" />
         {weekDays.map((day, i) => (
