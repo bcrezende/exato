@@ -23,9 +23,8 @@ interface AdminOverviewCardsProps {
   activeFilter?: OverviewFilter | null;
 }
 
-export default function AdminOverviewCards({ periodTasks, periodDelays, today, onCardClick, activeFilter }: AdminOverviewCardsProps) {
+export default function AdminOverviewCards({ periodTasks, periodDelays, periodEndISO, onCardClick, activeFilter }: AdminOverviewCardsProps) {
   const metrics = useMemo(() => {
-    const todayISO = today.toISOString();
     const totalTasks = periodTasks.length;
 
     const lateStartTaskIds = new Set(
