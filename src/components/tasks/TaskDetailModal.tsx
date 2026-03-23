@@ -11,7 +11,9 @@ import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
-import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText } from "lucide-react";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText, XCircle } from "lucide-react";
+import NotDoneActionModal from "@/components/tasks/NotDoneActionModal";
+import { markTaskAsNotDone, generateNextRecurrence as genNext } from "@/lib/task-utils";
 import TaskAttachments from "@/components/tasks/TaskAttachments";
 import { format } from "date-fns";
 import { formatStoredDate } from "@/lib/date-utils";
@@ -99,6 +101,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const [executionTime, setExecutionTime] = useState<string | null>(null);
   const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
   const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
+  const [showNotDone, setShowNotDone] = useState(false);
   const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
 
   useEffect(() => {
@@ -304,6 +307,11 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                   <p className="text-xs text-muted-foreground">Para alterar, solicite ao gerente</p>
                 </div>
               )}
+              {(localTask.status === "pending" || localTask.status === "in_progress" || localTask.status === "overdue") && (
+                <Button size="sm" variant="outline" className="w-full text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950" disabled={statusLoading} onClick={() => setShowNotDone(true)}>
+                  <XCircle className="mr-2 h-4 w-4" /> Não feita
+                </Button>
+              )}
             </div>
           )}
 
@@ -331,6 +339,30 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
       tasks={pendingTasks}
       onClose={closeAlert}
       onProceed={() => proceedAction?.()}
+    />
+    <NotDoneActionModal
+      task={localTask}
+      open={showNotDone}
+      onOpenChange={setShowNotDone}
+      onConfirm={async ({ taskId, reason, action, newDueDate }) => {
+        if (!user) return;
+        await markTaskAsNotDone({
+          taskId,
+          userId: user.id,
+          reason,
+          originalDueDate: localTask.due_date || new Date().toISOString(),
+          nextAction: action,
+          newDueDate,
+        });
+        if (action === "generate_next") {
+          const parentId = localTask.recurrence_parent_id || localTask.id;
+          await genNext(parentId);
+          toast({ title: "Próxima tarefa gerada!" });
+        }
+        setLocalTask({ ...localTask, status: action === "reschedule" ? "pending" as any : "not_done" as any });
+        toast({ title: "Tarefa marcada como não feita" });
+        onRefresh();
+      }}
     />
     <RecurrenceConfirmDialog
       open={showRecurrenceConfirm}
