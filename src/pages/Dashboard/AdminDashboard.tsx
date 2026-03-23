@@ -133,7 +133,6 @@ export default function AdminDashboard() {
       const startDay = t.start_date;
       if (dueDay && dueDay >= periodStartISO && dueDay <= periodEndISO) return true;
       if (startDay && startDay >= periodStartISO && startDay <= periodEndISO) return true;
-      if (t.status === "in_progress") return true;
       return false;
     });
   }, [filteredTasks, periodStartISO, periodEndISO]);
