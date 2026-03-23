@@ -45,7 +45,7 @@ export default function AdminOverviewCards({ periodTasks, periodDelays, periodEn
     const lateCompletions = lateCompletionTaskIds.size;
 
     const notCompleted = periodTasks.filter(
-      t => t.status !== "completed" && t.due_date && t.due_date < periodEndISO
+      t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < periodEndISO
     ).length;
 
     return { totalTasks, onTime, inProgress, lateStarts, lateCompletions, notCompleted };
