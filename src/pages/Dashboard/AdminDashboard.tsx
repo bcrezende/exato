@@ -346,9 +346,44 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="geral" className="mt-4">
-          <p className="text-sm text-muted-foreground text-center py-8">
-            As métricas principais estão nos cards acima.
-          </p>
+          {overviewFilter && drillDownTasks.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Prazo</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {drillDownTasks.map(task => (
+                    <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleTaskClick(task)}>
+                      <TableCell className="font-medium">{task.title}</TableCell>
+                      <TableCell>{getName(task.assigned_to)}</TableCell>
+                      <TableCell>
+                        <Badge className={cn("text-xs", statusColors[task.status])} variant="outline">
+                          {statusLabels[task.status] || task.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{formatStoredDate(task.due_date, "short-date")}</TableCell>
+                      <TableCell className="text-sm">{priorityLabels[task.priority] || task.priority}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : overviewFilter ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Nenhuma tarefa encontrada para este filtro.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Clique em um dos cards acima para ver as tarefas detalhadas.
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="setores" className="mt-4 space-y-5">
