@@ -395,7 +395,7 @@ export default function AdminDashboard() {
 
         <TabsContent value="usuarios" className="mt-4">
           <AdminUserRanking
-            tasks={tasks}
+            tasks={periodTasks}
             timeLogs={timeLogs}
             profiles={profilesList}
             departments={departments}
