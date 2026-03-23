@@ -76,51 +76,44 @@ export default function NotDoneActionModal({ task, open, onOpenChange, onConfirm
 
           <p className="text-sm text-muted-foreground">O que deseja fazer?</p>
 
-          {isRecurring ? (
+          <div className="space-y-2">
             <RadioGroup value={action} onValueChange={(v) => setAction(v as any)}>
+              {isRecurring && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="generate_next" id="gen" />
+                  <Label htmlFor="gen">Gerar próxima ocorrência</Label>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="generate_next" id="gen" />
-                <Label htmlFor="gen">Gerar próxima ocorrência</Label>
+                <RadioGroupItem value="reschedule" id="resched" />
+                <Label htmlFor="resched">Remarcar para nova data</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="just_mark" id="mark" />
                 <Label htmlFor="mark">Apenas marcar como não feita</Label>
               </div>
             </RadioGroup>
-          ) : (
-            <div className="space-y-2">
-              <RadioGroup value={action} onValueChange={(v) => setAction(v as any)}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="reschedule" id="resched" />
-                  <Label htmlFor="resched">Remarcar para nova data</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="just_mark" id="mark2" />
-                  <Label htmlFor="mark2">Apenas marcar como não feita</Label>
-                </div>
-              </RadioGroup>
-              {action === "reschedule" && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !newDate && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newDate ? format(newDate, "dd/MM/yyyy") : "Selecionar nova data"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={newDate}
-                      onSelect={setNewDate}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
-            </div>
-          )}
+            {action === "reschedule" && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !newDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newDate ? format(newDate, "dd/MM/yyyy") : "Selecionar nova data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newDate}
+                    onSelect={setNewDate}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
 
           <div className="space-y-1.5">
             <Label>💬 Motivo (opcional)</Label>
