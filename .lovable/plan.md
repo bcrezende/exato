@@ -1,36 +1,25 @@
 
 
-## Adicionar botão "Marcar como Não Feita" para analistas
+## Fix: Mostrar opção de remarcar data para todos os tipos de tarefa
 
-### Problema
+### Diagnóstico
 
-Atualmente, a única forma de marcar uma tarefa como "Não Feita" é:
-1. Automaticamente pela edge function `mark-not-done-daily` (roda no fim do dia)
-2. Arrastar no Kanban para a coluna "Não Feita"
+A tarefa "teste" do dia 22/03 tem `recurrence_type: "daily"`, então o modal detecta como recorrente e mostra apenas:
+1. Gerar próxima ocorrência
+2. Apenas marcar como não feita
 
-Não existe um botão explícito no modal de detalhes da tarefa (`TaskDetailModal`) para o analista marcar manualmente como não feita. Para tarefas do dia 22/03 (passadas), se a edge function não rodou ou o analista quer marcar manualmente, não há como.
+A opção **"Remarcar para nova data"** só aparece para tarefas não-recorrentes. Tarefas recorrentes não têm essa opção.
 
-### Solução
+### Correção
 
-Adicionar um botão "Não feita" no `TaskDetailModal` para tarefas com status `pending`, `in_progress` ou `overdue`, que abre o `NotDoneActionModal` existente para o analista escolher a ação (remarcar, gerar próxima, apenas marcar).
+Unificar as opções no `NotDoneActionModal` para que **todos os tipos de tarefa** tenham acesso à opção de remarcar:
 
-### Arquivos
+**Arquivo:** `src/components/tasks/NotDoneActionModal.tsx`
 
-| Arquivo | Mudança |
+| Cenário | Opções |
 |---|---|
-| `src/components/tasks/TaskDetailModal.tsx` | Importar `NotDoneActionModal`; adicionar botão "Não feita" nos status `pending`/`in_progress`/`overdue`; ao clicar, abrir o modal com as opções; chamar `markTaskAsNotDone` e fazer refresh |
+| Recorrente | Gerar próxima ocorrência · Remarcar para nova data · Apenas marcar como não feita |
+| Sem recorrência | Remarcar para nova data · Apenas marcar como não feita |
 
-### Detalhe técnico
-
-No bloco de "Atualizar Status" do `TaskDetailModal`, após os botões existentes de Iniciar/Concluir, adicionar:
-
-```typescript
-{(localTask.status === "pending" || localTask.status === "in_progress" || localTask.status === "overdue") && (
-  <Button size="sm" variant="outline" className="w-full text-orange-600" onClick={() => setShowNotDone(true)}>
-    <XCircle className="mr-2 h-4 w-4" /> Não feita
-  </Button>
-)}
-```
-
-E renderizar o `NotDoneActionModal` já existente, que ao confirmar chama `markTaskAsNotDone` de `task-utils.ts` e faz `onRefresh()`.
+Remover a bifurcação `isRecurring ? (...) : (...)` e usar um único `RadioGroup` com as 3 opções, onde "Gerar próxima ocorrência" só aparece se `isRecurring`.
 
