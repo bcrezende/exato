@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarDays, Download } from "lucide-react";
+import ImportBrazilHolidaysDialog from "./ImportBrazilHolidaysDialog";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
