@@ -1,40 +1,28 @@
 
 
-## Adicionar Overview Cards e Tabela Drill-Down ao Dashboard do Analista
+## Fix: Botão Editar no modal de tarefa do dashboard do analista
 
-### O que muda
+### Problema
 
-O dashboard do analista ganhará os mesmos **6 cards clicáveis** do admin (adaptados para dados individuais) e uma **aba "Visão Geral"** com tabela drill-down, mantendo o checklist interativo existente.
+No `AnalystDashboard.tsx`, o `TaskDetailModal` recebe:
+- `onEdit={() => {}}` -- no-op, por isso nada acontece
+- `members={[]}` e `departments={[]}` -- arrays vazios, sem dados para o formulário
 
-### Estrutura proposta
+### Correção
 
-```text
-┌─ Header + PeriodToggle ─────────────────────────┐
-├─ KPIs (4 cards existentes - mantidos) ──────────┤
-├─ Overview Cards (6 cards clicáveis) ────────────┤
-│  Total │ No Prazo │ Em Andamento │ Início      │
-│        │          │              │ Atrasado    │
-│  Conclusão Atrasada │ Não Concluídas            │
-├─ Tabs ──────────────────────────────────────────┤
-│  [Visão Geral] [Hoje] [Próximos] [Concluídas]  │
-│  [Atrasadas]                                     │
-│                                                  │
-│  Visão Geral: tabela drill-down ao clicar card  │
-│  Hoje: donut + checklist (existente)             │
-└──────────────────────────────────────────────────┘
-```
+**Arquivo:** `src/pages/Dashboard/AnalystDashboard.tsx`
 
-### Arquivos e mudanças
+1. Adicionar estado `editingTask` e importar `TaskForm`
+2. Buscar `members` (profiles) e `departments` no fetch inicial (o dashboard já pode ter acesso ao profile do próprio usuário, mas o TaskForm precisa das listas)
+3. Passar `onEdit={(task) => { setSelectedTask(null); setEditingTask(task); }}` ao `TaskDetailModal`
+4. Passar `members` e `departments` reais ao `TaskDetailModal`
+5. Renderizar `<TaskForm>` com `editing={editingTask}` e `onSaved` que refaz fetch + fecha o form
 
-| Arquivo | Mudança |
-|---|---|
-| `src/pages/Dashboard/AnalystDashboard.tsx` | 1) Buscar `task_delays` do usuário para calcular início/conclusão atrasada. 2) Adicionar `AdminOverviewCards` com dados filtrados pelo analista. 3) Adicionar aba "Visão Geral" como primeira tab, com tabela drill-down (título, horário início, prazo, status). 4) Reorganizar tabs: Visão Geral → Hoje → Próximos → Concluídas → Atrasadas. |
+### Mudanças concretas
 
-### Detalhes técnicos
-
-- Reutilizar o componente `AdminOverviewCards` existente (já aceita `periodTasks`, `periodDelays`, `periodEndISO`)
-- Buscar delays do analista: `supabase.from("task_delays").select(...).eq("user_id", user.id)`
-- Calcular `periodDelays` filtrando pelo período selecionado
-- Na aba "Visão Geral", replicar a lógica de `drillDownTasks` do admin (filtrar por `overviewFilter` usando os delays)
-- Tabela com colunas: Título, Início, Prazo, Status (sem coluna "Responsável" pois é sempre o próprio analista)
+- Adicionar `import TaskForm from "@/components/tasks/TaskForm"`
+- Adicionar states: `editingTask`, `members`, `departments`
+- No `useEffect` de fetch, buscar `profiles` e `departments` da company
+- Atualizar props do `TaskDetailModal`: `members={members}`, `departments={departments}`, `onEdit={(t) => { setSelectedTask(null); setEditingTask(t); }}`
+- Adicionar `<TaskForm open={!!editingTask} editing={editingTask} members={members} departments={departments} onSaved={...} onOpenChange={...} />`
 
