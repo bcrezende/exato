@@ -119,11 +119,12 @@ function getDateRange(period: AdminPeriod) {
 }
 
 /* ── DONUT CHART COLORS ── */
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<string, string> = {
   completed: "hsl(var(--success))",
   in_progress: "hsl(var(--primary))",
   pending: "hsl(var(--warning))",
   overdue: "hsl(var(--destructive))",
+  not_done: "hsl(30, 90%, 50%)",
 };
 
 /* ── main component ── */
@@ -151,7 +152,7 @@ export default function AnalystDashboard() {
       .from("tasks")
       .select(TASK_COLS)
       .eq("assigned_to", user.id)
-      .or(`status.eq.overdue,and(start_date.gte.${dateRange.start},start_date.lte.${dateRange.end}),and(due_date.gte.${dateRange.start},due_date.lte.${dateRange.end})`)
+      .or(`status.eq.overdue,status.eq.not_done,and(start_date.gte.${dateRange.start},start_date.lte.${dateRange.end}),and(due_date.gte.${dateRange.start},due_date.lte.${dateRange.end})`)
       .order("start_date", { ascending: true, nullsFirst: false });
     if (data) {
       data.sort((a, b) => {
@@ -202,6 +203,7 @@ export default function AnalystDashboard() {
     pending: allTasks.filter(t => t.status === "pending").length,
     inProgress: allTasks.filter(t => t.status === "in_progress").length,
     completed: allTasks.filter(t => t.status === "completed").length,
+    notDone: allTasks.filter(t => (t.status as string) === "not_done").length,
   }), [allTasks]);
 
   /* status change */
@@ -244,6 +246,7 @@ export default function AnalystDashboard() {
     { name: "Em andamento", value: stats.inProgress, color: STATUS_COLORS.in_progress },
     { name: "Pendentes", value: stats.pending, color: STATUS_COLORS.pending },
     { name: "Atrasadas", value: stats.overdue, color: STATUS_COLORS.overdue },
+    { name: "Não feitas", value: stats.notDone, color: STATUS_COLORS.not_done },
   ].filter(d => d.value > 0), [stats]);
 
   /* upcoming days grouped */
@@ -535,6 +538,7 @@ const statusBadge: Record<string, { label: string; variant: "default" | "seconda
   in_progress: { label: "Em andamento", variant: "default" },
   completed: { label: "Concluída", variant: "secondary" },
   overdue: { label: "Atrasada", variant: "destructive" },
+  not_done: { label: "Não feita", variant: "destructive" },
 };
 
 function TaskRow({

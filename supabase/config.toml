@@ -11,3 +11,5 @@ project_id = "nfrhxwehfqerasvlfnxv"
     verify_jwt = false
   [functions.process-email-queue]
     verify_jwt = true
+  [functions.mark-not-done-daily]
+    verify_jwt = false

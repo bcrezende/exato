@@ -35,12 +35,13 @@ type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
-const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
+const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada", not_done: "Não Feita" };
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
   in_progress: "bg-primary/10 text-primary",
   completed: "bg-success/10 text-success",
   overdue: "bg-destructive/10 text-destructive",
+  not_done: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
 };
 
 export default function Tasks() {
@@ -249,7 +250,7 @@ export default function Tasks() {
     return sortDirection === "asc" ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
   };
 
-  const kanbanColumns = ["pending", "in_progress", "completed", "overdue"] as const;
+  const kanbanColumns = ["pending", "in_progress", "completed", "overdue", "not_done"] as const;
 
   const handleDragEnd = useCallback(async (result: DropResult) => {
     const { destination, draggableId } = result;
@@ -395,7 +396,7 @@ export default function Tasks() {
       {/* Kanban View */}
       {viewMode === "kanban" && (
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 stagger-fade-in">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5 stagger-fade-in">
             {kanbanColumns.map((status) => {
               const columnTasks = filtered.filter((t) => {
                 if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending");
@@ -403,8 +404,8 @@ export default function Tasks() {
                 if (status === "in_progress") return t.status === "in_progress";
                 return t.status === status;
               });
-              const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : "bg-destructive";
-              const isOverdueColumn = status === "overdue";
+              const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : status === "not_done" ? "bg-orange-500" : "bg-destructive";
+              const isOverdueColumn = status === "overdue" || status === "not_done";
               return (
                 <div key={status} className="space-y-2">
                   <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2">

@@ -3,9 +3,12 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ProfileCompletionBadge } from "@/components/ProfileCompletionBadge";
+import { usePendingNotDone } from "@/hooks/usePendingNotDone";
+import PendingNotDoneModal from "@/components/tasks/PendingNotDoneModal";
 
 export function AppLayout() {
   const location = useLocation();
+  const { notDoneTasks, showModal, resolveTask } = usePendingNotDone();
 
   return (
     <SidebarProvider>
@@ -26,6 +29,11 @@ export function AppLayout() {
           </main>
         </div>
       </div>
+      <PendingNotDoneModal
+        open={showModal}
+        tasks={notDoneTasks}
+        onResolve={resolveTask}
+      />
     </SidebarProvider>
   );
 }
