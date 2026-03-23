@@ -1,30 +1,55 @@
 
 
-## Importar Feriados Nacionais do Brasil
+## Personalização do Perfil: Avatar + Tema Claro/Escuro
 
-### Abordagem
+### 1. Avatar com Upload de Foto
 
-Usar a **BrasilAPI** (gratuita, sem autenticação): `https://brasilapi.com.br/api/feriados/v1/{ano}` — retorna JSON com feriados nacionais do ano.
+**Storage**: Criar bucket `avatars` (público) com RLS para upload/delete pelo próprio usuário.
 
-### Implementação
+**Componente** `src/components/settings/AvatarUpload.tsx`:
+- Preview circular com foto atual ou iniciais (fallback)
+- Botão de upload com input file (aceita imagens até 2MB)
+- Crop não será implementado agora (upload direto com resize client-side)
+- Ao fazer upload: salva no bucket `avatars/{user_id}.webp`, atualiza `profiles.avatar_url`
+- Botão para remover foto
 
-**Arquivo:** `src/components/settings/HolidaySettings.tsx`
+**Integração no perfil** (`Settings.tsx`):
+- Adicionar `AvatarUpload` no topo do card de perfil
 
-1. Adicionar botão "Importar Feriados BR" ao lado do "Novo Feriado"
-2. Ao clicar, abrir dialog com:
-   - Select de ano (ano atual e próximo)
-   - Preview dos feriados que serão importados (vindos da BrasilAPI)
-   - Indicação de quais já existem no banco (para evitar duplicatas)
-   - Botão "Importar Selecionados"
-3. Fazer `fetch` direto do client para `https://brasilapi.com.br/api/feriados/v1/{ano}`
-4. Comparar com feriados já cadastrados (por data) e marcar duplicatas
-5. Inserir os selecionados na tabela `company_holidays` com `is_recurring: true` para feriados fixos (Natal, Ano Novo, etc.) e `is_recurring: false` para feriados móveis (Carnaval, Páscoa, Corpus Christi)
+**Sidebar** (`AppSidebar.tsx`):
+- Usar `AvatarImage` do Shadcn com `profile.avatar_url` como src, mantendo fallback de iniciais
 
-### Detalhes técnicos
+**Outros locais**: Qualquer componente que exibe avatar do usuário (rankings, equipe) passará a mostrar a foto quando disponível.
 
-- A BrasilAPI retorna: `[{ date: "2026-01-01", name: "Confraternização mundial", type: "national" }]`
-- Feriados móveis (baseados na Páscoa): Carnaval, Sexta-feira Santa, Corpus Christi — serão marcados como `is_recurring: false`
-- Feriados fixos (mesma data todo ano): todos os demais — marcados como `is_recurring: true`
-- Nenhuma dependência nova necessária — usa `fetch` nativo
-- Nenhuma alteração no banco de dados
+---
+
+### 2. Tema Claro/Escuro
+
+**Contexto** `src/contexts/ThemeContext.tsx`:
+- Provider com 3 opções: `light`, `dark`, `system`
+- Aplica classe `dark` no `<html>` conforme preferência
+- Persiste no `localStorage` (sem necessidade de salvar no banco)
+
+**Componente no Settings**:
+- Select ou toggle group com ícones (Sol, Lua, Monitor) na aba Perfil
+
+**Sidebar**:
+- Botão pequeno de toggle tema no footer (ícone sol/lua)
+
+**CSS** (`index.css`):
+- O Tailwind já suporta `dark:` — garantir que as variáveis CSS do tema tenham variantes dark definidas
+
+---
+
+### Resumo de Arquivos
+
+| Arquivo | Ação |
+|---|---|
+| Migration SQL | Criar bucket `avatars` + RLS policies |
+| `src/components/settings/AvatarUpload.tsx` | Novo componente de upload |
+| `src/contexts/ThemeContext.tsx` | Novo contexto de tema |
+| `src/pages/Settings.tsx` | Adicionar avatar upload + seletor de tema |
+| `src/components/AppSidebar.tsx` | Exibir avatar image + toggle tema |
+| `src/main.tsx` | Envolver app com ThemeProvider |
+| `src/index.css` | Variáveis CSS dark mode |
 
