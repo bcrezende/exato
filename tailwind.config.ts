@@ -140,6 +140,18 @@ export default {
           "0%": { opacity: "1", transform: "translateY(0) rotate(0deg)" },
           "100%": { opacity: "0", transform: "translateY(100vh) rotate(720deg)" },
         },
+        "bell-ring": {
+          "0%, 100%": { transform: "rotate(0deg)" },
+          "15%": { transform: "rotate(14deg)" },
+          "30%": { transform: "rotate(-12deg)" },
+          "45%": { transform: "rotate(10deg)" },
+          "60%": { transform: "rotate(-8deg)" },
+          "75%": { transform: "rotate(4deg)" },
+        },
+        "badge-pulse": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.25)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
