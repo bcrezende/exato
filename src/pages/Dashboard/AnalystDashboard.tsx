@@ -194,6 +194,40 @@ export default function AnalystDashboard() {
 
   useEffect(() => { fetchTasks(); fetchUpcoming(); }, [fetchTasks, fetchUpcoming]);
 
+  /* fetch delays */
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("task_delays")
+      .select("id,task_id,log_type,created_at")
+      .eq("user_id", user.id)
+      .then(({ data }) => { if (data) setDelays(data); });
+  }, [user]);
+
+  /* period delays filtered */
+  const periodDelays = useMemo(() =>
+    delays.filter(d => d.created_at >= dateRange.start && d.created_at <= dateRange.end),
+    [delays, dateRange]
+  );
+
+  /* drill-down tasks based on overviewFilter */
+  const drillDownTasks = useMemo(() => {
+    if (!overviewFilter) return allTasks;
+    const taskIds = new Set(allTasks.map(t => t.id));
+    const lateStartIds = new Set(periodDelays.filter(d => d.log_type === "inicio_atrasado" && taskIds.has(d.task_id)).map(d => d.task_id));
+    const lateCompletionIds = new Set(periodDelays.filter(d => d.log_type === "conclusao_atrasada" && taskIds.has(d.task_id)).map(d => d.task_id));
+
+    switch (overviewFilter) {
+      case "total": return allTasks;
+      case "onTime": return allTasks.filter(t => t.status === "completed" && !lateStartIds.has(t.id) && !lateCompletionIds.has(t.id));
+      case "inProgress": return allTasks.filter(t => t.status === "in_progress");
+      case "lateStart": return allTasks.filter(t => lateStartIds.has(t.id));
+      case "lateCompletion": return allTasks.filter(t => lateCompletionIds.has(t.id));
+      case "notCompleted": return allTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < dateRange.end);
+      default: return allTasks;
+    }
+  }, [overviewFilter, allTasks, periodDelays, dateRange.end]);
+
   /* today tasks (always current day for checklist) */
   const todayTasks = useMemo(() => {
     const now = new Date();
