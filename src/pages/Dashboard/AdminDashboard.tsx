@@ -133,7 +133,6 @@ export default function AdminDashboard() {
       const startDay = t.start_date;
       if (dueDay && dueDay >= periodStartISO && dueDay <= periodEndISO) return true;
       if (startDay && startDay >= periodStartISO && startDay <= periodEndISO) return true;
-      if (t.status === "in_progress") return true;
       return false;
     });
   }, [filteredTasks, periodStartISO, periodEndISO]);
@@ -187,7 +186,7 @@ export default function AdminDashboard() {
 
   const drillDownTasks = useMemo(() => {
     if (!overviewFilter) return [];
-    const todayISO = new Date().toISOString();
+    const cutoffISO = periodEndISO;
     const lateStartIds = new Set(periodDelays.filter(d => d.log_type === "inicio_atrasado").map(d => d.task_id));
     const lateCompletionIds = new Set(periodDelays.filter(d => d.log_type === "conclusao_atrasada").map(d => d.task_id));
 
@@ -196,7 +195,7 @@ export default function AdminDashboard() {
       case "onTime": return periodTasks.filter(t => t.status === "completed" && !lateStartIds.has(t.id) && !lateCompletionIds.has(t.id));
       case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
       case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
-      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.due_date && t.due_date < todayISO);
+      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.due_date && t.due_date < cutoffISO);
       default: return [];
     }
   }, [overviewFilter, periodTasks, periodDelays]);
@@ -314,7 +313,7 @@ export default function AdminDashboard() {
       <AdminOverviewCards
         periodTasks={periodTasks}
         periodDelays={periodDelays}
-        today={new Date()}
+        periodEndISO={periodEndISO}
         onCardClick={handleOverviewCardClick}
         activeFilter={overviewFilter}
       />

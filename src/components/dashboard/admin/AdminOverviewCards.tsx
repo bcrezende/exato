@@ -18,14 +18,13 @@ export type OverviewFilter = "total" | "onTime" | "lateStart" | "lateCompletion"
 interface AdminOverviewCardsProps {
   periodTasks: Task[];
   periodDelays: DelayRecord[];
-  today: Date;
+  periodEndISO: string;
   onCardClick?: (filter: OverviewFilter) => void;
   activeFilter?: OverviewFilter | null;
 }
 
-export default function AdminOverviewCards({ periodTasks, periodDelays, today, onCardClick, activeFilter }: AdminOverviewCardsProps) {
+export default function AdminOverviewCards({ periodTasks, periodDelays, periodEndISO, onCardClick, activeFilter }: AdminOverviewCardsProps) {
   const metrics = useMemo(() => {
-    const todayISO = today.toISOString();
     const totalTasks = periodTasks.length;
 
     const lateStartTaskIds = new Set(
@@ -44,11 +43,11 @@ export default function AdminOverviewCards({ periodTasks, periodDelays, today, o
     const lateCompletions = lateCompletionTaskIds.size;
 
     const notCompleted = periodTasks.filter(
-      t => t.status !== "completed" && t.due_date && t.due_date < todayISO
+      t => t.status !== "completed" && t.due_date && t.due_date < periodEndISO
     ).length;
 
     return { totalTasks, onTime, lateStarts, lateCompletions, notCompleted };
-  }, [periodTasks, periodDelays, today]);
+  }, [periodTasks, periodDelays, periodEndISO]);
 
   const cards: { label: string; value: number; icon: typeof ListTodo; color: string; filterKey: OverviewFilter }[] = [
     { label: "Total de Tarefas", value: metrics.totalTasks, icon: ListTodo, color: "text-primary", filterKey: "total" },
