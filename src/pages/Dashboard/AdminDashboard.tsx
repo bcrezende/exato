@@ -406,7 +406,7 @@ export default function AdminDashboard() {
 
         <TabsContent value="atrasos" className="mt-4">
           <DelayKpiCards
-            tasks={filteredTasks}
+            tasks={periodTasks}
             selectedDepartment={selectedDepartment}
             selectedEmployee={selectedEmployee}
             referenceDate={periodEnd}
