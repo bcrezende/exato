@@ -26,12 +26,13 @@ interface AdminOverviewCardsProps {
 export default function AdminOverviewCards({ periodTasks, periodDelays, periodEndISO, onCardClick, activeFilter }: AdminOverviewCardsProps) {
   const metrics = useMemo(() => {
     const totalTasks = periodTasks.length;
+    const periodTaskIds = new Set(periodTasks.map(t => t.id));
 
     const lateStartTaskIds = new Set(
-      periodDelays.filter(d => d.log_type === "inicio_atrasado").map(d => d.task_id)
+      periodDelays.filter(d => d.log_type === "inicio_atrasado" && periodTaskIds.has(d.task_id)).map(d => d.task_id)
     );
     const lateCompletionTaskIds = new Set(
-      periodDelays.filter(d => d.log_type === "conclusao_atrasada").map(d => d.task_id)
+      periodDelays.filter(d => d.log_type === "conclusao_atrasada" && periodTaskIds.has(d.task_id)).map(d => d.task_id)
     );
 
     const completedTasks = periodTasks.filter(t => t.status === "completed");
