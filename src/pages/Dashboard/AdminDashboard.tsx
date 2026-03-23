@@ -195,7 +195,7 @@ export default function AdminDashboard() {
       case "onTime": return periodTasks.filter(t => t.status === "completed" && !lateStartIds.has(t.id) && !lateCompletionIds.has(t.id));
       case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
       case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
-      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.due_date && t.due_date < todayISO);
+      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.due_date && t.due_date < cutoffISO);
       default: return [];
     }
   }, [overviewFilter, periodTasks, periodDelays]);
