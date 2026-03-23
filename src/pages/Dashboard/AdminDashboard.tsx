@@ -369,7 +369,7 @@ export default function AdminDashboard() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">{formatStoredDate(task.due_date, "short-date")}</TableCell>
-                      <TableCell className="text-sm">{priorityLabels[task.priority] || task.priority}</TableCell>
+                      
                     </TableRow>
                   ))}
                 </TableBody>
