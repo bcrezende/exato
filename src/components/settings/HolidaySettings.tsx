@@ -121,9 +121,14 @@ export default function HolidaySettings() {
             </CardTitle>
             <CardDescription>Cadastre feriados para que tarefas recorrentes os pulem automaticamente</CardDescription>
           </div>
-          <Button onClick={openCreate} size="sm">
-            <Plus className="mr-2 h-4 w-4" /> Novo Feriado
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setImportOpen(true)} size="sm" variant="outline">
+              <Download className="mr-2 h-4 w-4" /> Importar Feriados BR
+            </Button>
+            <Button onClick={openCreate} size="sm">
+              <Plus className="mr-2 h-4 w-4" /> Novo Feriado
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
