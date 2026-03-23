@@ -22,6 +22,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 export default function Settings() {
   const { user, role, profile } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [profileForm, setProfileForm] = useState({ full_name: "", phone: "", position: "" });
   const [initialProfileForm, setInitialProfileForm] = useState({ full_name: "", phone: "", position: "" });
   const [companyName, setCompanyName] = useState("");
