@@ -173,6 +173,21 @@ export default function Settings() {
                   />
                 </div>
                 <Separator />
+                <div className="space-y-2">
+                  <Label>Tema</Label>
+                  <ToggleGroup type="single" value={theme} onValueChange={(v) => v && setTheme(v as "light" | "dark" | "system")} className="justify-start">
+                    <ToggleGroupItem value="light" aria-label="Claro" className="gap-1.5">
+                      <Sun className="h-4 w-4" /> Claro
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="dark" aria-label="Escuro" className="gap-1.5">
+                      <Moon className="h-4 w-4" /> Escuro
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="system" aria-label="Sistema" className="gap-1.5">
+                      <Monitor className="h-4 w-4" /> Sistema
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <Separator />
                 <Button onClick={saveProfile} disabled={saving || !isProfileDirty}>
                   <Save className="mr-2 h-4 w-4" />
                   {saving ? "Salvando..." : "Salvar Perfil"}
