@@ -1,9 +1,10 @@
-import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound } from "lucide-react";
+import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound, Sun, Moon } from "lucide-react";
 import logoWhite from "@/assets/logo-white.png";
 import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   Sidebar,
   SidebarContent,
@@ -17,7 +18,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 const mainItems = [
@@ -40,6 +41,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { profile, role, signOut } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
   const initials = profile?.full_name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "U";
@@ -125,6 +127,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8 shrink-0">
+            {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.full_name || "Avatar"} />}
             <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">{initials}</AvatarFallback>
           </Avatar>
           {!collapsed && (
@@ -134,9 +137,19 @@ export function AppSidebar() {
             </div>
           )}
           {!collapsed && (
-            <Button variant="ghost" size="icon" className="shrink-0 text-sidebar-foreground/60 hover:text-sidebar-foreground" onClick={signOut}>
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="flex shrink-0 gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-sidebar-foreground/60 hover:text-sidebar-foreground h-8 w-8"
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              >
+                {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" className="text-sidebar-foreground/60 hover:text-sidebar-foreground h-8 w-8" onClick={signOut}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </div>
       </SidebarFooter>

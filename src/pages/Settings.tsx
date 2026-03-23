@@ -12,13 +12,17 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, RefreshCw, CalendarDays, Save } from "lucide-react";
+import { User, Building, RefreshCw, CalendarDays, Save, Sun, Moon, Monitor } from "lucide-react";
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
 import HolidaySettings from "@/components/settings/HolidaySettings";
+import AvatarUpload from "@/components/settings/AvatarUpload";
+import { useTheme } from "@/contexts/ThemeContext";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function Settings() {
   const { user, role, profile } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [profileForm, setProfileForm] = useState({ full_name: "", phone: "", position: "" });
   const [initialProfileForm, setInitialProfileForm] = useState({ full_name: "", phone: "", position: "" });
   const [companyName, setCompanyName] = useState("");
@@ -135,6 +139,8 @@ export default function Settings() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                <AvatarUpload />
+                <Separator />
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Nome Completo</Label>
@@ -165,6 +171,21 @@ export default function Settings() {
                       }
                     }}
                   />
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label>Tema</Label>
+                  <ToggleGroup type="single" value={theme} onValueChange={(v) => v && setTheme(v as "light" | "dark" | "system")} className="justify-start">
+                    <ToggleGroupItem value="light" aria-label="Claro" className="gap-1.5">
+                      <Sun className="h-4 w-4" /> Claro
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="dark" aria-label="Escuro" className="gap-1.5">
+                      <Moon className="h-4 w-4" /> Escuro
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="system" aria-label="Sistema" className="gap-1.5">
+                      <Monitor className="h-4 w-4" /> Sistema
+                    </ToggleGroupItem>
+                  </ToggleGroup>
                 </div>
                 <Separator />
                 <Button onClick={saveProfile} disabled={saving || !isProfileDirty}>
