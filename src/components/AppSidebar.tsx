@@ -41,6 +41,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { profile, role, signOut } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
   const initials = profile?.full_name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "U";
