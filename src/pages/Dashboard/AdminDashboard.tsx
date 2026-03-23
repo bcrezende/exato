@@ -10,11 +10,12 @@ import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admi
 import AdminKpiCards from "@/components/dashboard/admin/AdminKpiCards";
 import AdminSectorCards from "@/components/dashboard/admin/AdminSectorCards";
 import AdminUserRanking from "@/components/dashboard/admin/AdminUserRanking";
-import AdminOverviewCards from "@/components/dashboard/admin/AdminOverviewCards";
+import AdminOverviewCards, { type OverviewFilter } from "@/components/dashboard/admin/AdminOverviewCards";
 import DelayKpiCards from "@/components/dashboard/DelayKpiCards";
 import SectorComparisonCard from "@/components/dashboard/SectorComparisonCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import AIAnalysisDialog from "@/components/dashboard/AIAnalysisDialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Building2, BarChart3, Users, AlertCircle, LayoutDashboard, X, Search, CalendarIcon } from "lucide-react";
+import { formatStoredDate } from "@/lib/date-utils";
 
 const LazyPerformanceAnalytics = lazy(() => import("@/components/dashboard/PerformanceAnalytics"));
 
@@ -52,6 +54,7 @@ export default function AdminDashboard() {
   const [deptSearch, setDeptSearch] = useState("");
   const [empSearch, setEmpSearch] = useState("");
   const [activeTab, setActiveTab] = useState("geral");
+  const [overviewFilter, setOverviewFilter] = useState<OverviewFilter | null>(null);
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
@@ -173,6 +176,31 @@ export default function AdminDashboard() {
 
   const getName = (id: string | null) => (id ? profiles.get(id) || "—" : "Não atribuída");
 
+  const handleOverviewCardClick = (filter: OverviewFilter) => {
+    setOverviewFilter(prev => prev === filter ? null : filter);
+    setActiveTab("geral");
+  };
+
+  const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada" };
+  const statusColors: Record<string, string> = { pending: "bg-muted text-muted-foreground", in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200", completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200", overdue: "bg-destructive/10 text-destructive" };
+  const priorityLabels: Record<string, string> = { low: "Baixa", medium: "Média", high: "Alta" };
+
+  const drillDownTasks = useMemo(() => {
+    if (!overviewFilter) return [];
+    const todayISO = new Date().toISOString();
+    const lateStartIds = new Set(periodDelays.filter(d => d.log_type === "inicio_atrasado").map(d => d.task_id));
+    const lateCompletionIds = new Set(periodDelays.filter(d => d.log_type === "conclusao_atrasada").map(d => d.task_id));
+
+    switch (overviewFilter) {
+      case "total": return periodTasks;
+      case "onTime": return periodTasks.filter(t => t.status === "completed" && !lateStartIds.has(t.id) && !lateCompletionIds.has(t.id));
+      case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
+      case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
+      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.due_date && t.due_date < todayISO);
+      default: return [];
+    }
+  }, [overviewFilter, periodTasks, periodDelays]);
+
   // Filtered dropdowns
   const filteredDepts = departments.filter(d => d.name.toLowerCase().includes(deptSearch.toLowerCase()));
   const filteredEmps = employeeOptions.filter(p => (p.full_name || "").toLowerCase().includes(empSearch.toLowerCase()));
@@ -287,6 +315,8 @@ export default function AdminDashboard() {
         periodTasks={periodTasks}
         periodDelays={periodDelays}
         today={new Date()}
+        onCardClick={handleOverviewCardClick}
+        activeFilter={overviewFilter}
       />
 
       {/* Tabs */}
@@ -316,9 +346,44 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="geral" className="mt-4">
-          <p className="text-sm text-muted-foreground text-center py-8">
-            As métricas principais estão nos cards acima.
-          </p>
+          {overviewFilter && drillDownTasks.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Prazo</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {drillDownTasks.map(task => (
+                    <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleTaskClick(task)}>
+                      <TableCell className="font-medium">{task.title}</TableCell>
+                      <TableCell>{getName(task.assigned_to)}</TableCell>
+                      <TableCell>
+                        <Badge className={cn("text-xs", statusColors[task.status])} variant="outline">
+                          {statusLabels[task.status] || task.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{formatStoredDate(task.due_date, "short-date")}</TableCell>
+                      <TableCell className="text-sm">{priorityLabels[task.priority] || task.priority}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : overviewFilter ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Nenhuma tarefa encontrada para este filtro.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Clique em um dos cards acima para ver as tarefas detalhadas.
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="setores" className="mt-4 space-y-5">
