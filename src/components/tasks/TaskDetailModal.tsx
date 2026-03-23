@@ -307,6 +307,11 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                   <p className="text-xs text-muted-foreground">Para alterar, solicite ao gerente</p>
                 </div>
               )}
+              {(localTask.status === "pending" || localTask.status === "in_progress" || localTask.status === "overdue") && (
+                <Button size="sm" variant="outline" className="w-full text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950" disabled={statusLoading} onClick={() => setShowNotDone(true)}>
+                  <XCircle className="mr-2 h-4 w-4" /> Não feita
+                </Button>
+              )}
             </div>
           )}
 
