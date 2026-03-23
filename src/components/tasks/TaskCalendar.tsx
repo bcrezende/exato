@@ -342,12 +342,6 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
   const now = useCurrentTime();
   const isToday = isSameDay(currentDate, now);
 
-  const getTaskDurationHours = (t: Task) => {
-    if (!t.start_date || !t.due_date) return 1;
-    const diff = (new Date(t.due_date).getTime() - new Date(t.start_date).getTime()) / (1000 * 60 * 60);
-    return Math.max(1, Math.min(diff, 12));
-  };
-
   const layouted = useMemo(() => {
     const dayTasks = tasks.filter(t => {
       const start = toDisplayDate(t.start_date);
@@ -365,39 +359,42 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
 
   return (
     <div className="overflow-auto max-h-[600px] relative">
-      {isToday && <CurrentTimeLine now={now} offsetLeft="60px" />}
-      {HOURS.map(hour => {
-        const hourTasks = layouted.filter(lt => Math.floor(lt.startHour) === hour);
-        return (
-          <div key={hour} className="grid grid-cols-[60px_1fr] border-b border-dashed">
-            <div className="border-r px-2 py-1 text-right text-xs text-muted-foreground h-14 flex items-start justify-end pt-1">
-              {String(hour).padStart(2, "0")}:00
-            </div>
-            <div className="h-14 relative">
-              {hourTasks.map(lt => {
-                const c = statusCalendarColors[lt.task.status] || statusCalendarColors.pending;
-                const durationHours = getTaskDurationHours(lt.task);
-                const w = `calc((100% - 4px) / ${lt.totalColumns})`;
-                const l = `calc(${lt.columnIndex} * (100% - 4px) / ${lt.totalColumns} + 2px)`;
-                return (
-                  <div
-                    key={lt.task.id}
-                    onClick={() => onTaskClick(lt.task)}
-                    className={`absolute rounded-lg shadow-sm border px-2 py-1 text-xs font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
-                    style={{ height: `${durationHours * 56 - 4}px`, top: "2px", width: w, left: l }}
-                  >
-                    <div className="truncate font-semibold">{lt.task.title}</div>
-                    {lt.task.start_date && (
-                      <div className="text-[10px] opacity-70">{formatStoredDate(lt.task.start_date, "time")} - {lt.task.due_date ? formatStoredDate(lt.task.due_date, "time") : ""}</div>
-                    )}
-                    {lt.task.description && durationHours >= 2 && <div className="truncate text-[10px] opacity-60 mt-0.5">{lt.task.description}</div>}
-                  </div>
-                );
-              })}
-            </div>
+      {/* Hour grid */}
+      {HOURS.map(hour => (
+        <div key={hour} className="grid grid-cols-[60px_1fr] border-b border-dashed">
+          <div className="border-r px-2 py-1 text-right text-xs text-muted-foreground h-14 flex items-start justify-end pt-1">
+            {String(hour).padStart(2, "0")}:00
           </div>
-        );
-      })}
+          <div className="h-14" />
+        </div>
+      ))}
+      {/* Overlay for tasks + time line */}
+      <div className="absolute top-0 left-[60px] right-0 pointer-events-none" style={{ height: `${24 * ROW_H}px` }}>
+        {isToday && <CurrentTimeLine now={now} />}
+        <div className="relative pointer-events-auto" style={{ height: "100%" }}>
+          {layouted.map(lt => {
+            const c = statusCalendarColors[lt.task.status] || statusCalendarColors.pending;
+            const topPx = lt.startHour * ROW_H;
+            const heightPx = Math.max((lt.endHour - lt.startHour) * ROW_H - 2, MIN_CARD_H);
+            const w = `calc((100% - 4px) / ${lt.totalColumns})`;
+            const l = `calc(${lt.columnIndex} * (100% - 4px) / ${lt.totalColumns} + 2px)`;
+            return (
+              <div
+                key={lt.task.id}
+                onClick={() => onTaskClick(lt.task)}
+                className={`absolute rounded-lg shadow-sm border px-2 py-1 text-xs font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
+                style={{ top: `${topPx}px`, height: `${heightPx}px`, width: w, left: l }}
+              >
+                <div className="truncate font-semibold">{lt.task.title}</div>
+                {lt.task.start_date && heightPx > 30 && (
+                  <div className="text-[10px] opacity-70">{formatStoredDate(lt.task.start_date, "time")} - {lt.task.due_date ? formatStoredDate(lt.task.due_date, "time") : ""}</div>
+                )}
+                {lt.task.description && heightPx >= 60 && <div className="truncate text-[10px] opacity-60 mt-0.5">{lt.task.description}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
