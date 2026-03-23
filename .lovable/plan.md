@@ -1,38 +1,29 @@
 
 
-## Correção dos Bugs de Filtro por Período no AdminDashboard
+## Bug: Contagem de Atrasos nos Cards vs Drill-Down
 
-### Problema Raiz
+### Causa Raiz
 
-Três bugs trabalham juntos para gerar resultados incorretos:
+Os cards contam **todos os delays do período** (`periodDelays`), independente de a tarefa estar em `periodTasks`. Já o drill-down filtra `periodTasks.filter(t => lateStartIds.has(t.id))`, mostrando apenas tarefas que estão no período E têm delay.
 
-1. **Tarefas `in_progress` sem filtro de data** — A lógica de `periodTasks` inclui TODAS as tarefas com status `in_progress`, ignorando completamente o período selecionado. Isso traz tarefas do dia 23/03 quando o filtro é "ontem" (22/03).
+Exemplo: um delay criado em 20/03 para uma tarefa com due_date em 15/03 — o delay entra no período "Semana", mas a tarefa não.
 
-2. **"Não Concluídas" usa data errada** — Tanto no `AdminOverviewCards` quanto no `drillDownTasks`, o cálculo de "Não Concluídas" compara contra `new Date()` (hoje, tempo real) em vez do fim do período selecionado (`periodEndISO`).
-
-### Correções
-
-**Arquivo: `src/pages/Dashboard/AdminDashboard.tsx`**
-
-- **`periodTasks`** (linha 136): Remover a condição `if (t.status === "in_progress") return true`. Tarefas in_progress só devem aparecer se suas datas (start_date ou due_date) caírem dentro do período.
-- **`drillDownTasks`** (linha 190/199): Trocar `const todayISO = new Date().toISOString()` por `periodEndISO` na condição de "notCompleted".
+### Correção
 
 **Arquivo: `src/components/dashboard/admin/AdminOverviewCards.tsx`**
 
-- Adicionar prop `periodEndISO: string` ao componente
-- No cálculo de `notCompleted`, trocar `todayISO` (derivado de `today`) por `periodEndISO`
+Filtrar os IDs de delay para contar apenas tarefas que existem em `periodTasks`:
 
-### Resultado Esperado
+```typescript
+const periodTaskIds = new Set(periodTasks.map(t => t.id));
 
-Filtrando por "Ontem" (22/03/2026) + usuário específico:
-- Só aparecem tarefas cujo `start_date` ou `due_date` caiam em 22/03
-- "Não Concluídas" só conta tarefas com prazo vencido dentro do período selecionado
-- Tarefas do dia 23/03 não aparecem
+const lateStartTaskIds = new Set(
+  periodDelays.filter(d => d.log_type === "inicio_atrasado" && periodTaskIds.has(d.task_id)).map(d => d.task_id)
+);
+const lateCompletionTaskIds = new Set(
+  periodDelays.filter(d => d.log_type === "conclusao_atrasada" && periodTaskIds.has(d.task_id)).map(d => d.task_id)
+);
+```
 
-### Arquivos Afetados
-
-| Arquivo | Mudança |
-|---|---|
-| `src/pages/Dashboard/AdminDashboard.tsx` | Remover inclusão incondicional de `in_progress`; usar `periodEndISO` no drilldown |
-| `src/components/dashboard/admin/AdminOverviewCards.tsx` | Nova prop `periodEndISO`; corrigir cálculo de não concluídas |
+Uma única mudança em um arquivo. Os cards passam a mostrar os mesmos números do drill-down.
 
