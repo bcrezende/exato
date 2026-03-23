@@ -18,7 +18,7 @@ export type OverviewFilter = "total" | "onTime" | "lateStart" | "lateCompletion"
 interface AdminOverviewCardsProps {
   periodTasks: Task[];
   periodDelays: DelayRecord[];
-  today: Date;
+  periodEndISO: string;
   onCardClick?: (filter: OverviewFilter) => void;
   activeFilter?: OverviewFilter | null;
 }
