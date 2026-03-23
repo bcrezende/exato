@@ -1,28 +1,25 @@
 
 
-## Fix: Botão Editar no modal de tarefa do dashboard do analista
+## Sino de notificação mais chamativo
 
-### Problema
+### O que muda
 
-No `AnalystDashboard.tsx`, o `TaskDetailModal` recebe:
-- `onEdit={() => {}}` -- no-op, por isso nada acontece
-- `members={[]}` e `departments={[]}` -- arrays vazios, sem dados para o formulário
+Quando uma notificação nova chega (ou há não-lidas), o sino ganha animações visuais para chamar atenção:
 
-### Correção
+1. **Animação de balanço (shake/ring)** no ícone do sino quando uma nova notificação chega via realtime
+2. **Pulso no badge** vermelho de contagem para destacar visualmente
+3. **Efeito de glow/ring** ao redor do botão quando há não-lidas
 
-**Arquivo:** `src/pages/Dashboard/AnalystDashboard.tsx`
+### Arquivo
 
-1. Adicionar estado `editingTask` e importar `TaskForm`
-2. Buscar `members` (profiles) e `departments` no fetch inicial (o dashboard já pode ter acesso ao profile do próprio usuário, mas o TaskForm precisa das listas)
-3. Passar `onEdit={(task) => { setSelectedTask(null); setEditingTask(task); }}` ao `TaskDetailModal`
-4. Passar `members` e `departments` reais ao `TaskDetailModal`
-5. Renderizar `<TaskForm>` com `editing={editingTask}` e `onSaved` que refaz fetch + fecha o form
+| Arquivo | Mudança |
+|---|---|
+| `tailwind.config.ts` | Adicionar keyframe `bell-ring` (balanço lateral tipo sino) e `badge-pulse` (escala pulsante) |
+| `src/components/NotificationBell.tsx` | 1) Estado `justArrived` que ativa por 3s quando nova notificação chega via realtime. 2) Classe `animate-bell-ring` no ícone Bell durante `justArrived`. 3) Classe `animate-badge-pulse` permanente no badge de contagem. 4) Ring/glow sutil no botão quando `unreadCount > 0`. |
 
-### Mudanças concretas
+### Visual esperado
 
-- Adicionar `import TaskForm from "@/components/tasks/TaskForm"`
-- Adicionar states: `editingTask`, `members`, `departments`
-- No `useEffect` de fetch, buscar `profiles` e `departments` da company
-- Atualizar props do `TaskDetailModal`: `members={members}`, `departments={departments}`, `onEdit={(t) => { setSelectedTask(null); setEditingTask(t); }}`
-- Adicionar `<TaskForm open={!!editingTask} editing={editingTask} members={members} departments={departments} onSaved={...} onOpenChange={...} />`
+- Sino balança por ~3 segundos quando notificação nova chega
+- Badge vermelho pulsa continuamente enquanto há não-lidas
+- Botão tem um leve brilho/anel colorido quando há não-lidas
 
