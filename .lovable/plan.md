@@ -1,55 +1,84 @@
 
 
-## Personalização do Perfil: Avatar + Tema Claro/Escuro
+## Refatoração do AdminDashboard
 
-### 1. Avatar com Upload de Foto
+### 1. Atualizar `AdminPeriodToggle` — adicionar "Personalizado"
 
-**Storage**: Criar bucket `avatars` (público) com RLS para upload/delete pelo próprio usuário.
+**Arquivo:** `src/components/dashboard/admin/AdminPeriodToggle.tsx`
 
-**Componente** `src/components/settings/AvatarUpload.tsx`:
-- Preview circular com foto atual ou iniciais (fallback)
-- Botão de upload com input file (aceita imagens até 2MB)
-- Crop não será implementado agora (upload direto com resize client-side)
-- Ao fazer upload: salva no bucket `avatars/{user_id}.webp`, atualiza `profiles.avatar_url`
-- Botão para remover foto
+- Adicionar `"custom"` ao type `AdminPeriod`
+- Novo `ToggleGroupItem` com ícone `CalendarSearch` e label "Personalizado"
 
-**Integração no perfil** (`Settings.tsx`):
-- Adicionar `AvatarUpload` no topo do card de perfil
+### 2. Criar `AdminOverviewCards` — 5 cards de métricas
 
-**Sidebar** (`AppSidebar.tsx`):
-- Usar `AvatarImage` do Shadcn com `profile.avatar_url` como src, mantendo fallback de iniciais
+**Novo arquivo:** `src/components/dashboard/admin/AdminOverviewCards.tsx`
 
-**Outros locais**: Qualquer componente que exibe avatar do usuário (rankings, equipe) passará a mostrar a foto quando disponível.
+Props: `periodTasks`, `periodDelays` (filtrados pelo período), `today` (Date)
 
----
+Cards em grid `grid-cols-2 lg:grid-cols-5`:
+- **Total de Tarefas**: `periodTasks.length`
+- **Feitas no Prazo**: completed tasks que NÃO possuem delay de `inicio_atrasado` nem `conclusao_atrasada`
+- **Iniciadas com Atraso**: count de delays com `log_type === 'inicio_atrasado'`
+- **Concluídas com Atraso**: count de delays com `log_type === 'conclusao_atrasada'`
+- **Não Concluídas**: `status !== 'completed' AND due_date < hoje`
 
-### 2. Tema Claro/Escuro
+### 3. Refatorar `AdminDashboard.tsx`
 
-**Contexto** `src/contexts/ThemeContext.tsx`:
-- Provider com 3 opções: `light`, `dark`, `system`
-- Aplica classe `dark` no `<html>` conforme preferência
-- Persiste no `localStorage` (sem necessidade de salvar no banco)
+**Mudanças principais:**
 
-**Componente no Settings**:
-- Select ou toggle group com ícones (Sol, Lua, Monitor) na aba Perfil
+- Adicionar state `customStart` e `customEnd` (Date | undefined) para período personalizado
+- Quando `period === "custom"`, usar `customStart`/`customEnd` no cálculo de `periodStart`/`referenceDate`
+- Mostrar dois date pickers (Popover + Calendar) condicionalmente quando `period === "custom"`
+- Buscar `task_delays` no `useEffect` inicial junto com os outros dados
+- Calcular `periodDelays` filtrando delays por `created_at` dentro do período
 
-**Sidebar**:
-- Botão pequeno de toggle tema no footer (ícone sol/lua)
+**Remover da tab Geral:**
+- `TeamSummaryCard`
+- `KpiCards`
+- `RiskRadar`
+- `TodayProgress`
+- `CriticalTasksList`
+- `SectorComparisonCard` (manter apenas na tab Setores)
 
-**CSS** (`index.css`):
-- O Tailwind já suporta `dark:` — garantir que as variáveis CSS do tema tenham variantes dark definidas
+**Substituir por:** `AdminOverviewCards` + `AdminKpiCards`
 
----
+**Correção do bug de atrasadas:**
+```typescript
+// Antes (errado): usa nowAsFakeUTC() global
+// Depois (correto): atrasada = due_date < fim_do_período AND status !== 'completed' AND due_date >= periodStart
+const overdueTasks = periodTasks.filter(t =>
+  t.status !== "completed" &&
+  t.due_date &&
+  t.due_date < periodEndISO &&
+  t.due_date >= periodStartISO
+);
+```
 
-### Resumo de Arquivos
+**Remover imports não utilizados:** `TeamSummaryCard`, `KpiCards`, `RiskRadar`, `TodayProgress`, `CriticalTasksList`, `SectorComparisonCard`, `nowAsFakeUTC`
+
+### 4. Layout Final
+
+```text
+[Filtros Setor/Usuário]
+[Toggle: Hoje | Ontem | Semana | Mês | Personalizado]
+[DatePicker Início] [DatePicker Fim]  ← só se Personalizado
+
+[AdminKpiCards - 4 cards: Setores Ativos, Total Tarefas, Atrasadas, % Atraso]
+[AdminOverviewCards - 5 cards: Total, No Prazo, Início Atrasado, Conclusão Atrasada, Não Concluídas]
+
+[Tabs: Visão Geral | Setores | Usuários | Atrasos | Analytics]
+  Visão Geral → vazio (só os cards acima)
+  Setores → SectorComparisonCard + AdminSectorCards
+  Usuários → AdminUserRanking
+  Atrasos → DelayKpiCards
+  Analytics → PerformanceAnalytics
+```
+
+### Arquivos afetados
 
 | Arquivo | Ação |
 |---|---|
-| Migration SQL | Criar bucket `avatars` + RLS policies |
-| `src/components/settings/AvatarUpload.tsx` | Novo componente de upload |
-| `src/contexts/ThemeContext.tsx` | Novo contexto de tema |
-| `src/pages/Settings.tsx` | Adicionar avatar upload + seletor de tema |
-| `src/components/AppSidebar.tsx` | Exibir avatar image + toggle tema |
-| `src/main.tsx` | Envolver app com ThemeProvider |
-| `src/index.css` | Variáveis CSS dark mode |
+| `src/components/dashboard/admin/AdminPeriodToggle.tsx` | Adicionar "custom" ao type e toggle |
+| `src/components/dashboard/admin/AdminOverviewCards.tsx` | Novo componente com 5 cards |
+| `src/pages/Dashboard/AdminDashboard.tsx` | Refatorar: custom period, fetch delays, remover componentes, corrigir overdue |
 
