@@ -33,7 +33,7 @@ export default function HolidaySettings() {
   const [editing, setEditing] = useState<Holiday | null>(null);
   const [form, setForm] = useState({ name: "", holiday_date: "", is_recurring: true });
   const [saving, setSaving] = useState(false);
-
+  const [importOpen, setImportOpen] = useState(false);
   const fetchHolidays = async () => {
     if (!profile?.company_id) return;
     const { data } = await supabase
