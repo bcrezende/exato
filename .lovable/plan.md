@@ -1,84 +1,50 @@
 
 
-## Refatoração do AdminDashboard
+## Drill-down nos Cards de Métricas — Tarefas por Card
 
-### 1. Atualizar `AdminPeriodToggle` — adicionar "Personalizado"
+### Visão Geral
 
-**Arquivo:** `src/components/dashboard/admin/AdminPeriodToggle.tsx`
+Ao clicar em um dos 5 cards do `AdminOverviewCards`, a tab "Visão Geral" exibe uma tabela com as tarefas correspondentes ao card clicado.
 
-- Adicionar `"custom"` ao type `AdminPeriod`
-- Novo `ToggleGroupItem` com ícone `CalendarSearch` e label "Personalizado"
+### Implementação
 
-### 2. Criar `AdminOverviewCards` — 5 cards de métricas
+**1. Estado no `AdminDashboard.tsx`**
 
-**Novo arquivo:** `src/components/dashboard/admin/AdminOverviewCards.tsx`
+- Novo state: `overviewFilter: "total" | "onTime" | "lateStart" | "lateCompletion" | "notCompleted" | null`
+- Ao clicar num card, seta o filtro e muda `activeTab` para `"geral"`
+- Passar `onCardClick` como prop para `AdminOverviewCards`
 
-Props: `periodTasks`, `periodDelays` (filtrados pelo período), `today` (Date)
+**2. Atualizar `AdminOverviewCards.tsx`**
 
-Cards em grid `grid-cols-2 lg:grid-cols-5`:
-- **Total de Tarefas**: `periodTasks.length`
-- **Feitas no Prazo**: completed tasks que NÃO possuem delay de `inicio_atrasado` nem `conclusao_atrasada`
-- **Iniciadas com Atraso**: count de delays com `log_type === 'inicio_atrasado'`
-- **Concluídas com Atraso**: count de delays com `log_type === 'conclusao_atrasada'`
-- **Não Concluídas**: `status !== 'completed' AND due_date < hoje`
+- Aceitar nova prop `onCardClick?: (filter: string) => void` e `activeFilter?: string | null`
+- Cada card recebe `onClick={() => onCardClick?.(filterKey)}`
+- Card ativo ganha borda/destaque visual (`ring-2 ring-primary`)
+- Cursor pointer nos cards
 
-### 3. Refatorar `AdminDashboard.tsx`
+**3. Filtrar tarefas na tab "Visão Geral"**
 
-**Mudanças principais:**
+Lógica de filtragem baseada no `overviewFilter`:
+- `total` → todas as `periodTasks`
+- `onTime` → completed sem delays (início ou conclusão)
+- `lateStart` → tarefas com `inicio_atrasado` nos `periodDelays`
+- `lateCompletion` → tarefas com `conclusao_atrasada` nos `periodDelays`
+- `notCompleted` → `status !== 'completed'` e `due_date < hoje`
 
-- Adicionar state `customStart` e `customEnd` (Date | undefined) para período personalizado
-- Quando `period === "custom"`, usar `customStart`/`customEnd` no cálculo de `periodStart`/`referenceDate`
-- Mostrar dois date pickers (Popover + Calendar) condicionalmente quando `period === "custom"`
-- Buscar `task_delays` no `useEffect` inicial junto com os outros dados
-- Calcular `periodDelays` filtrando delays por `created_at` dentro do período
+**4. Tabela de tarefas na tab "Visão Geral"**
 
-**Remover da tab Geral:**
-- `TeamSummaryCard`
-- `KpiCards`
-- `RiskRadar`
-- `TodayProgress`
-- `CriticalTasksList`
-- `SectorComparisonCard` (manter apenas na tab Setores)
+Quando `overviewFilter` está ativo, renderizar uma tabela simples com:
+- Título (clicável → abre `TaskDetailModal`)
+- Responsável (nome do profile)
+- Status (badge colorido)
+- Prazo (data formatada)
+- Prioridade
 
-**Substituir por:** `AdminOverviewCards` + `AdminKpiCards`
+Quando nenhum card está selecionado, manter a mensagem atual.
 
-**Correção do bug de atrasadas:**
-```typescript
-// Antes (errado): usa nowAsFakeUTC() global
-// Depois (correto): atrasada = due_date < fim_do_período AND status !== 'completed' AND due_date >= periodStart
-const overdueTasks = periodTasks.filter(t =>
-  t.status !== "completed" &&
-  t.due_date &&
-  t.due_date < periodEndISO &&
-  t.due_date >= periodStartISO
-);
-```
+### Arquivos
 
-**Remover imports não utilizados:** `TeamSummaryCard`, `KpiCards`, `RiskRadar`, `TodayProgress`, `CriticalTasksList`, `SectorComparisonCard`, `nowAsFakeUTC`
-
-### 4. Layout Final
-
-```text
-[Filtros Setor/Usuário]
-[Toggle: Hoje | Ontem | Semana | Mês | Personalizado]
-[DatePicker Início] [DatePicker Fim]  ← só se Personalizado
-
-[AdminKpiCards - 4 cards: Setores Ativos, Total Tarefas, Atrasadas, % Atraso]
-[AdminOverviewCards - 5 cards: Total, No Prazo, Início Atrasado, Conclusão Atrasada, Não Concluídas]
-
-[Tabs: Visão Geral | Setores | Usuários | Atrasos | Analytics]
-  Visão Geral → vazio (só os cards acima)
-  Setores → SectorComparisonCard + AdminSectorCards
-  Usuários → AdminUserRanking
-  Atrasos → DelayKpiCards
-  Analytics → PerformanceAnalytics
-```
-
-### Arquivos afetados
-
-| Arquivo | Ação |
+| Arquivo | Mudança |
 |---|---|
-| `src/components/dashboard/admin/AdminPeriodToggle.tsx` | Adicionar "custom" ao type e toggle |
-| `src/components/dashboard/admin/AdminOverviewCards.tsx` | Novo componente com 5 cards |
-| `src/pages/Dashboard/AdminDashboard.tsx` | Refatorar: custom period, fetch delays, remover componentes, corrigir overdue |
+| `src/components/dashboard/admin/AdminOverviewCards.tsx` | Adicionar `onCardClick`, `activeFilter`, cursor e destaque |
+| `src/pages/Dashboard/AdminDashboard.tsx` | State `overviewFilter`, lógica de filtragem, tabela na tab Geral |
 
