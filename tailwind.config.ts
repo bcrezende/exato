@@ -169,6 +169,8 @@ export default {
         "ring-pulse": "ring-pulse 1.5s ease-in-out infinite",
         "collapse-in": "collapse-in 0.3s ease-out forwards",
         "collapse-out": "collapse-out 0.3s ease-out forwards",
+        "bell-ring": "bell-ring 0.8s ease-in-out 3",
+        "badge-pulse": "badge-pulse 1.5s ease-in-out infinite",
       },
     },
   },

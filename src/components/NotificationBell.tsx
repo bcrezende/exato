@@ -126,10 +126,17 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "relative transition-shadow duration-300",
+            unreadCount > 0 && "ring-2 ring-primary/40 shadow-[0_0_8px_hsl(var(--primary)/0.3)] rounded-full"
+          )}
+        >
+          <Bell className={cn("h-5 w-5", justArrived && "animate-bell-ring")} />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground animate-badge-pulse">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
