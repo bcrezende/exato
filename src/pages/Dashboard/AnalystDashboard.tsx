@@ -119,11 +119,12 @@ function getDateRange(period: AdminPeriod) {
 }
 
 /* ── DONUT CHART COLORS ── */
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<string, string> = {
   completed: "hsl(var(--success))",
   in_progress: "hsl(var(--primary))",
   pending: "hsl(var(--warning))",
   overdue: "hsl(var(--destructive))",
+  not_done: "hsl(30, 90%, 50%)",
 };
 
 /* ── main component ── */
