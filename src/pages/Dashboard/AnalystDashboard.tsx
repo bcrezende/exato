@@ -10,6 +10,7 @@ import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
 import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
+import TaskForm from "@/components/tasks/TaskForm";
 import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admin/AdminPeriodToggle";
 import AdminOverviewCards, { type OverviewFilter } from "@/components/dashboard/admin/AdminOverviewCards";
 import { MyDaySkeleton } from "@/components/skeletons/MyDaySkeleton";
@@ -152,6 +153,9 @@ export default function AnalystDashboard() {
   const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
   const [delays, setDelays] = useState<DelayRecord[]>([]);
   const [overviewFilter, setOverviewFilter] = useState<OverviewFilter | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [members, setMembers] = useState<Tables<"profiles">[]>([]);
+  const [departments, setDepartments] = useState<Tables<"departments">[]>([]);
 
   const dateRange = useMemo(() => getDateRange(period), [period]);
 
@@ -194,15 +198,25 @@ export default function AnalystDashboard() {
 
   useEffect(() => { fetchTasks(); fetchUpcoming(); }, [fetchTasks, fetchUpcoming]);
 
-  /* fetch delays */
+  /* fetch delays + members/departments */
   useEffect(() => {
-    if (!user) return;
+    if (!user || !profile?.company_id) return;
     supabase
       .from("task_delays")
       .select("id,task_id,log_type,created_at")
       .eq("user_id", user.id)
       .then(({ data }) => { if (data) setDelays(data); });
-  }, [user]);
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("company_id", profile.company_id)
+      .then(({ data }) => { if (data) setMembers(data); });
+    supabase
+      .from("departments")
+      .select("*")
+      .eq("company_id", profile.company_id)
+      .then(({ data }) => { if (data) setDepartments(data); });
+  }, [user, profile?.company_id]);
 
   /* period delays filtered */
   const periodDelays = useMemo(() =>
@@ -581,10 +595,19 @@ export default function AnalystDashboard() {
         task={selectedTask}
         open={!!selectedTask}
         onOpenChange={(open) => { if (!open) setSelectedTask(null); }}
-        members={[]}
-        departments={[]}
-        onEdit={() => {}}
+        members={members}
+        departments={departments}
+        onEdit={(t) => { setSelectedTask(null); setEditingTask(t); }}
         onRefresh={() => { fetchTasks(); fetchUpcoming(); }}
+      />
+
+      <TaskForm
+        open={!!editingTask}
+        onOpenChange={(open) => { if (!open) setEditingTask(null); }}
+        editing={editingTask}
+        members={members}
+        departments={departments}
+        onSaved={() => { setEditingTask(null); fetchTasks(); fetchUpcoming(); }}
       />
 
       <PendingTasksAlert
