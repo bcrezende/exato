@@ -203,6 +203,7 @@ export default function AnalystDashboard() {
     pending: allTasks.filter(t => t.status === "pending").length,
     inProgress: allTasks.filter(t => t.status === "in_progress").length,
     completed: allTasks.filter(t => t.status === "completed").length,
+    notDone: allTasks.filter(t => (t.status as string) === "not_done").length,
   }), [allTasks]);
 
   /* status change */
