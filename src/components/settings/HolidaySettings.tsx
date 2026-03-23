@@ -206,6 +206,13 @@ export default function HolidaySettings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ImportBrazilHolidaysDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        existingDates={holidays.map((h) => h.holiday_date)}
+        onImported={fetchHolidays}
+      />
     </Card>
   );
 }
