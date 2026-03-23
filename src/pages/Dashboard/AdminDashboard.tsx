@@ -315,6 +315,8 @@ export default function AdminDashboard() {
         periodTasks={periodTasks}
         periodDelays={periodDelays}
         today={new Date()}
+        onCardClick={handleOverviewCardClick}
+        activeFilter={overviewFilter}
       />
 
       {/* Tabs */}
