@@ -150,6 +150,8 @@ export default function AnalystDashboard() {
   const { definitions } = useRecurrenceDefinitions();
   const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
   const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
+  const [delays, setDelays] = useState<DelayRecord[]>([]);
+  const [overviewFilter, setOverviewFilter] = useState<OverviewFilter | null>(null);
 
   const dateRange = useMemo(() => getDateRange(period), [period]);
 
