@@ -23,6 +23,7 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const [justArrived, setJustArrived] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
