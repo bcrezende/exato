@@ -1,25 +1,30 @@
 
 
-## Sino de notificação mais chamativo
+## Fix: Campo "Recorrência" duplicado no TaskForm
 
-### O que muda
+### Problema
 
-Quando uma notificação nova chega (ou há não-lidas), o sino ganha animações visuais para chamar atenção:
+O formulário tem **dois blocos** que renderizam o seletor de Recorrência:
 
-1. **Animação de balanço (shake/ring)** no ícone do sino quando uma nova notificação chega via realtime
-2. **Pulso no badge** vermelho de contagem para destacar visualmente
-3. **Efeito de glow/ring** ao redor do botão quando há não-lidas
+1. **Linha 328-348** — dentro do bloco `!isAnalyst` → `else` de `isAdmin` (ou seja, exibido para **manager** e **coordinator**)
+2. **Linha 367-387** — exibido para `isAdmin || isCoordinator || isAnalyst`
 
-### Arquivo
+Para o **coordinator**, ambas as condições são verdadeiras, então o campo aparece duas vezes. O mesmo aconteceria se um manager fosse adicionado à segunda condição no futuro.
 
-| Arquivo | Mudança |
-|---|---|
-| `tailwind.config.ts` | Adicionar keyframe `bell-ring` (balanço lateral tipo sino) e `badge-pulse` (escala pulsante) |
-| `src/components/NotificationBell.tsx` | 1) Estado `justArrived` que ativa por 3s quando nova notificação chega via realtime. 2) Classe `animate-bell-ring` no ícone Bell durante `justArrived`. 3) Classe `animate-badge-pulse` permanente no badge de contagem. 4) Ring/glow sutil no botão quando `unreadCount > 0`. |
+### Correção
 
-### Visual esperado
+**Arquivo:** `src/components/tasks/TaskForm.tsx`
 
-- Sino balança por ~3 segundos quando notificação nova chega
-- Badge vermelho pulsa continuamente enquanto há não-lidas
-- Botão tem um leve brilho/anel colorido quando há não-lidas
+- **Linha 328**: Alterar a condição do `else` para mostrar Recorrência apenas para **manager** (que não aparece no segundo bloco):
+  - Trocar de `) : (` para `) : isManager ? (` e fechar com `) : null}`
+  - Isso garante que o primeiro bloco de Recorrência só apareça para managers
+  - O segundo bloco (linha 367) já cobre admin, coordinator e analyst corretamente
+
+### Resultado
+
+Cada role verá o campo Recorrência exatamente **uma vez**:
+- **Admin**: bloco 2 (linhas 367-387)
+- **Manager**: bloco 1 (linhas 328-348), ao lado do Responsável
+- **Coordinator**: bloco 2 (linhas 367-387)
+- **Analyst**: bloco 2 (linhas 367-387)
 
