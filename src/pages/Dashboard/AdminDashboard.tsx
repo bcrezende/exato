@@ -350,12 +350,12 @@ export default function AdminDashboard() {
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                   <TableRow>
                     <TableHead>Título</TableHead>
                     <TableHead>Responsável</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Início</TableHead>
                     <TableHead>Prazo</TableHead>
-                    
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -363,12 +363,13 @@ export default function AdminDashboard() {
                     <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleTaskClick(task)}>
                       <TableCell className="font-medium">{task.title}</TableCell>
                       <TableCell>{getName(task.assigned_to)}</TableCell>
+                      <TableCell className="text-sm">{formatStoredDate(task.start_date, "datetime")}</TableCell>
+                      <TableCell className="text-sm">{formatStoredDate(task.due_date, "datetime")}</TableCell>
                       <TableCell>
                         <Badge className={cn("text-xs", statusColors[task.status])} variant="outline">
                           {statusLabels[task.status] || task.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">{formatStoredDate(task.due_date, "short-date")}</TableCell>
                       
                     </TableRow>
                   ))}
