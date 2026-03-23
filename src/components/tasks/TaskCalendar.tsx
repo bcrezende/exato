@@ -268,8 +268,15 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
     const map = new Map<number, LayoutedTask[]>();
     weekDays.forEach((day, i) => {
       const dayTasks = tasks.filter(t => {
-        const start = toDisplayDate(t.start_date) || toDisplayDate(t.due_date);
-        return start && isSameDay(start, day);
+        const start = toDisplayDate(t.start_date);
+        const end = toDisplayDate(t.due_date);
+        if (start && end) {
+          return isSameDay(start, day) || isSameDay(end, day) ||
+            (day >= new Date(start.toDateString()) && day <= new Date(end.toDateString()));
+        }
+        if (start) return isSameDay(start, day);
+        if (end) return isSameDay(end, day);
+        return false;
       });
       map.set(i, layoutOverlappingTasks(dayTasks));
     });
@@ -340,8 +347,15 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
 
   const layouted = useMemo(() => {
     const dayTasks = tasks.filter(t => {
-      const start = toDisplayDate(t.start_date) || toDisplayDate(t.due_date);
-      return start && isSameDay(start, currentDate);
+      const start = toDisplayDate(t.start_date);
+      const end = toDisplayDate(t.due_date);
+      if (start && end) {
+        return isSameDay(start, currentDate) || isSameDay(end, currentDate) ||
+          (currentDate >= new Date(start.toDateString()) && currentDate <= new Date(end.toDateString()));
+      }
+      if (start) return isSameDay(start, currentDate);
+      if (end) return isSameDay(end, currentDate);
+      return false;
     });
     return layoutOverlappingTasks(dayTasks);
   }, [tasks, currentDate.toDateString()]);
