@@ -1,31 +1,35 @@
 
 
-## Ajustar Dashboards do Manager e Coordinator igual ao Admin
+## Gerar CSV de usuários com UUIDs originais
 
-### O que falta em ambos
+### Problema
 
-Comparando com o Admin, os dashboards do Manager e Coordinator não possuem:
+O CSV gerado anteriormente não incluiu o `id` (UUID) dos usuários. Sem ele, ao importar no novo banco, as foreign keys em `tasks`, `profiles`, `user_roles`, `coordinator_analysts`, `notifications`, etc. quebrariam.
 
-1. **Overview Cards** (6 cards clicáveis: Total, No Prazo, Em Andamento, Início Atrasado, Conclusão Atrasada, Não Concluídas)
-2. **Tabela drill-down** na aba "Visão Geral" ao clicar nos cards
-3. **Fetch de `task_delays`** necessário para calcular início/conclusão atrasada
-4. **Botão Editar funcional** no modal de tarefa (ambos têm `onEdit={() => {}}`)
+### Solução
 
-### Mudanças por arquivo
+Gerar um novo CSV incluindo o UUID original como primeira coluna:
 
-| Arquivo | Mudanças |
-|---|---|
-| `src/pages/Dashboard/ManagerDashboard.tsx` | 1) Importar `AdminOverviewCards`, `TaskForm`, `Table` components. 2) Adicionar states: `delays`, `overviewFilter`, `editingTask`. 3) Fetch `task_delays` junto com os outros dados. 4) Calcular `periodDelays`, `periodEndISO`, `drillDownTasks`. 5) Renderizar `AdminOverviewCards` entre os KPIs e as Tabs. 6) Na aba "Visão Geral", mostrar tabela drill-down quando `overviewFilter` ativo (antes do conteúdo existente). 7) Implementar `onEdit` real + `TaskForm`. |
-| `src/pages/Dashboard/CoordinatorDashboard.tsx` | Mesmas mudanças: 1) Importar `AdminOverviewCards`, `TaskForm`, `Table` components. 2) States: `delays`, `overviewFilter`, `editingTask`. 3) Fetch `task_delays`. 4) Calcular `periodDelays`, `periodEndISO`, `drillDownTasks`. 5) `AdminOverviewCards` entre KPIs e Tabs. 6) Drill-down table na "Visão Geral". 7) `onEdit` real + `TaskForm`. Adicionar aba "Analytics" que o coordinator não tem. |
+```sql
+SELECT 
+  u.id,
+  u.email,
+  p.full_name as nome,
+  ur.role,
+  d.name as departamento,
+  p.department_id,
+  p.company_id,
+  u.encrypted_password
+FROM auth.users u
+LEFT JOIN public.profiles p ON p.id = u.id
+LEFT JOIN public.user_roles ur ON ur.user_id = u.id
+LEFT JOIN public.departments d ON d.id = p.department_id
+ORDER BY p.full_name;
+```
 
-### Detalhes técnicos
+Campos exportados: `id`, `email`, `nome`, `role`, `departamento`, `department_id`, `company_id`, `encrypted_password`
 
-- Reutilizar `AdminOverviewCards` existente (aceita `periodTasks`, `periodDelays`, `periodEndISO`)
-- Fetch delays: `supabase.from("task_delays").select("id, task_id, user_id, log_type, created_at")`
-  - Manager: filtrar por tasks do departamento
-  - Coordinator: filtrar por tasks da equipe
-- `periodEndISO` calculado com `endOfDay(referenceDate).toISOString()`
-- `drillDownTasks` segue a mesma lógica do Admin (switch por `overviewFilter`)
-- Tabela drill-down: Título, Responsável, Início, Prazo, Status (clicável para abrir modal)
-- `TaskForm` com `editing={editingTask}` e `onSaved` que refaz fetch
+Incluir também `department_id` e `company_id` como UUIDs para facilitar a recriação dos vínculos no destino.
+
+Arquivo: `/mnt/documents/usuarios_migracao_v2.csv`
 
