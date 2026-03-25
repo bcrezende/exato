@@ -173,6 +173,17 @@ export default function AdminDashboard() {
     return (overdueTasks.length / total) * 100;
   }, [periodTasks, overdueTasks]);
 
+  const overdueByDepartment = useMemo(() => {
+    const map = new Map<string, number>();
+    overdueTasks.forEach(t => {
+      const deptName = departments.find(d => d.id === t.department_id)?.name || "Sem setor";
+      map.set(deptName, (map.get(deptName) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [overdueTasks, departments]);
+
   const getName = (id: string | null) => (id ? profiles.get(id) || "—" : "Não atribuída");
 
   const handleOverviewCardClick = (filter: OverviewFilter) => {
@@ -309,6 +320,7 @@ export default function AdminDashboard() {
         overdueTasks={overdueTasks.length}
         avgDelayRate={avgDelayRate}
         period={period}
+        overdueByDepartment={overdueByDepartment}
       />
 
       {/* Overview Cards */}
