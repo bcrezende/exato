@@ -489,6 +489,22 @@ export default function Tasks() {
                                             <span className="truncate max-w-[80px]">{getMemberName(task.assigned_to)}</span>
                                           </div>
                                         </div>
+                                        {(timeLogs[task.id]?.started || timeLogs[task.id]?.completed) && (
+                                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                            {timeLogs[task.id]?.started && (
+                                              <span className="flex items-center gap-0.5">
+                                                <Play className="h-2.5 w-2.5 text-primary" />
+                                                {formatLogTime(timeLogs[task.id].started)}
+                                              </span>
+                                            )}
+                                            {timeLogs[task.id]?.completed && (
+                                              <span className="flex items-center gap-0.5">
+                                                <CheckCircle2 className="h-2.5 w-2.5 text-success" />
+                                                {formatLogTime(timeLogs[task.id].completed)}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
                                         {/* Quick actions */}
                                         <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
                                           {role === "analyst" && task.assigned_to === user?.id && (
