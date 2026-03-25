@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, subDays, startOfWeek, startOfMonth, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatStoredDate } from "@/lib/date-utils";
 import { toast } from "sonner";
 import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
@@ -411,10 +412,10 @@ export default function AnalystDashboard() {
                         <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedTask(task)}>
                           <TableCell className="font-medium max-w-[200px] truncate">{task.title}</TableCell>
                           <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                            {task.start_date ? format(new Date(task.start_date), "dd/MM HH:mm") : "—"}
+                            {task.start_date ? formatStoredDate(task.start_date, "datetime") : "—"}
                           </TableCell>
                           <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                            {task.due_date ? format(new Date(task.due_date), "dd/MM HH:mm") : "—"}
+                            {task.due_date ? formatStoredDate(task.due_date, "datetime") : "—"}
                           </TableCell>
                           <TableCell>
                             <Badge variant={sb.variant}>{sb.label}</Badge>
@@ -517,7 +518,7 @@ export default function AnalystDashboard() {
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{t.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {t.start_date ? format(new Date(t.start_date), "EEE, dd/MM", { locale: ptBR }) : "Sem data"}
+                            {t.start_date ? formatStoredDate(t.start_date, "short-date") : "Sem data"}
                           </p>
                         </div>
                         <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />

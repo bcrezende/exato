@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatStoredDate } from "@/lib/date-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -340,10 +341,10 @@ export default function DelayKpiCards({ tasks, selectedDepartment, selectedEmplo
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground">
-                        {format(new Date(d.scheduled_time), "dd/MM HH:mm", { locale: ptBR })}
+                        {formatStoredDate(d.scheduled_time, "datetime")}
                       </TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground">
-                        {format(new Date(d.actual_time), "dd/MM HH:mm", { locale: ptBR })}
+                        {formatStoredDate(d.actual_time, "datetime")}
                       </TableCell>
                     </TableRow>
                   );

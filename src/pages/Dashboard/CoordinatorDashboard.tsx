@@ -375,7 +375,7 @@ export default function CoordinatorDashboard() {
                   </Badge>
                   {task.due_date && (
                     <span className="text-[11px] text-muted-foreground shrink-0">
-                      {format(new Date(task.due_date), "dd/MM")}
+                      {formatStoredDate(task.due_date, "short-date")}
                     </span>
                   )}
                 </div>

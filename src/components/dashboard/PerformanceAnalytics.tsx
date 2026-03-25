@@ -8,6 +8,7 @@ import { Timer, TrendingDown, CheckCircle, AlertTriangle } from "lucide-react";
 import { FormulaTooltip } from "@/components/ui/formula-tooltip";
 import { format, subDays, startOfDay, differenceInMilliseconds } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatStoredDate } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Task = Tables<"tasks">;
@@ -153,7 +154,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
     filteredLogs
       .filter((l) => l.action === "completed")
       .forEach((l) => {
-        const logDate = format(new Date(l.created_at), "yyyy-MM-dd");
+        const logDate = new Date(l.created_at).toISOString().slice(0, 10);
         const day = days.find((d) => d.date === logDate);
         if (day) day.count += 1;
       });
@@ -564,7 +565,7 @@ export default function PerformanceAnalytics({ tasks, timeLogs, departments, sel
                   <TableCell className="font-medium">{t.title}</TableCell>
                   <TableCell>{t.assignedTo ? profileNameMap.get(t.assignedTo) || "—" : "Não atribuída"}</TableCell>
                   <TableCell>{t.deptId ? deptNameMap.get(t.deptId) || "—" : "Sem setor"}</TableCell>
-                  <TableCell className="text-right">{format(new Date(t.completedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
+                  <TableCell className="text-right">{formatStoredDate(t.completedAt, "datetime")}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
