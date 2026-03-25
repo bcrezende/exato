@@ -255,13 +255,13 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
             {startedAt && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Play className="h-4 w-4 shrink-0 text-primary" />
-                <span>Iniciou: <span className="text-foreground font-medium">{format(new Date(startedAt), "dd/MM HH:mm")}</span></span>
+                <span>Iniciou: <span className="text-foreground font-medium">{(() => { const d = new Date(startedAt); return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; })()}</span></span>
               </div>
             )}
             {completedAt && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
-                <span>Concluiu: <span className="text-foreground font-medium">{format(new Date(completedAt), "dd/MM HH:mm")}</span></span>
+                <span>Concluiu: <span className="text-foreground font-medium">{(() => { const d = new Date(completedAt); return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; })()}</span></span>
               </div>
             )}
             {executionTime && (
