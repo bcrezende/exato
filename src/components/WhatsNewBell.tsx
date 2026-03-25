@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,11 +9,11 @@ export function WhatsNewBell() {
   const { user, profile } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const hasAutoOpened = useRef(false);
 
   const fetchUnread = async () => {
     if (!user || !profile?.company_id) return;
 
-    // Get read entry IDs
     const { data: reads } = await supabase
       .from("changelog_reads")
       .select("changelog_id")
@@ -21,7 +21,6 @@ export function WhatsNewBell() {
 
     const readIds = (reads || []).map((r: any) => r.changelog_id);
 
-    // Count entries not in read list
     let query = supabase
       .from("changelog_entries")
       .select("id", { count: "exact", head: true })
@@ -48,6 +47,20 @@ export function WhatsNewBell() {
     return () => { supabase.removeChannel(channel); };
   }, [user, profile?.company_id]);
 
+  // Auto-open modal once per session if there are unread items and user hasn't dismissed
+  useEffect(() => {
+    if (unreadCount > 0 && !profile?.dismiss_whats_new && !hasAutoOpened.current) {
+      hasAutoOpened.current = true;
+      setOpen(true);
+    }
+  }, [unreadCount, profile?.dismiss_whats_new]);
+
+  const handleDismissForever = async () => {
+    if (!user) return;
+    await supabase.from("profiles").update({ dismiss_whats_new: true }).eq("id", user.id);
+    setOpen(false);
+  };
+
   return (
     <>
       <Button
@@ -70,6 +83,7 @@ export function WhatsNewBell() {
           setOpen(v);
           if (!v) fetchUnread();
         }}
+        onDismissForever={handleDismissForever}
       />
     </>
   );
