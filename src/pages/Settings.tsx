@@ -129,6 +129,14 @@ export default function Settings() {
                 <TooltipContent>Feriados</TooltipContent>
               </Tooltip>
             )}
+            {role === "admin" && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="whatsnew"><Sparkles className="h-4 w-4" /></TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Novidades</TooltipContent>
+              </Tooltip>
+            )}
           </TabsList>
 
           <TabsContent value="profile">
@@ -248,6 +256,12 @@ export default function Settings() {
           {role === "admin" && (
             <TabsContent value="holidays">
               <HolidaySettings />
+            </TabsContent>
+          )}
+
+          {role === "admin" && (
+            <TabsContent value="whatsnew">
+              <WhatsNewAdmin />
             </TabsContent>
           )}
         </Tabs>
