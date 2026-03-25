@@ -104,6 +104,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
   const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
   const [showNotDone, setShowNotDone] = useState(false);
+  const [hasNextInstance, setHasNextInstance] = useState(true);
   const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
 
   useEffect(() => {
