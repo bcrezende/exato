@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, addMonths, subMonths, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toDisplayDate, formatStoredDate } from "@/lib/date-utils";
@@ -235,9 +235,10 @@ function MonthView({ currentDate, tasks, onTaskClick, onDayClick }: { currentDat
                     <div
                       key={t.id}
                       onClick={(e) => { e.stopPropagation(); onTaskClick(t); }}
-                      className={`truncate rounded px-1 py-0.5 text-[10px] font-medium border cursor-pointer ${c.bg} ${c.border} ${c.text}`}
+                     className={`truncate rounded px-1 py-0.5 text-[10px] font-medium border cursor-pointer flex items-center gap-0.5 ${c.bg} ${c.border} ${c.text}`}
                     >
-                      {t.title}
+                      <span className="truncate">{t.title}</span>
+                      {t.justification && <AlertTriangle className="h-2.5 w-2.5 text-amber-500 shrink-0" />}
                     </div>
                   );
                 })}
@@ -321,9 +322,14 @@ function WeekView({ currentDate, tasks, onTaskClick }: { currentDate: Date; task
                   <div
                     key={lt.task.id}
                     onClick={() => onTaskClick(lt.task)}
-                    className={`absolute rounded-lg shadow-sm border px-1 py-0.5 text-[11px] font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
+                   className={`absolute rounded-lg shadow-sm border px-1 py-0.5 text-[11px] font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
                     style={{ top: `${topPx}px`, height: `${heightPx}px`, width: w, left: l }}
                   >
+                    {lt.task.justification && (
+                      <div className="absolute top-0.5 right-0.5">
+                        <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
+                      </div>
+                    )}
                     <div className="truncate">{lt.task.title}</div>
                     {heightPx > 30 && lt.task.start_date && (
                       <div className="text-[10px] opacity-70">{formatStoredDate(lt.task.start_date, "time")} - {lt.task.due_date ? formatStoredDate(lt.task.due_date, "time") : ""}</div>
@@ -382,9 +388,14 @@ function DayView({ currentDate, tasks, onTaskClick }: { currentDate: Date; tasks
               <div
                 key={lt.task.id}
                 onClick={() => onTaskClick(lt.task)}
-                className={`absolute rounded-lg shadow-sm border px-2 py-1 text-xs font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
+                   className={`absolute rounded-lg shadow-sm border px-2 py-1 text-xs font-medium cursor-pointer overflow-hidden z-[1] ${c.bg} ${c.border} ${c.text}`}
                 style={{ top: `${topPx}px`, height: `${heightPx}px`, width: w, left: l }}
               >
+                {lt.task.justification && (
+                  <div className="absolute top-0.5 right-0.5">
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  </div>
+                )}
                 <div className="truncate font-semibold">{lt.task.title}</div>
                 {lt.task.start_date && heightPx > 30 && (
                   <div className="text-[10px] opacity-70">{formatStoredDate(lt.task.start_date, "time")} - {lt.task.due_date ? formatStoredDate(lt.task.due_date, "time") : ""}</div>
