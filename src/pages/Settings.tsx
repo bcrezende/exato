@@ -12,10 +12,11 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, RefreshCw, CalendarDays, Save, Sun, Moon, Monitor } from "lucide-react";
+import { User, Building, RefreshCw, CalendarDays, Save, Sun, Moon, Monitor, Sparkles } from "lucide-react";
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
 import HolidaySettings from "@/components/settings/HolidaySettings";
 import AvatarUpload from "@/components/settings/AvatarUpload";
+import WhatsNewAdmin from "@/components/settings/WhatsNewAdmin";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -126,6 +127,14 @@ export default function Settings() {
                   <TabsTrigger value="holidays"><CalendarDays className="h-4 w-4" /></TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent>Feriados</TooltipContent>
+              </Tooltip>
+            )}
+            {role === "admin" && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="whatsnew"><Sparkles className="h-4 w-4" /></TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Novidades</TooltipContent>
               </Tooltip>
             )}
           </TabsList>
@@ -247,6 +256,12 @@ export default function Settings() {
           {role === "admin" && (
             <TabsContent value="holidays">
               <HolidaySettings />
+            </TabsContent>
+          )}
+
+          {role === "admin" && (
+            <TabsContent value="whatsnew">
+              <WhatsNewAdmin />
             </TabsContent>
           )}
         </Tabs>
