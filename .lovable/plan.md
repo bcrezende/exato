@@ -1,35 +1,38 @@
 
 
-## Gerar CSV de usuários com UUIDs originais
+## Corrigir divergência de -3 horas nos dashboards
 
-### Problema
+### Causa raiz
 
-O CSV gerado anteriormente não incluiu o `id` (UUID) dos usuários. Sem ele, ao importar no novo banco, as foreign keys em `tasks`, `profiles`, `user_roles`, `coordinator_analysts`, `notifications`, etc. quebrariam.
+As datas são armazenadas como "fake UTC" (09:00 salvo como `09:00:00+00:00`). O sistema possui `formatStoredDate()` que lê componentes UTC corretamente. Porém, em vários locais dos dashboards, é usado `format(new Date(...), "dd/MM HH:mm")` do **date-fns**, que converte para horário local (UTC-3 no Brasil), resultando em 09:00 exibido como 06:00.
+
+### Locais com o bug
+
+| Arquivo | Linha(s) | Uso incorreto |
+|---|---|---|
+| `AnalystDashboard.tsx` | 414, 417 | `format(new Date(task.start_date), "dd/MM HH:mm")` nas tabelas |
+| `AnalystDashboard.tsx` | 520 | `format(new Date(t.start_date), "EEE, dd/MM")` nos cards upcoming |
+| `DelayKpiCards.tsx` | 343, 346 | `format(new Date(d.scheduled_time), "dd/MM HH:mm")` e `actual_time` |
+| `PerformanceAnalytics.tsx` | 156 | `format(new Date(l.created_at), "yyyy-MM-dd")` para agrupar logs por dia |
+| `PerformanceAnalytics.tsx` | 567 | `format(new Date(t.completedAt), "dd/MM/yyyy HH:mm")` na tabela de concluídas |
+| `CoordinatorDashboard.tsx` | 378 | `format(new Date(task.due_date), "dd/MM")` nos cards de analista |
+
+### Locais corretos (não precisam de mudança)
+
+- `formatTime()` em `AnalystDashboard.tsx` e `MyDayView.tsx` — usam `getUTCHours()` ✓
+- Drill-down tables nos 3 dashboards Admin/Manager/Coordinator — usam `formatStoredDate()` ✓
+- `DashboardHeader.tsx` — formata `new Date()` (data atual, não do banco) ✓
 
 ### Solução
 
-Gerar um novo CSV incluindo o UUID original como primeira coluna:
+Substituir todas as chamadas `format(new Date(isoStr), ...)` que formatam datas vindas do banco por `formatStoredDate()` de `@/lib/date-utils.ts`.
 
-```sql
-SELECT 
-  u.id,
-  u.email,
-  p.full_name as nome,
-  ur.role,
-  d.name as departamento,
-  p.department_id,
-  p.company_id,
-  u.encrypted_password
-FROM auth.users u
-LEFT JOIN public.profiles p ON p.id = u.id
-LEFT JOIN public.user_roles ur ON ur.user_id = u.id
-LEFT JOIN public.departments d ON d.id = p.department_id
-ORDER BY p.full_name;
-```
+| Arquivo | Mudança |
+|---|---|
+| `AnalystDashboard.tsx` | Linhas 414, 417: trocar por `formatStoredDate(task.start_date, "datetime")` e `formatStoredDate(task.due_date, "datetime")`. Usar formato `"short-date"` na linha 520. |
+| `DelayKpiCards.tsx` | Linhas 343, 346: trocar por `formatStoredDate(d.scheduled_time, "datetime")` e `formatStoredDate(d.actual_time, "datetime")` |
+| `PerformanceAnalytics.tsx` | Linha 156: usar componentes UTC para extrair a data (`new Date(l.created_at).toISOString().slice(0,10)`). Linha 567: trocar por `formatStoredDate(t.completedAt, "datetime")` |
+| `CoordinatorDashboard.tsx` | Linha 378: trocar por `formatStoredDate(task.due_date, "short-date")` |
 
-Campos exportados: `id`, `email`, `nome`, `role`, `departamento`, `department_id`, `company_id`, `encrypted_password`
-
-Incluir também `department_id` e `company_id` como UUIDs para facilitar a recriação dos vínculos no destino.
-
-Arquivo: `/mnt/documents/usuarios_migracao_v2.csv`
+Nenhuma tabela ou migração necessária — é puramente uma correção de formatação no frontend.
 
