@@ -1,58 +1,53 @@
 
 
-## Corrigir card "Não Concluídas" contando tarefas cujo prazo ainda não venceu
+## Adicionar indicador de justificativa nas tarefas
 
-### Causa raiz
+### O que será feito
 
-A tarefa "PLANILHA DE RECUSA" (due_date: 25/03 17:15, status: pending) aparece como "Não Concluída" porque a lógica compara `due_date < periodEndISO`, onde `periodEndISO` é o final do dia (23:59:59). Como 17:15 < 23:59, a tarefa é incluída, mesmo que o prazo ainda não tenha passado.
+Adicionar um pequeno ícone/badge chamativo no canto superior direito dos cards de tarefa que possuem o campo `justification` preenchido, nas três visualizações: Kanban, Lista e Calendário.
 
-O filtro deveria usar o **momento atual** como corte (não o fim do período), pois uma tarefa só é "não concluída" se seu prazo **já passou**.
+### Mudanças
 
-### Correção
+**1. `src/pages/Tasks.tsx`**
 
-Nos dois locais (AdminOverviewCards e drillDownTasks no AdminDashboard), trocar a referência de corte:
+- **Kanban**: No card (dentro de `<CardContent>`), adicionar um ícone `AlertTriangle` (ou `MessageSquareWarning`) amarelo/laranja posicionado `absolute top-1 right-1` quando `task.justification` existir. Envolver `<Card>` com `relative` para posicionamento.
+- **Lista**: Adicionar uma coluna "Just." ou inserir um ícone ao lado do título da tarefa quando houver justificativa. Opção mais limpa: colocar o ícone inline ao lado do título.
 
-- Para o período "hoje": usar `nowAsFakeUTC()` em vez de `periodEndISO`
-- Para períodos passados (ontem, semana passada, etc.): `periodEndISO` já está correto
+**2. `src/components/tasks/TaskCalendar.tsx`**
 
-A lógica final: `due_date < min(periodEndISO, nowAsFakeUTC())`
+- **MonthView**: No mini-card de tarefa do dia, adicionar um pequeno dot/ícone quando `t.justification` existir.
+- **WeekView / DayView**: Nos cards de tarefa posicionados no grid horário, adicionar o mesmo ícone `absolute top-0.5 right-0.5`.
+
+### Detalhes técnicos
+
+Ícone escolhido: `AlertTriangle` do lucide-react, tamanho pequeno (h-3 w-3), cor `text-amber-500`, com tooltip "Possui justificativa".
+
+**Kanban** — envolver Card com `relative`, adicionar:
+```tsx
+{task.justification && (
+  <div className="absolute -top-1 -right-1 bg-amber-100 border border-amber-300 rounded-full p-0.5 z-10" title="Possui justificativa">
+    <AlertTriangle className="h-3 w-3 text-amber-600" />
+  </div>
+)}
+```
+
+**Lista** — adicionar ícone inline ao lado do título:
+```tsx
+<div className="flex items-center gap-1 truncate max-w-[300px]">
+  {task.title}
+  {task.justification && <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" title="Possui justificativa" />}
+</div>
+```
+
+**Calendário (Month/Week/Day)** — adicionar nos cards de tarefa:
+```tsx
+{t.justification && <AlertTriangle className="h-2.5 w-2.5 text-amber-500 inline ml-0.5 shrink-0" />}
+```
 
 ### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `AdminOverviewCards.tsx` | Adicionar prop `nowISO` e usar `Math.min` entre `periodEndISO` e `nowISO` no filtro `notCompleted` |
-| `AdminDashboard.tsx` | Calcular `nowISO = nowAsFakeUTC()` e passar para `AdminOverviewCards` e usar no `drillDownTasks` case `notCompleted` |
-
-### Detalhes técnicos
-
-**AdminOverviewCards.tsx** — nova prop e filtro corrigido:
-```typescript
-interface AdminOverviewCardsProps {
-  // ...existing props
-  nowISO: string; // novo
-}
-
-// No cálculo de notCompleted:
-const cutoff = nowISO < periodEndISO ? nowISO : periodEndISO;
-const notCompleted = periodTasks.filter(
-  t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff
-).length;
-```
-
-**AdminDashboard.tsx** — passar nowISO e corrigir drillDown:
-```typescript
-import { nowAsFakeUTC } from "@/lib/date-utils";
-
-const nowISO = nowAsFakeUTC();
-
-// No AdminOverviewCards:
-<AdminOverviewCards ... nowISO={nowISO} />
-
-// No drillDownTasks case "notCompleted":
-const cutoff = nowISO < cutoffISO ? nowISO : cutoffISO;
-return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff);
-```
-
-Nenhuma migração necessária.
+| `src/pages/Tasks.tsx` | Badge no kanban card + ícone na lista |
+| `src/components/tasks/TaskCalendar.tsx` | Ícone nos cards do mês, semana e dia |
 
