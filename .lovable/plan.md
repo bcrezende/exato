@@ -1,62 +1,41 @@
 
 
-## Dividir card "Atrasadas" por setor no AdminDashboard
+## Botão "Gerar próxima recorrência" na tarefa concluída
 
 ### O que será feito
 
-O card "Atrasadas Hoje/Ontem/Período" no `AdminKpiCards` passará a exibir, além do total, uma lista compacta mostrando a quantidade de tarefas atrasadas por setor (departamento). O card terá o número total em destaque e abaixo uma mini-lista com o nome do setor e a contagem.
+Quando uma tarefa recorrente está com status `completed` e **não existe** uma próxima instância já gerada, exibir um botão "Gerar próxima" no `TaskDetailModal`. Isso permite que o usuário que recusou a geração automática possa fazê-lo depois.
+
+### Lógica
+
+1. No `TaskDetailModal`, quando a tarefa está `completed` e é recorrente, verificar se já existe uma tarefa filha com `recurrence_parent_id` apontando para o mesmo parent e `due_date` maior que a tarefa atual
+2. Se **não existe** próxima instância → mostrar botão "Gerar próxima recorrência"
+3. Ao clicar, abrir o `RecurrenceConfirmDialog` já existente e, ao confirmar, chamar `generateNextRecurrence`
 
 ### Mudanças
 
-**1. `src/pages/Dashboard/AdminDashboard.tsx`**
-- Calcular um objeto `overdueByDepartment` (array de `{ name: string, count: number }`) agrupando `overdueTasks` por `department_id` e mapeando para o nome do departamento
-- Passar esse array como nova prop `overdueByDepartment` ao `AdminKpiCards`
+**`src/components/tasks/TaskDetailModal.tsx`**
+- Adicionar um `useEffect` que, quando a tarefa é recorrente e `completed`, consulta se já existe próxima instância via query: `tasks` where `recurrence_parent_id = parentId` and `due_date > task.due_date` and `status != not_done`
+- Guardar resultado em state `hasNextInstance` (boolean)
+- No bloco onde mostra `Badge "Concluída"`, adicionar abaixo um botão `CalendarPlus` + "Gerar próxima" quando `isRecurring && !hasNextInstance`
+- O botão abre o `RecurrenceConfirmDialog` já existente (reutiliza a mesma lógica de `pendingRecurrence`)
 
-**2. `src/components/dashboard/admin/AdminKpiCards.tsx`**
-- Adicionar prop `overdueByDepartment: { name: string; count: number }[]`
-- Substituir o card "Atrasadas" por um card especial que mostra:
-  - O total de atrasadas em destaque (texto grande)
-  - Abaixo, uma mini-lista scrollável (max 3-4 itens visíveis) com cada setor e sua contagem, usando badges ou texto compacto
-  - Setores ordenados por quantidade de atrasos (maior primeiro)
-
-### Visual proposto
+### Visual
 
 ```text
-┌─────────────────────┐
-│ ⚠  17               │
-│ Atrasadas Hoje      │
-│ ─────────────────── │
-│ Financeiro      8   │
-│ Comercial       5   │
-│ RH              4   │
-└─────────────────────┘
+┌──────────────────────┐
+│ ✅ Concluída         │
+│ Para alterar, ...    │
+│                      │
+│ [📅 Gerar próxima]   │  ← novo botão, só aparece se não há próxima
+└──────────────────────┘
 ```
-
-### Detalhes técnicos
-
-**AdminDashboard — cálculo:**
-```typescript
-const overdueByDepartment = useMemo(() => {
-  const map = new Map<string, number>();
-  overdueTasks.forEach(t => {
-    const deptName = departments.find(d => d.id === t.department_id)?.name || "Sem setor";
-    map.set(deptName, (map.get(deptName) || 0) + 1);
-  });
-  return Array.from(map.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count);
-}, [overdueTasks, departments]);
-```
-
-**AdminKpiCards — card especial para atrasadas:**
-- Os 3 primeiros cards continuam iguais (Setores Ativos, Total de Tarefas, % Atraso Médio)
-- O card "Atrasadas" renderiza com layout expandido: ícone + total no topo, separador, lista de setores abaixo com `max-h-[80px] overflow-y-auto` e texto `text-xs`
-- Cada linha do setor: nome truncado à esquerda, contagem à direita com badge pequeno
 
 ### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Dashboard/AdminDashboard.tsx` | Calcular e passar `overdueByDepartment` |
-| `src/components/dashboard/admin/AdminKpiCards.tsx` | Receber prop e renderizar breakdown por setor no card |
+| `src/components/tasks/TaskDetailModal.tsx` | Query de verificação + botão condicional |
+
+Nenhuma mudança de banco necessária — apenas lógica de frontend.
 
