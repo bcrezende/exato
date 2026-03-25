@@ -607,7 +607,7 @@ export default function Tasks() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-1 truncate max-w-[300px]">
                         {task.title}
-                        {task.justification && <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" title="Possui justificativa" />}
+                        {task.justification && <span title="Possui justificativa"><AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" /></span>}
                       </div>
                       {task.description && <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">{task.description}</p>}
                     </TableCell>
