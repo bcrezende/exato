@@ -665,7 +665,7 @@ export default function Tasks() {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                     Nenhuma tarefa encontrada
                   </TableCell>
                 </TableRow>
