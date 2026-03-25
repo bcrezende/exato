@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Building2, CalendarIcon, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Filter } from "lucide-react";
+import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Building2, CalendarIcon, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Filter, Play, CheckCircle2 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -35,6 +35,14 @@ type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
+function formatLogTime(isoStr?: string): string {
+  if (!isoStr) return "—";
+  const d = new Date(isoStr);
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada", not_done: "Não Feita" };
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -50,6 +58,7 @@ export default function Tasks() {
   const { definitions, getLabelsMap, getLabel } = useRecurrenceDefinitions();
   const recurrenceLabels = getLabelsMap();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [timeLogs, setTimeLogs] = useState<Record<string, { started?: string; completed?: string }>>({});
   const [members, setMembers] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "calendar">("kanban");
@@ -90,11 +99,36 @@ export default function Tasks() {
 
   const TASK_COLS = "id,title,status,priority,due_date,start_date,assigned_to,department_id,recurrence_type,estimated_minutes,created_by,created_at,recurrence_parent_id,justification,difficulty_rating,updated_at,description,company_id" as const;
 
+  const fetchTimeLogs = async (taskIds: string[]) => {
+    if (taskIds.length === 0) { setTimeLogs({}); return; }
+    const { data } = await supabase
+      .from("task_time_logs")
+      .select("task_id, action, created_at")
+      .in("task_id", taskIds)
+      .in("action", ["started", "started_late", "completed"])
+      .order("created_at", { ascending: true });
+    if (!data) return;
+    const map: Record<string, { started?: string; completed?: string }> = {};
+    for (const log of data) {
+      if (!map[log.task_id]) map[log.task_id] = {};
+      if ((log.action === "started" || log.action === "started_late") && !map[log.task_id].started) {
+        map[log.task_id].started = log.created_at;
+      }
+      if (log.action === "completed") {
+        map[log.task_id].completed = log.created_at;
+      }
+    }
+    setTimeLogs(map);
+  };
+
   const fetchTasks = async () => {
     let query = supabase.from("tasks").select(TASK_COLS).order("created_at", { ascending: false });
     if (role === "analyst" && user) query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
     const { data } = await query;
-    if (data) setTasks(data as unknown as Task[]);
+    if (data) {
+      setTasks(data as unknown as Task[]);
+      fetchTimeLogs(data.map(t => t.id));
+    }
     setLoading(false);
   };
 
@@ -455,6 +489,22 @@ export default function Tasks() {
                                             <span className="truncate max-w-[80px]">{getMemberName(task.assigned_to)}</span>
                                           </div>
                                         </div>
+                                        {(timeLogs[task.id]?.started || timeLogs[task.id]?.completed) && (
+                                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                            {timeLogs[task.id]?.started && (
+                                              <span className="flex items-center gap-0.5">
+                                                <Play className="h-2.5 w-2.5 text-primary" />
+                                                {formatLogTime(timeLogs[task.id].started)}
+                                              </span>
+                                            )}
+                                            {timeLogs[task.id]?.completed && (
+                                              <span className="flex items-center gap-0.5">
+                                                <CheckCircle2 className="h-2.5 w-2.5 text-success" />
+                                                {formatLogTime(timeLogs[task.id].completed)}
+                                              </span>
+                                            )}
+                                          </div>
+                                        )}
                                         {/* Quick actions */}
                                         <div className="flex items-center gap-1 pt-1 border-t" onClick={(e) => e.stopPropagation()}>
                                           {role === "analyst" && task.assigned_to === user?.id && (
@@ -533,6 +583,12 @@ export default function Tasks() {
                 <TableHead className="min-w-[150px] cursor-pointer select-none" onClick={() => toggleSort("due_date")}>
                   <span className="flex items-center">Término <SortIcon column="due_date" /></span>
                 </TableHead>
+                <TableHead className="min-w-[80px]">
+                  <span className="flex items-center gap-1"><Play className="h-3 w-3" /> Iniciou</span>
+                </TableHead>
+                <TableHead className="min-w-[80px]">
+                  <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Concluiu</span>
+                </TableHead>
                 <TableHead className="min-w-[120px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -565,6 +621,22 @@ export default function Tasks() {
                     <TableCell className="text-xs text-muted-foreground">
                       {formatStoredDate(task.due_date)}
                     </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {timeLogs[task.id]?.started ? (
+                        <span className="flex items-center gap-1">
+                          <Play className="h-3 w-3 text-primary" />
+                          {formatLogTime(timeLogs[task.id].started)}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {timeLogs[task.id]?.completed ? (
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3 text-success" />
+                          {formatLogTime(timeLogs[task.id].completed)}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {(role === "analyst" && task.assigned_to === user?.id) && (
@@ -593,7 +665,7 @@ export default function Tasks() {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                     Nenhuma tarefa encontrada
                   </TableCell>
                 </TableRow>

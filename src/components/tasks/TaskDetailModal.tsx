@@ -11,7 +11,7 @@ import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
-import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText, XCircle } from "lucide-react";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText, XCircle, Play, CheckCircle2 } from "lucide-react";
 import NotDoneActionModal from "@/components/tasks/NotDoneActionModal";
 import { markTaskAsNotDone, generateNextRecurrence as genNext } from "@/lib/task-utils";
 import TaskAttachments from "@/components/tasks/TaskAttachments";
@@ -99,6 +99,8 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const isCreator = localTask?.created_by === user?.id;
   const isAssigned = localTask?.assigned_to === user?.id;
   const [executionTime, setExecutionTime] = useState<string | null>(null);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
   const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
   const [showNotDone, setShowNotDone] = useState(false);
@@ -109,17 +111,19 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   }, [task]);
 
   useEffect(() => {
-    if (!localTask || !open) { setExecutionTime(null); return; }
+    if (!localTask || !open) { setExecutionTime(null); setStartedAt(null); setCompletedAt(null); return; }
     const fetchLogs = async () => {
       const { data } = await supabase
         .from("task_time_logs")
         .select("action, created_at")
         .eq("task_id", localTask.id)
         .order("created_at", { ascending: true });
-      if (!data || data.length === 0) { setExecutionTime(null); return; }
+      if (!data || data.length === 0) { setExecutionTime(null); setStartedAt(null); setCompletedAt(null); return; }
       const started = data.find(l => l.action === "started" || l.action === "started_late");
       const completed = data.find(l => l.action === "completed");
       const lateTag = started?.action === "started_late" ? " (iniciada com atraso)" : "";
+      setStartedAt(started?.created_at || null);
+      setCompletedAt(completed?.created_at || null);
       if (started && completed) {
         const diff = new Date(completed.created_at).getTime() - new Date(started.created_at).getTime();
         setExecutionTime(formatDuration(diff) + lateTag);
@@ -246,6 +250,18 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Hourglass className="h-4 w-4 shrink-0" />
                 <span>Estimativa: <span className="text-foreground font-medium">{extTask.estimated_minutes}min</span></span>
+              </div>
+            )}
+            {startedAt && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Play className="h-4 w-4 shrink-0 text-primary" />
+                <span>Iniciou: <span className="text-foreground font-medium">{(() => { const d = new Date(startedAt); return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; })()}</span></span>
+              </div>
+            )}
+            {completedAt && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                <span>Concluiu: <span className="text-foreground font-medium">{(() => { const d = new Date(completedAt); return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; })()}</span></span>
               </div>
             )}
             {executionTime && (
