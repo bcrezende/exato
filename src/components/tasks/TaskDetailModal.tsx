@@ -11,7 +11,7 @@ import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
-import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText, XCircle, Play, CheckCircle2 } from "lucide-react";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText, XCircle, Play, CheckCircle2, CalendarPlus } from "lucide-react";
 import NotDoneActionModal from "@/components/tasks/NotDoneActionModal";
 import { markTaskAsNotDone, generateNextRecurrence as genNext } from "@/lib/task-utils";
 import TaskAttachments from "@/components/tasks/TaskAttachments";
