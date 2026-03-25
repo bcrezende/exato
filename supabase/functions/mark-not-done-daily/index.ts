@@ -26,12 +26,19 @@ Deno.serve(async (req) => {
     let totalMarked = 0;
 
     for (const company of companies || []) {
-      // Calculate "now" in the company's timezone by getting the current date
-      // We use a simple approach: current UTC time is the cutoff
-      const now = new Date();
-      const todayStart = new Date(
-        Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
-      );
+      // Calculate "today" in the company's timezone
+      // Since dates are stored as "fake UTC" (local time with +00:00),
+      // we need to find what "today" is in the company's timezone
+      // and compare against the date portion of due_date.
+      const tz = company.timezone || "America/Sao_Paulo";
+      const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: tz,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const todayStr = formatter.format(new Date()); // "2026-03-25"
+      const todayStart = `${todayStr}T00:00:00+00:00`;
 
       // Find pending/in_progress tasks with due_date before today
       const { data: tasksToMark, error: fetchErr } = await supabase
@@ -40,7 +47,7 @@ Deno.serve(async (req) => {
         .eq("company_id", company.id)
         .in("status", ["pending", "in_progress"])
         .not("due_date", "is", null)
-        .lt("due_date", todayStart.toISOString());
+        .lt("due_date", todayStart);
 
       if (fetchErr) {
         console.error(`Error fetching tasks for company ${company.id}:`, fetchErr);

@@ -187,7 +187,7 @@ export default function CoordinatorDashboard() {
       const dueDay = t.due_date?.split("T")[0];
       const startDay = t.start_date?.split("T")[0];
       const isInProgress = t.status === "in_progress";
-      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowFake));
+      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date.split("T")[0] < referenceDateStr));
 
       if (isOverdue && !isCompleted) { overdue.push(t); return; }
       if (isInProgress) { todayList.push(t); return; }
@@ -209,13 +209,13 @@ export default function CoordinatorDashboard() {
   const myTasks = useMemo(() => tasks.filter(t => t.assigned_to === user?.id), [tasks, user?.id]);
   const myCompleted = myTasks.filter(t => t.status === "completed").length;
   const myInProgress = myTasks.filter(t => t.status === "in_progress").length;
-  const myOverdue = myTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && t.due_date < nowAsFakeUTC())).length;
+  const myOverdue = myTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && t.due_date.split("T")[0] < referenceDateStr)).length;
   const myProgress = myTasks.length > 0 ? Math.round((myCompleted / myTasks.length) * 100) : 0;
 
   const teamProductivity = useMemo(() => {
     const total = periodTasks.length;
     if (total === 0) return 100;
-    const overdue = periodTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && new Date(t.due_date) < new Date())).length;
+    const overdue = periodTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && t.due_date.split("T")[0] < referenceDateStr)).length;
     return Math.round(((total - overdue) / total) * 100);
   }, [periodTasks]);
 
@@ -223,7 +223,7 @@ export default function CoordinatorDashboard() {
     return analystProfiles.map(p => {
       const pTasks = tasks.filter(t => t.assigned_to === p.id);
       const inProgress = pTasks.filter(t => t.status === "in_progress").length;
-      const overdue = pTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && t.due_date < nowAsFakeUTC())).length;
+      const overdue = pTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && t.due_date.split("T")[0] < referenceDateStr)).length;
       const pending = pTasks.filter(t => t.status === "pending").length;
       const completed = pTasks.filter(t => t.status === "completed").length;
       const activity: "active" | "idle" | "inactive" = inProgress > 0 ? "active" : (pending > 0 || overdue > 0) ? "idle" : "inactive";

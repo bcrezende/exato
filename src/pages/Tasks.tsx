@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
-import { toDisplayDate, formatStoredDate, getTodayRange, nowAsFakeUTC } from "@/lib/date-utils";
+import { toDisplayDate, formatStoredDate, getTodayRange, nowAsFakeUTC, todayDateStr } from "@/lib/date-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
@@ -260,7 +260,7 @@ export default function Tasks() {
     const task = tasks.find((t) => t.id === draggableId);
     if (!task) return;
     if (role === "analyst" && task.assigned_to !== user?.id) return;
-    const currentEffective = task.status === "pending" && task.due_date && task.due_date < nowAsFakeUTC() ? "overdue" : task.status;
+    const currentEffective = task.status === "pending" && task.due_date && task.due_date.split("T")[0] < todayDateStr() ? "overdue" : task.status;
     if (newStatus === currentEffective) return;
     await handleStatusChange(draggableId, newStatus);
   }, [tasks, role, user?.id, handleStatusChange]);
@@ -399,8 +399,8 @@ export default function Tasks() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5 stagger-fade-in">
             {kanbanColumns.map((status) => {
               const columnTasks = filtered.filter((t) => {
-                if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending");
-                if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < nowAsFakeUTC());
+                if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date.split("T")[0] < todayDateStr() && t.status === "pending");
+                if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date.split("T")[0] < todayDateStr());
                 if (status === "in_progress") return t.status === "in_progress";
                 return t.status === status;
               });
