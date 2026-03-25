@@ -252,6 +252,18 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                 <span>Estimativa: <span className="text-foreground font-medium">{extTask.estimated_minutes}min</span></span>
               </div>
             )}
+            {startedAt && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Play className="h-4 w-4 shrink-0 text-primary" />
+                <span>Iniciou: <span className="text-foreground font-medium">{format(new Date(startedAt), "dd/MM HH:mm")}</span></span>
+              </div>
+            )}
+            {completedAt && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                <span>Concluiu: <span className="text-foreground font-medium">{format(new Date(completedAt), "dd/MM HH:mm")}</span></span>
+              </div>
+            )}
             {executionTime && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Timer className="h-4 w-4 shrink-0" />
