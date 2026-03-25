@@ -1,90 +1,79 @@
 
 
-## Sistema de Novidades e Changelog
+## Modal automático de novidades com "Lido" e "Não mostrar mais"
 
-### Conceito
+### O que será feito
 
-Um sistema "What's New" onde o admin pode publicar avisos de novidades/mudanças para todos os usuários da empresa. Os usuários veem um indicador no header e um modal/painel com as novidades não lidas.
+Quando o usuário faz login ou acessa a aplicação e existem novidades não lidas, um modal aparece automaticamente. Cada novidade terá um botão "Marcar como lido" individual, e o modal terá um botão "Não mostrar mais" que suprime o popup automático (o usuário ainda pode ver novidades clicando no ícone Sparkles).
 
-### Arquitetura
+### Mudanças
 
-**Nova tabela `changelog_entries`** — armazena as novidades publicadas pelo admin:
-- `id`, `company_id`, `title`, `content` (texto markdown/plain), `category` (enum: `feature`, `improvement`, `fix`, `announcement`), `created_by`, `created_at`
+**1. Coluna `dismiss_whats_new` na tabela `profiles`** (migração SQL)
+- Adicionar `dismiss_whats_new boolean NOT NULL DEFAULT false`
+- Quando `true`, o modal automático não aparece, mas o bell continua funcionando
 
-**Nova tabela `changelog_reads`** — registra quais usuários já leram cada entrada:
-- `id`, `user_id`, `changelog_id`, `read_at`
+**2. `src/components/WhatsNewBell.tsx`**
+- Adicionar lógica de auto-open: se `unreadCount > 0` e `profile.dismiss_whats_new !== true`, abrir o modal automaticamente (uma vez por sessão, usando um `useRef` para evitar loops)
+- Passar prop `onDismissForever` ao dialog
 
-Isso permite saber quantas novidades cada usuário ainda não leu.
+**3. `src/components/WhatsNewDialog.tsx`**
+- Remover o auto-mark-all-as-read ao abrir. Em vez disso, cada card de novidade não lida terá um botão "Marcar como lido" que insere em `changelog_reads` e atualiza o estado local
+- Adicionar botão "Marcar todas como lidas" no footer
+- Adicionar botão "Não mostrar mais" no footer que seta `profiles.dismiss_whats_new = true` e fecha o modal
+- Cards lidos ficam com visual mais suave, cards não lidos ficam destacados com o botão de ação
 
-### Componentes
+**4. `src/integrations/supabase/types.ts`**
+- Será atualizado automaticamente pela migração
 
-| Componente | Descrição |
-|---|---|
-| `WhatsNewBell` | Botão no header (ao lado do NotificationBell) com ícone `Sparkles`, badge com contagem de não lidas |
-| `WhatsNewDialog` | Dialog/Sheet que lista as novidades em cards, com título, categoria (badge colorido), data e conteúdo. Marca como lido ao abrir |
-| `WhatsNewAdmin` | Seção na página Settings (apenas admin) para criar/editar/excluir entradas de changelog |
+### Fluxo do usuário
 
-### Fluxo
-
-1. Admin acessa Settings → aba "Novidades" → cria uma entrada com título, conteúdo e categoria
-2. A entrada é salva em `changelog_entries` com o `company_id` do admin
-3. Todos os usuários da empresa veem o badge com contagem de não lidas no `WhatsNewBell`
-4. Ao clicar, abre o `WhatsNewDialog` listando as novidades (mais recentes primeiro)
-5. Ao abrir, insere registros em `changelog_reads` para marcar como lidas
-6. Badge atualiza em tempo real via realtime no `changelog_entries`
-
-### Mudanças por arquivo
-
-| Arquivo | Mudança |
-|---|---|
-| **Migração SQL** | Criar tabelas `changelog_entries` e `changelog_reads` com RLS, enum `changelog_category`, realtime |
-| `src/components/WhatsNewBell.tsx` | Novo — ícone Sparkles + badge + popover/dialog com lista de novidades |
-| `src/components/WhatsNewDialog.tsx` | Novo — lista de cards de novidades com scroll, categorias coloridas, "marcar todas como lidas" |
-| `src/components/AppLayout.tsx` | Adicionar `WhatsNewBell` ao header, ao lado do `NotificationBell` |
-| `src/pages/Settings.tsx` | Adicionar aba "Novidades" para admins criarem/editarem entradas |
+1. Usuário acessa o app → bell busca unread count
+2. Se há novidades não lidas E `dismiss_whats_new` é `false` → modal abre automaticamente
+3. Usuário pode: marcar individualmente como lido, marcar todas, ou clicar "Não mostrar mais"
+4. "Não mostrar mais" desativa o popup automático, mas o bell no header continua mostrando contagem e permitindo abrir manualmente
+5. Se o admin publicar uma nova novidade, o `dismiss_whats_new` é resetado para `false` para todos os perfis da empresa (via trigger SQL)
 
 ### Detalhes técnicos
 
-**Migração:**
+**Migração SQL:**
 ```sql
-CREATE TYPE changelog_category AS ENUM ('feature','improvement','fix','announcement');
+ALTER TABLE profiles ADD COLUMN dismiss_whats_new boolean NOT NULL DEFAULT false;
 
-CREATE TABLE changelog_entries (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id uuid NOT NULL,
-  title text NOT NULL,
-  content text NOT NULL,
-  category changelog_category NOT NULL DEFAULT 'feature',
-  created_by uuid NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+-- Trigger para resetar dismiss quando nova novidade é publicada
+CREATE OR REPLACE FUNCTION reset_dismiss_whats_new()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE profiles SET dismiss_whats_new = false
+  WHERE company_id = NEW.company_id;
+  RETURN NEW;
+END;
+$$;
 
-CREATE TABLE changelog_reads (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  changelog_id uuid NOT NULL REFERENCES changelog_entries(id) ON DELETE CASCADE,
-  read_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(user_id, changelog_id)
-);
-
--- RLS: entries visíveis por empresa, inserção/update/delete apenas admin
--- RLS: reads inserção pelo próprio user, select pelo próprio user
-
-ALTER PUBLICATION supabase_realtime ADD TABLE changelog_entries;
+CREATE TRIGGER trg_reset_dismiss_whats_new
+AFTER INSERT ON changelog_entries
+FOR EACH ROW EXECUTE FUNCTION reset_dismiss_whats_new();
 ```
 
-**WhatsNewBell** — query para contar não lidas:
+**WhatsNewDialog — botões no footer:**
+- "Marcar todas como lidas" → insere batch em `changelog_reads`, atualiza estado
+- "Não mostrar mais" → `supabase.from('profiles').update({ dismiss_whats_new: true }).eq('id', user.id)`, fecha modal
+
+**WhatsNewBell — auto-open:**
 ```typescript
-const { count } = await supabase
-  .from("changelog_entries")
-  .select("id", { count: "exact", head: true })
-  .eq("company_id", profile.company_id)
-  .not("id", "in", `(${readIds.join(",")})`);
+const hasAutoOpened = useRef(false);
+useEffect(() => {
+  if (unreadCount > 0 && !profile?.dismiss_whats_new && !hasAutoOpened.current) {
+    hasAutoOpened.current = true;
+    setOpen(true);
+  }
+}, [unreadCount, profile?.dismiss_whats_new]);
 ```
 
-**Categorias visuais:**
-- `feature` → badge azul "Novidade"
-- `improvement` → badge verde "Melhoria"  
-- `fix` → badge laranja "Correção"
-- `announcement` → badge roxo "Comunicado"
+### Arquivos afetados
+
+| Arquivo | Mudança |
+|---|---|
+| Migração SQL | Coluna `dismiss_whats_new` + trigger de reset |
+| `src/components/WhatsNewBell.tsx` | Auto-open do modal |
+| `src/components/WhatsNewDialog.tsx` | Botões "Lido", "Marcar todas", "Não mostrar mais" |
 
