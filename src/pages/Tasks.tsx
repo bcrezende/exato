@@ -583,6 +583,12 @@ export default function Tasks() {
                 <TableHead className="min-w-[150px] cursor-pointer select-none" onClick={() => toggleSort("due_date")}>
                   <span className="flex items-center">Término <SortIcon column="due_date" /></span>
                 </TableHead>
+                <TableHead className="min-w-[80px]">
+                  <span className="flex items-center gap-1"><Play className="h-3 w-3" /> Iniciou</span>
+                </TableHead>
+                <TableHead className="min-w-[80px]">
+                  <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Concluiu</span>
+                </TableHead>
                 <TableHead className="min-w-[120px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
