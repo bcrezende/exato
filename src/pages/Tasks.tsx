@@ -621,6 +621,22 @@ export default function Tasks() {
                     <TableCell className="text-xs text-muted-foreground">
                       {formatStoredDate(task.due_date)}
                     </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {timeLogs[task.id]?.started ? (
+                        <span className="flex items-center gap-1">
+                          <Play className="h-3 w-3 text-primary" />
+                          {formatLogTime(timeLogs[task.id].started)}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {timeLogs[task.id]?.completed ? (
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3 text-success" />
+                          {formatLogTime(timeLogs[task.id].completed)}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {(role === "analyst" && task.assigned_to === user?.id) && (
