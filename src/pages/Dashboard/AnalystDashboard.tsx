@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, subDays, startOfWeek, startOfMonth, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatStoredDate } from "@/lib/date-utils";
+import { formatStoredDate, nowAsFakeUTC } from "@/lib/date-utils";
 import { toast } from "sonner";
 import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
@@ -238,7 +238,7 @@ export default function AnalystDashboard() {
       case "inProgress": return allTasks.filter(t => t.status === "in_progress");
       case "lateStart": return allTasks.filter(t => lateStartIds.has(t.id));
       case "lateCompletion": return allTasks.filter(t => lateCompletionIds.has(t.id));
-      case "notCompleted": return allTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < dateRange.end);
+      case "notCompleted": { const cutoff = nowAsFakeUTC() < dateRange.end ? nowAsFakeUTC() : dateRange.end; return allTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff); }
       default: return allTasks;
     }
   }, [overviewFilter, allTasks, periodDelays, dateRange.end]);
@@ -368,6 +368,7 @@ export default function AnalystDashboard() {
         periodTasks={allTasks}
         periodDelays={periodDelays}
         periodEndISO={dateRange.end}
+        nowISO={nowAsFakeUTC()}
         onCardClick={(f) => setOverviewFilter(prev => prev === f ? null : f)}
         activeFilter={overviewFilter}
       />
