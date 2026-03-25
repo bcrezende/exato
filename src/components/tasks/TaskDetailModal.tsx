@@ -11,7 +11,7 @@ import { useRecurrenceDefinitions } from "@/hooks/useRecurrenceDefinitions";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
 import RecurrenceConfirmDialog from "@/components/tasks/RecurrenceConfirmDialog";
-import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText, XCircle, Play, CheckCircle2 } from "lucide-react";
+import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hourglass, Star, Bell, FileText, XCircle, Play, CheckCircle2, CalendarPlus } from "lucide-react";
 import NotDoneActionModal from "@/components/tasks/NotDoneActionModal";
 import { markTaskAsNotDone, generateNextRecurrence as genNext } from "@/lib/task-utils";
 import TaskAttachments from "@/components/tasks/TaskAttachments";
@@ -104,6 +104,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
   const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
   const [showNotDone, setShowNotDone] = useState(false);
+  const [hasNextInstance, setHasNextInstance] = useState(true);
   const { checkBeforeStart, pendingTasks, isAlertOpen, closeAlert, proceedAction } = usePendingTasksCheck();
 
   useEffect(() => {
@@ -145,6 +146,28 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
       setParentRecurrenceType(null);
     }
   }, [localTask?.id, open]);
+
+  // Check if next recurrence instance already exists
+  useEffect(() => {
+    if (!localTask || !open || localTask.status !== "completed") {
+      setHasNextInstance(true);
+      return;
+    }
+    const effectiveType = localTask.recurrence_type !== "none" ? localTask.recurrence_type : parentRecurrenceType;
+    if (!effectiveType || effectiveType === "none") {
+      setHasNextInstance(true);
+      return;
+    }
+    const parentId = localTask.recurrence_parent_id || localTask.id;
+    supabase
+      .from("tasks")
+      .select("id")
+      .eq("recurrence_parent_id", parentId)
+      .gt("due_date", localTask.due_date || "")
+      .neq("status", "not_done")
+      .limit(1)
+      .then(({ data }) => setHasNextInstance(!!(data && data.length > 0)));
+  }, [localTask?.id, localTask?.status, open, parentRecurrenceType]);
 
   if (!localTask) return null;
 
@@ -318,9 +341,25 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                 </Popover>
               )}
               {localTask.status === "completed" && (
-                <div className="text-center space-y-1">
+                <div className="text-center space-y-2">
                   <Badge className="bg-success/10 text-success">Concluída</Badge>
                   <p className="text-xs text-muted-foreground">Para alterar, solicite ao gerente</p>
+                  {effectiveRecurrenceType !== "none" && !hasNextInstance && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full gap-1.5"
+                      disabled={statusLoading}
+                      onClick={() => {
+                        const parentId = localTask.recurrence_parent_id || localTask.id;
+                        setPendingRecurrence({ parentId, recurrenceType: effectiveRecurrenceType });
+                        setShowRecurrenceConfirm(true);
+                      }}
+                    >
+                      <CalendarPlus className="h-4 w-4" />
+                      Gerar próxima recorrência
+                    </Button>
+                  )}
                 </div>
               )}
               {(localTask.status === "pending" || localTask.status === "in_progress" || localTask.status === "overdue") && (
