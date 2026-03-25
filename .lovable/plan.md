@@ -1,65 +1,47 @@
 
 
-## Corrigir classificação prematura de tarefas como atrasadas/não feitas
+## Reverter tarefas incorretamente marcadas como "não feitas" para pendente
 
-### Problema identificado
+### O que será feito
 
-Existem dois bugs relacionados ao tratamento de timezone que podem causar tarefas futuras aparecerem como "atrasadas" ou "não feitas":
+Executar duas operações de dados (sem alteração de schema):
 
-### Bug 1 — Edge Function `mark-not-done-daily` ignora o timezone da empresa
+1. **Reverter status das 11 tarefas** de `not_done` para `pending`
+2. **Remover os logs correspondentes** da tabela `task_not_done_logs` para que o modal de resolução não apareça mais
 
-A função busca `company.timezone` mas nunca o utiliza. Ela calcula `todayStart` usando `new Date()` do servidor (UTC). Como as datas são armazenadas como "fake UTC" (representando horário local brasileiro), quando a função roda à meia-noite UTC (21h no Brasil), tarefas com prazo entre 21:00 e 23:59 do dia atual no Brasil são incorretamente marcadas como `not_done` porque seu `due_date` fake UTC já é menor que o `todayStart` do dia seguinte em UTC real.
+### Tarefas afetadas
 
-**Correção**: Usar o timezone da empresa para calcular o início do dia correto. Para `America/Sao_Paulo`, o "início de hoje" em fake UTC deve corresponder à data atual naquele fuso.
+| Usuário | Qtd | Prazos |
+|---|---|---|
+| Laura Rejane Cavalcanti Rezende | 9 | 23/03 e 24/03 |
+| teste analista | 1 | 23/03 |
+| teste coordenador | 1 | 23/03 |
 
-**Arquivo**: `supabase/functions/mark-not-done-daily/index.ts`
-- Converter `now` para o timezone da empresa antes de extrair a data
-- Calcular `todayStart` como `YYYY-MM-DDT00:00:00+00:00` usando a data local da empresa
+### Operações SQL (via insert tool)
 
-### Bug 2 — Classificação client-side compara timestamp completo
+```sql
+-- 1. Reverter status para pending
+UPDATE tasks SET status = 'pending'
+WHERE id IN (
+  '6bfe3046-eafc-45ef-888b-9d4e6d7a2ab2',
+  '11c3c6c8-05d9-4692-9d4b-bcf6765f9a43',
+  '7ccd2834-4b7b-4f9a-b628-74645ff952bd',
+  '8e286eb3-e19e-47da-bbc2-002d76ad7353',
+  'beb3a437-002e-4ba5-85fc-b4e6ec7ed58b',
+  'dfa5315c-af12-4fd9-849b-531f8a3def6e',
+  '1fab097f-6065-4c2a-891a-aea42187051f',
+  'edd434f5-3ff6-4520-99f4-d3412f29822c',
+  'a8e1f9a4-8845-47a1-b218-13856d12e2a9',
+  '12dc2470-3bf2-4157-b300-3e4097ee5d1e',
+  '497d7021-3261-42d3-8625-1dac9bb33342'
+);
 
-Nos dashboards, a lógica `due_date < nowAsFakeUTC()` compara o timestamp completo (data + hora). Isso faz uma tarefa com prazo às 17:15 aparecer como "atrasada" a partir das 17:16, o que é correto para hora, mas vários locais usam essa lógica para classificar tarefas em colunas de "atrasadas" quando deveriam comparar apenas a **data** (dia inteiro).
-
-**Correção**: Criar uma função `todayEndAsFakeUTC()` que retorna `YYYY-MM-DDT23:59:59+00:00` e usá-la nas comparações de overdue que classificam por dia, mantendo `nowAsFakeUTC()` apenas onde a comparação por hora faz sentido.
-
-**Arquivos afetados**:
-- `src/lib/date-utils.ts` — adicionar `todayEndAsFakeUTC()`
-- `src/pages/Dashboard/CoordinatorDashboard.tsx` (linhas 190, 212, 226)
-- `src/pages/Dashboard/ManagerDashboard.tsx` (linha 169)
-- `src/pages/Dashboard/ManagerCoordinatorDashboard.tsx` (linha 159)
-- `src/pages/Tasks.tsx` (linhas 263, 402-403) — classificação Kanban
-
-### Detalhes técnicos
-
-**Edge Function — cálculo correto do todayStart**:
-```typescript
-// Usar Intl.DateTimeFormat para obter a data no timezone da empresa
-const formatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: company.timezone || "America/Sao_Paulo",
-  year: "numeric", month: "2-digit", day: "2-digit",
-});
-const todayStr = formatter.format(new Date()); // "2026-03-25"
-const todayStart = `${todayStr}T00:00:00+00:00`;
+-- 2. Remover os logs auto-gerados pendentes
+DELETE FROM task_not_done_logs
+WHERE task_id IN (/* mesmos IDs */)
+  AND auto_generated = true
+  AND next_action = 'Aguardando ação do usuário';
 ```
 
-**Nova função em date-utils.ts**:
-```typescript
-export function todayEndAsFakeUTC(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}T23:59:59+00:00`;
-}
-```
-
-**Substituição nos dashboards** — onde a classificação é por "dia atrasado":
-```typescript
-// Antes:
-const isOverdue = ... t.due_date < nowFake;
-// Depois:
-const isOverdue = ... t.due_date.split("T")[0] < nowFake.split("T")[0];
-```
-
-Nenhuma migração de banco necessária.
+Nenhuma alteração de código necessária — apenas correção de dados no banco.
 
