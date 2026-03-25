@@ -147,6 +147,28 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
     }
   }, [localTask?.id, open]);
 
+  // Check if next recurrence instance already exists
+  useEffect(() => {
+    if (!localTask || !open || localTask.status !== "completed") {
+      setHasNextInstance(true);
+      return;
+    }
+    const effectiveType = localTask.recurrence_type !== "none" ? localTask.recurrence_type : parentRecurrenceType;
+    if (!effectiveType || effectiveType === "none") {
+      setHasNextInstance(true);
+      return;
+    }
+    const parentId = localTask.recurrence_parent_id || localTask.id;
+    supabase
+      .from("tasks")
+      .select("id")
+      .eq("recurrence_parent_id", parentId)
+      .gt("due_date", localTask.due_date || "")
+      .neq("status", "not_done")
+      .limit(1)
+      .then(({ data }) => setHasNextInstance(!!(data && data.length > 0)));
+  }, [localTask?.id, localTask?.status, open, parentRecurrenceType]);
+
   if (!localTask) return null;
 
   const extTask = localTask as any;
