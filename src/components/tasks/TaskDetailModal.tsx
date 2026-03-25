@@ -341,9 +341,25 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
                 </Popover>
               )}
               {localTask.status === "completed" && (
-                <div className="text-center space-y-1">
+                <div className="text-center space-y-2">
                   <Badge className="bg-success/10 text-success">Concluída</Badge>
                   <p className="text-xs text-muted-foreground">Para alterar, solicite ao gerente</p>
+                  {effectiveRecurrenceType !== "none" && !hasNextInstance && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full gap-1.5"
+                      disabled={statusLoading}
+                      onClick={() => {
+                        const parentId = localTask.recurrence_parent_id || localTask.id;
+                        setPendingRecurrence({ parentId, recurrenceType: effectiveRecurrenceType });
+                        setShowRecurrenceConfirm(true);
+                      }}
+                    >
+                      <CalendarPlus className="h-4 w-4" />
+                      Gerar próxima recorrência
+                    </Button>
+                  )}
                 </div>
               )}
               {(localTask.status === "pending" || localTask.status === "in_progress" || localTask.status === "overdue") && (
