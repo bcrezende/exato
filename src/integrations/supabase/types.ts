@@ -55,6 +55,73 @@ export type Database = {
           },
         ]
       }
+      changelog_entries: {
+        Row: {
+          category: Database["public"]["Enums"]["changelog_category"]
+          company_id: string
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          title: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["changelog_category"]
+          company_id: string
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          title: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["changelog_category"]
+          company_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "changelog_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      changelog_reads: {
+        Row: {
+          changelog_id: string
+          id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          changelog_id: string
+          id?: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          changelog_id?: string
+          id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "changelog_reads_changelog_id_fkey"
+            columns: ["changelog_id"]
+            isOneToOne: false
+            referencedRelation: "changelog_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
@@ -835,6 +902,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "employee" | "coordinator" | "analyst"
+      changelog_category: "feature" | "improvement" | "fix" | "announcement"
       delay_log_type: "inicio_atrasado" | "conclusao_atrasada"
       interval_unit: "day" | "week" | "month" | "year"
       task_priority: "low" | "medium" | "high"
@@ -972,6 +1040,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "employee", "coordinator", "analyst"],
+      changelog_category: ["feature", "improvement", "fix", "announcement"],
       delay_log_type: ["inicio_atrasado", "conclusao_atrasada"],
       interval_unit: ["day", "week", "month", "year"],
       task_priority: ["low", "medium", "high"],
