@@ -16,6 +16,7 @@ import { User, Building, RefreshCw, CalendarDays, Save, Sun, Moon, Monitor, Spar
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
 import HolidaySettings from "@/components/settings/HolidaySettings";
 import AvatarUpload from "@/components/settings/AvatarUpload";
+import WhatsNewAdmin from "@/components/settings/WhatsNewAdmin";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
