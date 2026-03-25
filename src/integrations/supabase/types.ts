@@ -417,6 +417,7 @@ export type Database = {
           created_at: string
           department_id: string | null
           dismiss_pending_warnings: boolean
+          dismiss_whats_new: boolean
           full_name: string | null
           id: string
           phone: string | null
@@ -429,6 +430,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           dismiss_pending_warnings?: boolean
+          dismiss_whats_new?: boolean
           full_name?: string | null
           id: string
           phone?: string | null
@@ -441,6 +443,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           dismiss_pending_warnings?: boolean
+          dismiss_whats_new?: boolean
           full_name?: string | null
           id?: string
           phone?: string | null
