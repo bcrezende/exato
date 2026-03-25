@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Building2, BarChart3, Users, AlertCircle, LayoutDashboard, X, Search, CalendarIcon } from "lucide-react";
-import { formatStoredDate } from "@/lib/date-utils";
+import { formatStoredDate, nowAsFakeUTC } from "@/lib/date-utils";
 
 const LazyPerformanceAnalytics = lazy(() => import("@/components/dashboard/PerformanceAnalytics"));
 
@@ -196,7 +196,7 @@ export default function AdminDashboard() {
       case "inProgress": return periodTasks.filter(t => t.status === "in_progress");
       case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
       case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
-      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoffISO);
+      case "notCompleted": { const cutoff = nowAsFakeUTC() < cutoffISO ? nowAsFakeUTC() : cutoffISO; return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff); }
       default: return [];
     }
   }, [overviewFilter, periodTasks, periodDelays]);
@@ -316,6 +316,7 @@ export default function AdminDashboard() {
         periodTasks={periodTasks}
         periodDelays={periodDelays}
         periodEndISO={periodEndISO}
+        nowISO={nowAsFakeUTC()}
         onCardClick={handleOverviewCardClick}
         activeFilter={overviewFilter}
       />

@@ -223,7 +223,7 @@ export default function ManagerDashboard() {
       case "inProgress": return periodTasks.filter(t => t.status === "in_progress");
       case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
       case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
-      case "notCompleted": return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoffISO);
+      case "notCompleted": { const cutoff = nowAsFakeUTC() < cutoffISO ? nowAsFakeUTC() : cutoffISO; return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff); }
       default: return [];
     }
   }, [overviewFilter, periodTasks, periodDelays, periodEndISO]);
@@ -321,6 +321,7 @@ export default function ManagerDashboard() {
         periodTasks={periodTasks}
         periodDelays={periodDelays}
         periodEndISO={periodEndISO}
+        nowISO={nowAsFakeUTC()}
         onCardClick={handleOverviewCardClick}
         activeFilter={overviewFilter}
       />
