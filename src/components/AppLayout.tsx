@@ -20,6 +20,7 @@ export function AppLayout() {
             <SidebarTrigger />
             <div className="ml-auto flex items-center gap-3">
               <ProfileCompletionBadge />
+              <WhatsNewBell />
               <NotificationBell />
             </div>
           </header>
