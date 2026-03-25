@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Building2, CalendarIcon, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Filter, Play, CheckCircle2 } from "lucide-react";
+import { Plus, Search, List, CalendarDays, LayoutGrid, Pencil, Trash2, X, User, Building2, CalendarIcon, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown, Filter, Play, CheckCircle2, AlertTriangle } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -470,7 +470,7 @@ export default function Tasks() {
                                   >
                                     <Card
                                       className={cn(
-                                        "cursor-pointer hover-lift transition-all duration-200",
+                                        "cursor-pointer hover-lift transition-all duration-200 relative",
                                         highlightedId === task.id && "animate-highlight-flash",
                                         successId === task.id && "animate-highlight-success animate-pulse-success",
                                         dragSnapshot.isDragging && "shadow-2xl ring-2 ring-primary/40 rotate-[2deg] scale-105 z-50",
@@ -478,6 +478,11 @@ export default function Tasks() {
                                       )}
                                       onClick={() => !dragSnapshot.isDragging && openDetail(task)}
                                     >
+                                      {task.justification && (
+                                        <div className="absolute -top-1 -right-1 bg-amber-100 border border-amber-300 rounded-full p-0.5 z-10" title="Possui justificativa">
+                                          <AlertTriangle className="h-3 w-3 text-amber-600" />
+                                        </div>
+                                      )}
                                       <CardContent className="p-3 space-y-2">
                                         <h4 className="font-medium leading-tight text-sm">{task.title}</h4>
                                         <div className="flex items-center justify-between">
@@ -600,7 +605,10 @@ export default function Tasks() {
                     highlightedId === task.id ? "animate-highlight-flash" : ""
                   } ${successId === task.id ? "animate-highlight-success" : ""}`} onClick={() => openDetail(task)}>
                     <TableCell className="font-medium">
-                      <div className="truncate max-w-[300px]">{task.title}</div>
+                      <div className="flex items-center gap-1 truncate max-w-[300px]">
+                        {task.title}
+                        {task.justification && <span title="Possui justificativa"><AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" /></span>}
+                      </div>
                       {task.description && <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">{task.description}</p>}
                     </TableCell>
                     <TableCell>
