@@ -49,7 +49,7 @@ export default function Team() {
   const fetchData = async () => {
     if (!currentProfile?.company_id) return;
 
-    let membersQuery = supabase.from("profiles").select("id, full_name, avatar_url, company_id, department_id, phone, position, created_at, updated_at, dismiss_pending_warnings").eq("company_id", currentProfile.company_id);
+    let membersQuery = supabase.from("profiles").select("id, full_name, avatar_url, company_id, department_id, phone, position, created_at, updated_at, dismiss_pending_warnings, dismiss_whats_new").eq("company_id", currentProfile.company_id);
     if (role === "manager" && currentProfile.department_id) {
       membersQuery = membersQuery.eq("department_id", currentProfile.department_id);
     }
