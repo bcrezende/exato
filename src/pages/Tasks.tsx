@@ -403,7 +403,7 @@ export default function Tasks() {
                 if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date.split("T")[0] < todayDateStr());
                 if (status === "in_progress") return t.status === "in_progress";
                 return t.status === status;
-              });
+              }).sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
               const dotColor = status === "pending" ? "bg-muted-foreground" : status === "in_progress" ? "bg-primary" : status === "completed" ? "bg-success" : status === "not_done" ? "bg-orange-500" : "bg-destructive";
               const isOverdueColumn = status === "overdue" || status === "not_done";
               return (
