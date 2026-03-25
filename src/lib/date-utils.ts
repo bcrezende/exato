@@ -101,3 +101,27 @@ export function nowAsFakeUTC(): string {
   const s = String(now.getSeconds()).padStart(2, "0");
   return `${y}-${mo}-${d}T${h}:${mi}:${s}+00:00`;
 }
+
+/**
+ * Get end of today as a fake-UTC ISO string (23:59:59).
+ * Useful for "overdue by day" comparisons where anything due today
+ * should NOT be considered overdue.
+ */
+export function todayEndAsFakeUTC(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}T23:59:59+00:00`;
+}
+
+/**
+ * Get today's date string (YYYY-MM-DD) based on local time.
+ */
+export function todayDateStr(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}

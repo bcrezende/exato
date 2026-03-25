@@ -156,7 +156,7 @@ export default function ManagerCoordinatorDashboard() {
       }
 
       const isInProgress = t.status === "in_progress";
-      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date < nowFake));
+      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date.split("T")[0] < referenceDateStr));
 
       if (isOverdue && !isCompleted) { overdue.push(t); return; }
       if (isInProgress) { todayList.push(t); return; }
