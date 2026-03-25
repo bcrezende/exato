@@ -99,6 +99,8 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const isCreator = localTask?.created_by === user?.id;
   const isAssigned = localTask?.assigned_to === user?.id;
   const [executionTime, setExecutionTime] = useState<string | null>(null);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [showDifficultyPopover, setShowDifficultyPopover] = useState(false);
   const [parentRecurrenceType, setParentRecurrenceType] = useState<string | null>(null);
   const [showNotDone, setShowNotDone] = useState(false);
@@ -109,17 +111,19 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   }, [task]);
 
   useEffect(() => {
-    if (!localTask || !open) { setExecutionTime(null); return; }
+    if (!localTask || !open) { setExecutionTime(null); setStartedAt(null); setCompletedAt(null); return; }
     const fetchLogs = async () => {
       const { data } = await supabase
         .from("task_time_logs")
         .select("action, created_at")
         .eq("task_id", localTask.id)
         .order("created_at", { ascending: true });
-      if (!data || data.length === 0) { setExecutionTime(null); return; }
+      if (!data || data.length === 0) { setExecutionTime(null); setStartedAt(null); setCompletedAt(null); return; }
       const started = data.find(l => l.action === "started" || l.action === "started_late");
       const completed = data.find(l => l.action === "completed");
       const lateTag = started?.action === "started_late" ? " (iniciada com atraso)" : "";
+      setStartedAt(started?.created_at || null);
+      setCompletedAt(completed?.created_at || null);
       if (started && completed) {
         const diff = new Date(completed.created_at).getTime() - new Date(started.created_at).getTime();
         setExecutionTime(formatDuration(diff) + lateTag);
