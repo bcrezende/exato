@@ -35,6 +35,14 @@ type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
 
+function formatLogTime(isoStr?: string): string {
+  if (!isoStr) return "—";
+  const d = new Date(isoStr);
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 const statusLabels: Record<string, string> = { pending: "Pendente", in_progress: "Em Andamento", completed: "Concluída", overdue: "Atrasada", not_done: "Não Feita" };
 const statusColors: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
