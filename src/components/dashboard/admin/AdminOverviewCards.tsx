@@ -19,11 +19,12 @@ interface AdminOverviewCardsProps {
   periodTasks: Task[];
   periodDelays: DelayRecord[];
   periodEndISO: string;
+  nowISO: string;
   onCardClick?: (filter: OverviewFilter) => void;
   activeFilter?: OverviewFilter | null;
 }
 
-export default function AdminOverviewCards({ periodTasks, periodDelays, periodEndISO, onCardClick, activeFilter }: AdminOverviewCardsProps) {
+export default function AdminOverviewCards({ periodTasks, periodDelays, periodEndISO, nowISO, onCardClick, activeFilter }: AdminOverviewCardsProps) {
   const metrics = useMemo(() => {
     const totalTasks = periodTasks.length;
     const periodTaskIds = new Set(periodTasks.map(t => t.id));
@@ -45,8 +46,9 @@ export default function AdminOverviewCards({ periodTasks, periodDelays, periodEn
     const lateStarts = lateStartTaskIds.size;
     const lateCompletions = lateCompletionTaskIds.size;
 
+    const cutoff = nowISO < periodEndISO ? nowISO : periodEndISO;
     const notCompleted = periodTasks.filter(
-      t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < periodEndISO
+      t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff
     ).length;
 
     return { totalTasks, onTime, inProgress, lateStarts, lateCompletions, notCompleted };
