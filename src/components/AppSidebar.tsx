@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound, Sun, Moon, Mail } from "lucide-react";
 import logoWhite from "@/assets/logo-white.png";
 import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
@@ -101,6 +101,24 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {profile?.is_master && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/50">Master</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive("/email-monitor")} tooltip="Monitorar Emails" className="hover-scale-subtle">
+                    <NavLink to="/email-monitor" end activeClassName="bg-sidebar-accent text-sidebar-accent-foreground">
+                      <Mail className="h-4 w-4" />
+                      {!collapsed && <span>Monitorar Emails</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

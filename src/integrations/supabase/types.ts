@@ -919,6 +919,43 @@ export type Database = {
         Args: { _coordinator_id: string }
         Returns: string[]
       }
+      get_email_logs: {
+        Args: {
+          _end: string
+          _limit?: number
+          _offset?: number
+          _start: string
+          _status?: string
+          _template?: string
+        }
+        Returns: {
+          created_at: string
+          error_message: string
+          message_id: string
+          metadata: Json
+          recipient_email: string
+          status: string
+          template_name: string
+        }[]
+      }
+      get_email_stats: {
+        Args: {
+          _end: string
+          _start: string
+          _status?: string
+          _template?: string
+        }
+        Returns: {
+          count: number
+          status: string
+        }[]
+      }
+      get_email_templates: {
+        Args: never
+        Returns: {
+          template_name: string
+        }[]
+      }
       get_invitation_by_token: {
         Args: { _token: string }
         Returns: {
