@@ -105,7 +105,7 @@ function ConfettiCanvas() {
 }
 
 /* ── date range ── */
-function getDateRange(period: AdminPeriod) {
+function getDateRange(period: AdminPeriod, customStart?: string, customEnd?: string) {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
   const todayStart = new Date(Date.UTC(y, m, d, 0, 0, 0));
@@ -123,6 +123,17 @@ function getDateRange(period: AdminPeriod) {
     case "month": {
       const ms = startOfMonth(todayStart);
       return { start: ms.toISOString(), end: todayEnd.toISOString() };
+    }
+    case "custom": {
+      if (customStart && customEnd) {
+        const [sy, sm, sd] = customStart.split("-").map(Number);
+        const [ey, em, ed] = customEnd.split("-").map(Number);
+        return {
+          start: new Date(Date.UTC(sy, sm - 1, sd, 0, 0, 0)).toISOString(),
+          end: new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59, 999)).toISOString(),
+        };
+      }
+      return { start: todayStart.toISOString(), end: todayEnd.toISOString() };
     }
     default:
       return { start: todayStart.toISOString(), end: todayEnd.toISOString() };
