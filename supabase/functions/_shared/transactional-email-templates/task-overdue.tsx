@@ -11,24 +11,25 @@ interface Props {
   taskTitle?: string
   dueTime?: string
   assigneeName?: string
+  _headingOverride?: string
+  _bodyOverride?: string
 }
 
-const TaskOverdueEmail = ({ taskTitle, dueTime, assigneeName }: Props) => (
+const TaskOverdueEmail = ({ taskTitle, dueTime, assigneeName, _headingOverride, _bodyOverride }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
     <Preview>Prazo excedido: {taskTitle || 'Tarefa'}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Img src={LOGO_URL} alt={SITE_NAME} height="48" style={logo} />
-        <Heading style={h1}>⚠️ Prazo excedido</Heading>
+        <Heading style={h1}>{_headingOverride || '⚠️ Prazo excedido'}</Heading>
         {assigneeName && <Text style={text}>Olá, {assigneeName}!</Text>}
         <Section style={card}>
           <Text style={cardTitle}>{taskTitle || 'Tarefa sem título'}</Text>
           <Text style={cardDetail}>Prazo final: <strong>{dueTime || '—'}</strong></Text>
         </Section>
         <Text style={text}>
-          O prazo desta tarefa expirou e ela ainda não foi concluída. 
-          Acesse a plataforma para atualizar o status.
+          {_bodyOverride || 'O prazo desta tarefa expirou e ela ainda não foi concluída. Acesse a plataforma para atualizar o status.'}
         </Text>
         <Hr style={hr} />
         <Text style={footer}>{SITE_NAME} — Gestão de tarefas</Text>
