@@ -1,70 +1,40 @@
 
-## Diagnóstico da task `52e7e102-2faa-4413-8a3b-bc8314aaff0b`
 
-### O que já confirmei
-- A task está `pending`
-- `start_date = 14:15`
-- `due_date = 14:30`
-- empresa com fuso `America/Sao_Paulo`
-- o job `check-task-notifications` está ativo e roda `* * * * *`
-- não existe registro em `task_email_notifications` para essa task
-- não existe registro correspondente em `email_send_log`
-- não há preferência do usuário desativando esses emails (`user_notification_preferences` sem linha = padrão ativo)
+## Corrigir 401 persistente nas notificações de email
 
-### Evidência do problema
-Nos logs da função `check-task-notifications`, essa task aparece várias vezes com:
-- `late_start` → `401 Unauthorized`
-- `overdue` → `401 Unauthorized`
+### Causa raiz confirmada
 
-E a função `send-transactional-email` não tem log dessa task, o que mostra que a requisição está sendo bloqueada antes mesmo de entrar na função de envio.
+A função `send-transactional-email` está configurada com `verify_jwt = true` no `config.toml`. O gateway do Supabase valida o JWT antes de a requisição chegar à função. Quando `check-task-notifications` faz a chamada interna com o `service_role` key, o gateway rejeita com `"Invalid Token or Protected Header formatting"` — o JWT não é aceito no formato esperado pelo gateway nesse contexto de função-para-função.
 
-## Causa raiz
+### Solução
 
-A task foi detectada corretamente para disparo, mas a chamada interna entre funções ainda está falhando na autenticação do gateway.
+Alterar `send-transactional-email` para `verify_jwt = false` no `config.toml` (como já é feito na maioria das outras funções do projeto) e adicionar validação de auth em código dentro da própria função, verificando que o caller tem role `service_role` ou `authenticated`.
 
-Hoje `check-task-notifications` chama `send-transactional-email` por HTTP com:
-- `Authorization: Bearer <service_role>`
+### Detalhes técnicos
 
-Só que a função de destino está com `verify_jwt = true`, e o gateway está rejeitando essa chamada com `401`. Por isso:
-1. o evento de atraso é identificado;
-2. a tentativa de envio acontece;
-3. o gateway bloqueia;
-4. o email não entra na fila;
-5. nada aparece no monitor de emails.
+**1. `supabase/config.toml`** — Mudar `verify_jwt` de `true` para `false`:
+```toml
+[functions.send-transactional-email]
+  verify_jwt = false
+```
 
-## Plano para sanar
+**2. `supabase/functions/send-transactional-email/index.ts`** — Adicionar validação de auth em código no início do handler:
+```typescript
+const authHeader = req.headers.get('Authorization')
+if (!authHeader?.startsWith('Bearer ')) {
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
+}
+```
 
-### 1. Corrigir a autenticação da chamada interna
-Ajustar `supabase/functions/check-task-notifications/index.ts` para enviar também o header `apikey`, além do `Authorization`, na chamada para `send-transactional-email`.
+**3. Redeploy** — Fazer deploy de `send-transactional-email` e `check-task-notifications` após as mudanças.
 
-### 2. Melhorar o diagnóstico de erro
-Ajustar o tratamento da resposta HTTP para:
-- suportar resposta não-JSON
-- logar corpo bruto, status e tipo da notificação
-- facilitar identificar falhas de gateway sem ambiguidade
+**4. Limpeza** — Remover registros da task de teste em `task_email_notifications` para permitir reprocessamento.
 
-### 3. Melhorar a observabilidade no painel
-Registrar falhas de despacho anteriores ao enfileiramento para que o Master Admin consiga ver esse tipo de erro no painel de monitoramento, e não apenas nos logs técnicos.
-
-### 4. Revalidar com esta mesma task
-Como não há linha em `task_email_notifications`, não precisa limpar nada. Depois da correção, essa task ainda pode disparar:
-- `late_start`
-- `overdue`
-enquanto continuar `pending`.
-
-### 5. Teste final controlado
-Depois da correção:
-- testar novamente esta task
-- criar uma nova task com início em 6–7 minutos
-- validar lembrete, atraso e visibilidade no monitor
-
-## Arquivos afetados
+### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `supabase/functions/check-task-notifications/index.ts` | Corrigir headers da chamada e melhorar logs |
-| `src/pages/EmailMonitor.tsx` e/ou backend de log | Exibir falhas técnicas pré-fila no monitor |
+| `supabase/config.toml` | `verify_jwt = false` para send-transactional-email |
+| `supabase/functions/send-transactional-email/index.ts` | Adicionar validação de auth em código |
+| Migração SQL | Limpar notificações da task de teste |
 
-## Conclusão objetiva
-
-O email não foi disparado porque o sistema detectou o atraso da task, mas a chamada interna para a função de envio está sendo rejeitada com `401 Unauthorized` antes do email entrar na fila.
