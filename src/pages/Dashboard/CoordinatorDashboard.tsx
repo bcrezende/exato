@@ -187,7 +187,9 @@ export default function CoordinatorDashboard() {
       const dueDay = t.due_date?.split("T")[0];
       const startDay = t.start_date?.split("T")[0];
       const isInProgress = t.status === "in_progress";
-      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date.split("T")[0] < referenceDateStr));
+      const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < nowFake;
+      const isDueOverdue = !isCompleted && t.due_date && t.due_date < nowFake;
+      const isOverdue = !isInProgress && (isStartOverdue || isDueOverdue);
 
       if (isOverdue && !isCompleted) { overdue.push(t); return; }
       if (isInProgress) { todayList.push(t); return; }
@@ -209,13 +211,23 @@ export default function CoordinatorDashboard() {
   const myTasks = useMemo(() => tasks.filter(t => t.assigned_to === user?.id), [tasks, user?.id]);
   const myCompleted = myTasks.filter(t => t.status === "completed").length;
   const myInProgress = myTasks.filter(t => t.status === "in_progress").length;
-  const myOverdue = myTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && t.due_date.split("T")[0] < referenceDateStr)).length;
+  const myOverdue = myTasks.filter(t => {
+    const nf = nowAsFakeUTC();
+    const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < nf;
+    const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < nf;
+    return isStartOverdue || isDueOverdue;
+  }).length;
   const myProgress = myTasks.length > 0 ? Math.round((myCompleted / myTasks.length) * 100) : 0;
 
   const teamProductivity = useMemo(() => {
     const total = periodTasks.length;
     if (total === 0) return 100;
-    const overdue = periodTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && t.due_date.split("T")[0] < referenceDateStr)).length;
+    const nf = nowAsFakeUTC();
+    const overdue = periodTasks.filter(t => {
+      const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < nf;
+      const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < nf;
+      return isStartOverdue || isDueOverdue;
+    }).length;
     return Math.round(((total - overdue) / total) * 100);
   }, [periodTasks]);
 
@@ -223,7 +235,12 @@ export default function CoordinatorDashboard() {
     return analystProfiles.map(p => {
       const pTasks = tasks.filter(t => t.assigned_to === p.id);
       const inProgress = pTasks.filter(t => t.status === "in_progress").length;
-      const overdue = pTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && t.due_date.split("T")[0] < referenceDateStr)).length;
+      const nfA = nowAsFakeUTC();
+      const overdue = pTasks.filter(t => {
+        const isStartOv = t.status === "pending" && t.start_date && t.start_date < nfA;
+        const isDueOv = t.status !== "completed" && t.due_date && t.due_date < nfA;
+        return isStartOv || isDueOv;
+      }).length;
       const pending = pTasks.filter(t => t.status === "pending").length;
       const completed = pTasks.filter(t => t.status === "completed").length;
       const activity: "active" | "idle" | "inactive" = inProgress > 0 ? "active" : (pending > 0 || overdue > 0) ? "idle" : "inactive";

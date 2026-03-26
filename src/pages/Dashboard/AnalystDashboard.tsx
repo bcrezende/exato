@@ -264,17 +264,26 @@ export default function AnalystDashboard() {
     const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, "0"), d = String(now.getDate()).padStart(2, "0");
     const dayStart = `${y}-${m}-${d}T00:00:00+00:00`;
     const dayEnd = `${y}-${m}-${d}T23:59:59.999+00:00`;
-    return allTasks.filter(t =>
-      t.status === "overdue" ||
-      (t.start_date && t.start_date >= dayStart && t.start_date <= dayEnd) ||
-      (t.due_date && t.due_date >= dayStart && t.due_date <= dayEnd)
-    );
+    const nf = nowAsFakeUTC();
+    return allTasks.filter(t => {
+      const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < nf;
+      const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < nf;
+      const isOverdueNow = isStartOverdue || isDueOverdue;
+      return isOverdueNow ||
+        (t.start_date && t.start_date >= dayStart && t.start_date <= dayEnd) ||
+        (t.due_date && t.due_date >= dayStart && t.due_date <= dayEnd);
+    });
   }, [allTasks]);
 
   /* stats */
   const stats = useMemo(() => ({
     total: allTasks.length,
-    overdue: allTasks.filter(t => t.status === "overdue").length,
+    overdue: allTasks.filter(t => {
+      const nf = nowAsFakeUTC();
+      const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < nf;
+      const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < nf;
+      return isStartOverdue || isDueOverdue;
+    }).length,
     pending: allTasks.filter(t => t.status === "pending").length,
     inProgress: allTasks.filter(t => t.status === "in_progress").length,
     completed: allTasks.filter(t => t.status === "completed").length,
@@ -612,7 +621,12 @@ export default function AnalystDashboard() {
         {/* TAB: Atrasadas */}
         <TabsContent value="overdue" className="space-y-2">
           {(() => {
-            const overdue = allTasks.filter(t => t.status === "overdue");
+            const nfOv = nowAsFakeUTC();
+            const overdue = allTasks.filter(t => {
+              const isStartOv = t.status === "pending" && t.start_date && t.start_date < nfOv;
+              const isDueOv = t.status !== "completed" && t.due_date && t.due_date < nfOv;
+              return isStartOv || isDueOv;
+            });
             if (overdue.length === 0) return (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
