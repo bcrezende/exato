@@ -5,6 +5,7 @@ import { format, subDays, startOfWeek, startOfMonth, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatStoredDate, nowAsFakeUTC } from "@/lib/date-utils";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
