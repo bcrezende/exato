@@ -12,7 +12,7 @@ export function WhatsNewBell() {
   const hasAutoOpened = useRef(false);
 
   const fetchUnread = async () => {
-    if (!user || !profile?.company_id) return;
+    if (!user) return;
 
     const { data: reads } = await supabase
       .from("changelog_reads")
@@ -23,8 +23,7 @@ export function WhatsNewBell() {
 
     let query = supabase
       .from("changelog_entries")
-      .select("id", { count: "exact", head: true })
-      .eq("company_id", profile.company_id);
+      .select("id", { count: "exact", head: true });
 
     if (readIds.length > 0) {
       query = query.not("id", "in", `(${readIds.join(",")})`);
@@ -45,7 +44,7 @@ export function WhatsNewBell() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, profile?.company_id]);
+  }, [user]);
 
   // Auto-open modal once per session if there are unread items and user hasn't dismissed
   useEffect(() => {

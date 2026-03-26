@@ -36,14 +36,13 @@ export function WhatsNewDialog({ open, onOpenChange, onDismissForever }: Props) 
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!open || !user || !profile?.company_id) return;
+    if (!open || !user) return;
 
     const load = async () => {
       const [{ data: entriesData }, { data: readsData }] = await Promise.all([
         supabase
           .from("changelog_entries")
           .select("id, title, content, category, created_at")
-          .eq("company_id", profile.company_id!)
           .order("created_at", { ascending: false })
           .limit(50),
         supabase
@@ -57,7 +56,7 @@ export function WhatsNewDialog({ open, onOpenChange, onDismissForever }: Props) 
     };
 
     load();
-  }, [open, user, profile?.company_id]);
+  }, [open, user]);
 
   const markAsRead = async (entryId: string) => {
     if (!user) return;
