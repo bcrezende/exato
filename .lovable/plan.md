@@ -1,40 +1,35 @@
 
 
-## Corrigir 401 persistente nas notificações de email
+## Corrigir escopo de empresa na policy de admins em user_roles
 
-### Causa raiz confirmada
+### Problema
 
-A função `send-transactional-email` está configurada com `verify_jwt = true` no `config.toml`. O gateway do Supabase valida o JWT antes de a requisição chegar à função. Quando `check-task-notifications` faz a chamada interna com o `service_role` key, o gateway rejeita com `"Invalid Token or Protected Header formatting"` — o JWT não é aceito no formato esperado pelo gateway nesse contexto de função-para-função.
+A policy "Admins can insert any role" verifica apenas que o ator é admin, mas não valida se o `user_id` alvo pertence à mesma empresa. Um admin poderia atribuir roles a usuários de outras empresas.
 
 ### Solução
 
-Alterar `send-transactional-email` para `verify_jwt = false` no `config.toml` (como já é feito na maioria das outras funções do projeto) e adicionar validação de auth em código dentro da própria função, verificando que o caller tem role `service_role` ou `authenticated`.
+Recriar a policy adicionando verificação de `company_id` no `user_id` alvo.
 
-### Detalhes técnicos
+### Migração SQL
 
-**1. `supabase/config.toml`** — Mudar `verify_jwt` de `true` para `false`:
-```toml
-[functions.send-transactional-email]
-  verify_jwt = false
+```sql
+DROP POLICY IF EXISTS "Admins can insert any role" ON public.user_roles;
+
+CREATE POLICY "Admins can insert any role"
+ON public.user_roles FOR INSERT TO authenticated
+WITH CHECK (
+  has_role(auth.uid(), 'admin'::app_role)
+  AND EXISTS (
+    SELECT 1 FROM profiles p
+    WHERE p.id = user_roles.user_id
+      AND p.company_id = get_user_company_id(auth.uid())
+  )
+);
 ```
 
-**2. `supabase/functions/send-transactional-email/index.ts`** — Adicionar validação de auth em código no início do handler:
-```typescript
-const authHeader = req.headers.get('Authorization')
-if (!authHeader?.startsWith('Bearer ')) {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
-}
-```
-
-**3. Redeploy** — Fazer deploy de `send-transactional-email` e `check-task-notifications` após as mudanças.
-
-**4. Limpeza** — Remover registros da task de teste em `task_email_notifications` para permitir reprocessamento.
-
-### Arquivos afetados
+### Arquivo afetado
 
 | Arquivo | Mudança |
 |---|---|
-| `supabase/config.toml` | `verify_jwt = false` para send-transactional-email |
-| `supabase/functions/send-transactional-email/index.ts` | Adicionar validação de auth em código |
-| Migração SQL | Limpar notificações da task de teste |
+| Migração SQL | Recriar policy com verificação de empresa |
 
