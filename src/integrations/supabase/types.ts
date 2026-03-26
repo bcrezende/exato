@@ -58,7 +58,7 @@ export type Database = {
       changelog_entries: {
         Row: {
           category: Database["public"]["Enums"]["changelog_category"]
-          company_id: string
+          company_id: string | null
           content: string
           created_at: string
           created_by: string
@@ -67,7 +67,7 @@ export type Database = {
         }
         Insert: {
           category?: Database["public"]["Enums"]["changelog_category"]
-          company_id: string
+          company_id?: string | null
           content: string
           created_at?: string
           created_by: string
@@ -76,7 +76,7 @@ export type Database = {
         }
         Update: {
           category?: Database["public"]["Enums"]["changelog_category"]
-          company_id?: string
+          company_id?: string | null
           content?: string
           created_at?: string
           created_by?: string
@@ -420,6 +420,7 @@ export type Database = {
           dismiss_whats_new: boolean
           full_name: string | null
           id: string
+          is_master: boolean
           phone: string | null
           position: string | null
           updated_at: string
@@ -433,6 +434,7 @@ export type Database = {
           dismiss_whats_new?: boolean
           full_name?: string | null
           id: string
+          is_master?: boolean
           phone?: string | null
           position?: string | null
           updated_at?: string
@@ -446,6 +448,7 @@ export type Database = {
           dismiss_whats_new?: boolean
           full_name?: string | null
           id?: string
+          is_master?: boolean
           phone?: string | null
           position?: string | null
           updated_at?: string
@@ -946,6 +949,7 @@ export type Database = {
         Args: { _analyst_id: string; _coordinator_id: string }
         Returns: boolean
       }
+      is_master: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
