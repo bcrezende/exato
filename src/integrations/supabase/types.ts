@@ -919,6 +919,18 @@ export type Database = {
         Args: { _coordinator_id: string }
         Returns: string[]
       }
+      get_invitation_by_token: {
+        Args: { _token: string }
+        Returns: {
+          company_id: string
+          company_name: string
+          department_id: string
+          email: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          token: string
+        }[]
+      }
       get_task_import_assignees: {
         Args: never
         Returns: {
