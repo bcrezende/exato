@@ -1,0 +1,1 @@
+DELETE FROM public.task_email_notifications WHERE task_id = '52e7e102-2faa-4413-8a3b-bc8314aaff0b';
