@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, subDays, startOfWeek, startOfMonth, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatStoredDate, nowAsFakeUTC } from "@/lib/date-utils";
+import { formatStoredDate, nowAsFakeUTC, toFakeUTC } from "@/lib/date-utils";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
@@ -109,35 +109,36 @@ function ConfettiCanvas() {
 function getDateRange(period: AdminPeriod, customStart?: string, customEnd?: string) {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-  const todayStart = new Date(Date.UTC(y, m, d, 0, 0, 0));
-  const todayEnd = new Date(Date.UTC(y, m, d, 23, 59, 59, 999));
+  const todayStart = new Date(y, m, d, 0, 0, 0);
+  const todayEnd = new Date(y, m, d, 23, 59, 59, 999);
 
   switch (period) {
     case "yesterday": {
       const yd = subDays(todayStart, 1);
-      return { start: yd.toISOString(), end: new Date(Date.UTC(yd.getFullYear(), yd.getMonth(), yd.getDate(), 23, 59, 59, 999)).toISOString() };
+      const ydEnd = new Date(yd.getFullYear(), yd.getMonth(), yd.getDate(), 23, 59, 59, 999);
+      return { start: toFakeUTC(yd), end: toFakeUTC(ydEnd) };
     }
     case "week": {
       const ws = startOfWeek(todayStart, { weekStartsOn: 1 });
-      return { start: ws.toISOString(), end: todayEnd.toISOString() };
+      return { start: toFakeUTC(ws), end: toFakeUTC(todayEnd) };
     }
     case "month": {
       const ms = startOfMonth(todayStart);
-      return { start: ms.toISOString(), end: todayEnd.toISOString() };
+      return { start: toFakeUTC(ms), end: toFakeUTC(todayEnd) };
     }
     case "custom": {
       if (customStart && customEnd) {
         const [sy, sm, sd] = customStart.split("-").map(Number);
         const [ey, em, ed] = customEnd.split("-").map(Number);
         return {
-          start: new Date(Date.UTC(sy, sm - 1, sd, 0, 0, 0)).toISOString(),
-          end: new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59, 999)).toISOString(),
+          start: toFakeUTC(new Date(sy, sm - 1, sd, 0, 0, 0)),
+          end: toFakeUTC(new Date(ey, em - 1, ed, 23, 59, 59)),
         };
       }
-      return { start: todayStart.toISOString(), end: todayEnd.toISOString() };
+      return { start: toFakeUTC(todayStart), end: toFakeUTC(todayEnd) };
     }
     default:
-      return { start: todayStart.toISOString(), end: todayEnd.toISOString() };
+      return { start: toFakeUTC(todayStart), end: toFakeUTC(todayEnd) };
   }
 }
 
