@@ -365,7 +365,28 @@ export default function AnalystDashboard() {
             <p className="text-sm text-muted-foreground mt-1">{profile.full_name}</p>
           )}
         </div>
-        <AdminPeriodToggle value={period} onChange={setPeriod} />
+        <div className="flex flex-col items-end gap-2">
+          <AdminPeriodToggle value={period} onChange={setPeriod} />
+          {period === "custom" && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="h-8 w-[140px] text-xs"
+                placeholder="Início"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <Input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="h-8 w-[140px] text-xs"
+                placeholder="Fim"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPIs */}
