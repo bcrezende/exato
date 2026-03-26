@@ -96,6 +96,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
   const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const canManage = role === "admin" || role === "manager" || role === "coordinator";
   const isCreator = localTask?.created_by === user?.id;
   const isAssigned = localTask?.assigned_to === user?.id;
