@@ -265,6 +265,7 @@ Deno.serve(async (req) => {
       const data = { ...item.templateData, assigneeName }
 
       try {
+        const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
         const res = await fetch(
           `${supabaseUrl}/functions/v1/send-transactional-email`,
           {
@@ -272,6 +273,7 @@ Deno.serve(async (req) => {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${supabaseServiceKey}`,
+              'apikey': anonKey,
             },
             body: JSON.stringify({
               templateName: item.templateName,
@@ -282,14 +284,17 @@ Deno.serve(async (req) => {
           }
         )
 
-        const responseBody = await res.json()
+        const rawBody = await res.text()
+        let responseBody: any = null
+        try { responseBody = JSON.parse(rawBody) } catch { /* non-JSON response */ }
 
         if (!res.ok || responseBody?.error) {
           console.error('send-transactional-email failed', {
             taskId: item.task.id,
             type: item.type,
             status: res.status,
-            error: responseBody?.error || res.statusText,
+            contentType: res.headers.get('Content-Type'),
+            body: rawBody.slice(0, 500),
           })
           continue
         }
