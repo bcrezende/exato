@@ -1,71 +1,61 @@
 
 
-## Diagnóstico do Sistema de Emails de Notificação
+## Alinhar regra de atraso em todos os dashboards
 
-### Problemas encontrados
+### Problema atual
 
-**1. `send-transactional-email` nunca foi deployed**
-- Não existem logs para esta Edge Function — nenhuma invocação chegou a executar
-- A função retorna 401 "Invalid JWT" ao ser chamada, o que confirma que não está deployed (ou não está acessível)
-- Resultado: **nenhum email de notificação de tarefa foi enviado** apesar de 10+ notificações terem sido detectadas
+O `AdminDashboard` usa a regra correta com dupla verificação por horário exato:
+- Tarefa `pending` com `start_date` já passado → atrasada
+- Tarefa não `completed` com `due_date` já passado → atrasada
 
-**2. `check-task-notifications` não valida resposta do invoke**
-- O código faz `await supabase.functions.invoke(...)` mas não verifica `{ data, error }` retornado
-- Independente de o email ter sido enviado ou não, registra a notificação como "enviada" em `task_email_notifications`
-- Isso impede reenvio futuro — a notificação fica marcada como enviada mas nunca foi
+Os outros 4 dashboards usam lógica antiga baseada apenas no **dia** do `due_date`, ignorando completamente atrasos por `start_date`.
 
-**3. Dados atuais no banco**
-- `email_send_log`: **0 registros** com template `task-*` — nenhum email de tarefa foi processado
-- `task_email_notifications`: **10+ registros** — notificações detectadas mas nunca enviadas de fato
-- Todos os 24 emails com status `dlq` são de convites antigos (TTL expirado), não relacionados
+### Mudanças por arquivo
 
-### Plano de correção
+**1. `src/pages/Dashboard/ManagerDashboard.tsx`**
 
-**Etapa 1 — Deploy das Edge Functions faltantes**
+- **`overdueTasks` (linha 158-182)**: Substituir a lógica `due_date.split("T")[0] < referenceDateStr` pela regra dual com `nowAsFakeUTC()` como cutoff:
+  ```typescript
+  const cutoff = nowAsFakeUTC();
+  const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < cutoff;
+  const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < cutoff;
+  ```
+- **`drillDownTasks` (linha 214-229)**: Adicionar case `"overdue"` com a mesma lógica dual
+- **`myOverdue` (linha 212)**: Alinhar com a mesma regra
+- **`teamProductivity` (linha 215-220)**: Usar regra dual no cálculo de produtividade
 
-Deployar todas as Edge Functions do sistema de email transacional:
-- `send-transactional-email`
-- `handle-email-unsubscribe`
-- `handle-email-suppression`
-- `process-email-queue`
+**2. `src/pages/Dashboard/CoordinatorDashboard.tsx`**
 
-**Etapa 2 — Corrigir `check-task-notifications` para validar resposta**
+- **`overdueTasks` (linha 179-202)**: Mesma substituição pela regra dual
+- **`drillDownTasks` (linha 247-262)**: Adicionar case `"overdue"` com lógica dual
+- **`myOverdue` (linha 212)**: Alinhar
+- **`teamProductivity`**: Alinhar
 
-Alterar o bloco de envio para verificar o retorno do invoke antes de registrar:
+**3. `src/pages/Dashboard/ManagerCoordinatorDashboard.tsx`**
+
+- **`overdueTasks` (linha 136-175)**: Substituir pela regra dual com cutoff por horário
+
+**4. `src/pages/Dashboard/AnalystDashboard.tsx`**
+
+- **`stats.overdue` (linha 277)**: Trocar de `status === "overdue"` para regra dual (pending + start_date passado OU não completed + due_date passado)
+- **Tab "Atrasadas" (linha 615)**: Usar mesma regra para listar tarefas
+- **`todayTasks` (linha 266-270)**: Não incluir `status === "overdue"` automaticamente; usar a regra dual
+
+### Regra unificada (para todos)
 
 ```typescript
-const { error: invokeError } = await supabase.functions.invoke('send-transactional-email', {
-  body: { ... },
-})
-
-if (invokeError) {
-  console.error('Failed to invoke send-transactional-email', { error: invokeError, taskId, type })
-  continue  // NÃO registrar como enviado
-}
-
-// Só registra se o envio foi bem-sucedido
-await supabase.from('task_email_notifications').upsert(...)
+const cutoff = nowAsFakeUTC();
+const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < cutoff;
+const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < cutoff;
+const isOverdue = isStartOverdue || isDueOverdue;
 ```
-
-**Etapa 3 — Limpar notificações "fantasma"**
-
-Migração SQL para deletar os registros em `task_email_notifications` que foram marcados como enviados mas nunca resultaram em email:
-
-```sql
-DELETE FROM task_email_notifications;
-```
-
-Isso permite que o sistema reprocesse todas as tarefas pendentes na próxima execução do cron.
-
-**Etapa 4 — Re-deploy de `check-task-notifications`**
-
-Após a correção do código, re-deployar a função.
 
 ### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `supabase/functions/check-task-notifications/index.ts` | Validar retorno do invoke antes de registrar notificação |
-| Deploy | `send-transactional-email`, `handle-email-unsubscribe`, `handle-email-suppression`, `process-email-queue`, `check-task-notifications` |
-| Migração SQL | Limpar `task_email_notifications` para permitir reprocessamento |
+| `src/pages/Dashboard/ManagerDashboard.tsx` | overdueTasks, drillDown, myOverdue, productivity |
+| `src/pages/Dashboard/CoordinatorDashboard.tsx` | overdueTasks, drillDown, myOverdue, productivity |
+| `src/pages/Dashboard/ManagerCoordinatorDashboard.tsx` | overdueTasks |
+| `src/pages/Dashboard/AnalystDashboard.tsx` | stats.overdue, tab atrasadas, todayTasks |
 
