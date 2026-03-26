@@ -12,11 +12,12 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { User, Building, RefreshCw, CalendarDays, Save, Sun, Moon, Monitor, Sparkles } from "lucide-react";
+import { User, Building, RefreshCw, CalendarDays, Save, Sun, Moon, Monitor, Sparkles, Bell } from "lucide-react";
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
 import HolidaySettings from "@/components/settings/HolidaySettings";
 import AvatarUpload from "@/components/settings/AvatarUpload";
 import WhatsNewAdmin from "@/components/settings/WhatsNewAdmin";
+import NotificationPreferences from "@/components/settings/NotificationPreferences";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
