@@ -1,28 +1,29 @@
 
 
-## Corrigir INSERT irrestrito na tabela task_delays
+## Corrigir Function Search Path Mutable
 
-### Análise
+### Problema
 
-A tabela `task_delays` recebe inserções exclusivamente do trigger `detect_task_delay()`, que é `SECURITY DEFINER` (executa como service_role). Não há inserção direta pelo frontend.
+4 funções do sistema de email queue não definem `SET search_path`, o que o linter do Supabase marca como vulnerabilidade. Sem search_path fixo, um schema malicioso poderia interceptar chamadas.
 
-Solução: restringir INSERT ao `service_role`, igual ao que fizemos com `notifications`.
+### Solução
 
-### Migração SQL
+Migração SQL para recriar as 4 funções com `SET search_path TO 'public'` adicionado.
+
+### Detalhes técnicos
 
 ```sql
-DROP POLICY IF EXISTS "Authenticated can insert delays" ON task_delays;
-
-CREATE POLICY "Service role can insert delays"
-ON public.task_delays FOR INSERT
-WITH CHECK (auth.role() = 'service_role');
+CREATE OR REPLACE FUNCTION public.delete_email(...) SET search_path TO 'public'
+CREATE OR REPLACE FUNCTION public.move_to_dlq(...) SET search_path TO 'public'
+CREATE OR REPLACE FUNCTION public.read_email_batch(...) SET search_path TO 'public'
+CREATE OR REPLACE FUNCTION public.enqueue_email(...) SET search_path TO 'public'
 ```
+
+Cada função mantém exatamente a mesma lógica, apenas adicionando a cláusula `SET search_path`.
 
 ### Arquivo afetado
 
 | Arquivo | Mudança |
 |---|---|
-| Migração SQL | Substituir policy de INSERT por service_role only |
-
-Nenhuma alteração de código frontend necessária.
+| Migração SQL | Recriar 4 funções com `SET search_path TO 'public'` |
 
