@@ -341,6 +341,36 @@ export type Database = {
         }
         Relationships: []
       }
+      email_template_overrides: {
+        Row: {
+          body_override: string | null
+          heading_override: string | null
+          id: string
+          subject_override: string | null
+          template_name: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          body_override?: string | null
+          heading_override?: string | null
+          id?: string
+          subject_override?: string | null
+          template_name: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          body_override?: string | null
+          heading_override?: string | null
+          id?: string
+          subject_override?: string | null
+          template_name?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       email_unsubscribe_tokens: {
         Row: {
           created_at: string
