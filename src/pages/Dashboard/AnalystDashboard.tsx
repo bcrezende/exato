@@ -5,6 +5,7 @@ import { format, subDays, startOfWeek, startOfMonth, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatStoredDate, nowAsFakeUTC } from "@/lib/date-utils";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { updateTaskStatus, generateNextRecurrence } from "@/lib/task-utils";
 import { usePendingTasksCheck } from "@/hooks/usePendingTasksCheck";
 import PendingTasksAlert from "@/components/tasks/PendingTasksAlert";
@@ -105,7 +106,7 @@ function ConfettiCanvas() {
 }
 
 /* ── date range ── */
-function getDateRange(period: AdminPeriod) {
+function getDateRange(period: AdminPeriod, customStart?: string, customEnd?: string) {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
   const todayStart = new Date(Date.UTC(y, m, d, 0, 0, 0));
@@ -123,6 +124,17 @@ function getDateRange(period: AdminPeriod) {
     case "month": {
       const ms = startOfMonth(todayStart);
       return { start: ms.toISOString(), end: todayEnd.toISOString() };
+    }
+    case "custom": {
+      if (customStart && customEnd) {
+        const [sy, sm, sd] = customStart.split("-").map(Number);
+        const [ey, em, ed] = customEnd.split("-").map(Number);
+        return {
+          start: new Date(Date.UTC(sy, sm - 1, sd, 0, 0, 0)).toISOString(),
+          end: new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59, 999)).toISOString(),
+        };
+      }
+      return { start: todayStart.toISOString(), end: todayEnd.toISOString() };
     }
     default:
       return { start: todayStart.toISOString(), end: todayEnd.toISOString() };
@@ -157,8 +169,10 @@ export default function AnalystDashboard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [members, setMembers] = useState<Tables<"profiles">[]>([]);
   const [departments, setDepartments] = useState<Tables<"departments">[]>([]);
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
 
-  const dateRange = useMemo(() => getDateRange(period), [period]);
+  const dateRange = useMemo(() => getDateRange(period, customStart, customEnd), [period, customStart, customEnd]);
 
   /* fetch tasks for period */
   const fetchTasks = useCallback(async () => {
@@ -168,7 +182,7 @@ export default function AnalystDashboard() {
       .from("tasks")
       .select(TASK_COLS)
       .eq("assigned_to", user.id)
-      .or(`status.eq.overdue,status.eq.not_done,and(start_date.gte.${dateRange.start},start_date.lte.${dateRange.end}),and(due_date.gte.${dateRange.start},due_date.lte.${dateRange.end})`)
+      .or(`and(start_date.gte.${dateRange.start},start_date.lte.${dateRange.end}),and(due_date.gte.${dateRange.start},due_date.lte.${dateRange.end})`)
       .order("start_date", { ascending: true, nullsFirst: false });
     if (data) {
       data.sort((a, b) => {
@@ -352,7 +366,28 @@ export default function AnalystDashboard() {
             <p className="text-sm text-muted-foreground mt-1">{profile.full_name}</p>
           )}
         </div>
-        <AdminPeriodToggle value={period} onChange={setPeriod} />
+        <div className="flex flex-col items-end gap-2">
+          <AdminPeriodToggle value={period} onChange={setPeriod} />
+          {period === "custom" && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="h-8 w-[140px] text-xs"
+                placeholder="Início"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <Input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="h-8 w-[140px] text-xs"
+                placeholder="Fim"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPIs */}
