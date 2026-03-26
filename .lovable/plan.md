@@ -1,60 +1,70 @@
 
+## Diagnóstico da task `52e7e102-2faa-4413-8a3b-bc8314aaff0b`
 
-## Adicionar confirmações antes de ações destrutivas/importantes
+### O que já confirmei
+- A task está `pending`
+- `start_date = 14:15`
+- `due_date = 14:30`
+- empresa com fuso `America/Sao_Paulo`
+- o job `check-task-notifications` está ativo e roda `* * * * *`
+- não existe registro em `task_email_notifications` para essa task
+- não existe registro correspondente em `email_send_log`
+- não há preferência do usuário desativando esses emails (`user_notification_preferences` sem linha = padrão ativo)
 
-### Resumo
+### Evidência do problema
+Nos logs da função `check-task-notifications`, essa task aparece várias vezes com:
+- `late_start` → `401 Unauthorized`
+- `overdue` → `401 Unauthorized`
 
-Criar um componente reutilizável `ConfirmActionDialog` usando `AlertDialog` e integrá-lo em todos os pontos onde o usuário executa exclusões, edições ou salvamentos sem confirmação prévia.
+E a função `send-transactional-email` não tem log dessa task, o que mostra que a requisição está sendo bloqueada antes mesmo de entrar na função de envio.
 
-### Locais identificados
+## Causa raiz
 
-| Local | Ação sem confirmação | Tipo |
-|---|---|---|
-| `Tasks.tsx` | Excluir tarefa (Kanban + Lista) | Exclusão |
-| `TaskDetailModal.tsx` | Excluir tarefa | Exclusão |
-| `Team.tsx` | Excluir setor | Exclusão |
-| `Team.tsx` | Excluir convite | Exclusão |
-| `CoordinatorLinksTab.tsx` | Remover vínculo coordenador-analista | Exclusão |
-| `HolidaySettings.tsx` | Excluir feriado | Exclusão |
-| `WhatsNewAdmin.tsx` | Excluir novidade | Exclusão |
-| `RecurrenceSettings.tsx` | Excluir recorrência | Exclusão |
-| `AnalysisHistoryTable.tsx` | Excluir análise | Exclusão |
-| `NotificationBell.tsx` | Limpar todas notificações | Exclusão |
-| `EditMemberDialog.tsx` | Salvar edição de membro | Salvamento |
-| `EditDepartmentDialog.tsx` | Salvar edição de setor | Salvamento |
-| `TaskForm.tsx` | Salvar/criar tarefa | Salvamento |
-| `Settings.tsx` | Salvar perfil / empresa | Salvamento |
+A task foi detectada corretamente para disparo, mas a chamada interna entre funções ainda está falhando na autenticação do gateway.
 
-### Detalhes técnicos
+Hoje `check-task-notifications` chama `send-transactional-email` por HTTP com:
+- `Authorization: Bearer <service_role>`
 
-**1. Novo componente `src/components/ui/confirm-action-dialog.tsx`**
+Só que a função de destino está com `verify_jwt = true`, e o gateway está rejeitando essa chamada com `401`. Por isso:
+1. o evento de atraso é identificado;
+2. a tentativa de envio acontece;
+3. o gateway bloqueia;
+4. o email não entra na fila;
+5. nada aparece no monitor de emails.
 
-- Componente reutilizável baseado em `AlertDialog`
-- Props: `open`, `onConfirm`, `onCancel`, `title`, `description`, `confirmLabel`, `variant` (destructive | default)
-- Variante `destructive` para exclusões (botão vermelho), `default` para salvamentos
+## Plano para sanar
 
-**2. Integração nos arquivos**
+### 1. Corrigir a autenticação da chamada interna
+Ajustar `supabase/functions/check-task-notifications/index.ts` para enviar também o header `apikey`, além do `Authorization`, na chamada para `send-transactional-email`.
 
-Para **exclusões**: envolver cada `handleDelete` / `delete` em um state `confirmDelete` que abre o dialog antes de executar.
+### 2. Melhorar o diagnóstico de erro
+Ajustar o tratamento da resposta HTTP para:
+- suportar resposta não-JSON
+- logar corpo bruto, status e tipo da notificação
+- facilitar identificar falhas de gateway sem ambiguidade
 
-Para **salvamentos importantes** (edição de membro, setor, perfil): adicionar confirmação antes do `handleSave`.
+### 3. Melhorar a observabilidade no painel
+Registrar falhas de despacho anteriores ao enfileiramento para que o Master Admin consiga ver esse tipo de erro no painel de monitoramento, e não apenas nos logs técnicos.
 
-> Nota: Criação de tarefas e convites **não** terão confirmação (o ato de preencher o formulário já é intencional o suficiente). Apenas edições/atualizações e exclusões.
+### 4. Revalidar com esta mesma task
+Como não há linha em `task_email_notifications`, não precisa limpar nada. Depois da correção, essa task ainda pode disparar:
+- `late_start`
+- `overdue`
+enquanto continuar `pending`.
 
-### Arquivos afetados
+### 5. Teste final controlado
+Depois da correção:
+- testar novamente esta task
+- criar uma nova task com início em 6–7 minutos
+- validar lembrete, atraso e visibilidade no monitor
+
+## Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/ui/confirm-action-dialog.tsx` | Novo componente reutilizável |
-| `src/pages/Tasks.tsx` | Confirmação antes de excluir tarefa |
-| `src/components/tasks/TaskDetailModal.tsx` | Confirmação antes de excluir tarefa |
-| `src/pages/Team.tsx` | Confirmação antes de excluir setor e convite |
-| `src/components/team/CoordinatorLinksTab.tsx` | Confirmação antes de remover vínculo |
-| `src/components/settings/HolidaySettings.tsx` | Confirmação antes de excluir feriado |
-| `src/components/settings/WhatsNewAdmin.tsx` | Confirmação antes de excluir novidade |
-| `src/components/settings/RecurrenceSettings.tsx` | Confirmação antes de excluir recorrência |
-| `src/components/analysis/AnalysisHistoryTable.tsx` | Confirmação antes de excluir análise |
-| `src/components/NotificationBell.tsx` | Confirmação antes de limpar notificações |
-| `src/components/team/EditMemberDialog.tsx` | Confirmação antes de salvar edição |
-| `src/components/team/EditDepartmentDialog.tsx` | Confirmação antes de salvar edição |
+| `supabase/functions/check-task-notifications/index.ts` | Corrigir headers da chamada e melhorar logs |
+| `src/pages/EmailMonitor.tsx` e/ou backend de log | Exibir falhas técnicas pré-fila no monitor |
 
+## Conclusão objetiva
+
+O email não foi disparado porque o sistema detectou o atraso da task, mas a chamada interna para a função de envio está sendo rejeitada com `401 Unauthorized` antes do email entrar na fila.
