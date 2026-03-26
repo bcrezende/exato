@@ -19,6 +19,7 @@ import EditMemberDialog from "@/components/team/EditMemberDialog";
 import EditDepartmentDialog from "@/components/team/EditDepartmentDialog";
 import CoordinatorLinksTab from "@/components/team/CoordinatorLinksTab";
 import { TeamSkeleton } from "@/components/skeletons/TeamSkeleton";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 
 type Profile = Tables<"profiles">;
 type Department = Tables<"departments">;
@@ -44,6 +45,7 @@ export default function Team() {
   const [searchMembers, setSearchMembers] = useState("");
   const [filterDept, setFilterDept] = useState("all");
   const [filterRole, setFilterRole] = useState("all");
+  const [confirmDeleteInvite, setConfirmDeleteInvite] = useState<string | null>(null);
   const isAdmin = role === "admin";
 
   const fetchData = async () => {
@@ -329,10 +331,7 @@ export default function Team() {
                         </TableCell>
                         {isAdmin && (
                           <TableCell>
-                            <Button variant="ghost" size="icon" onClick={async () => {
-                              await supabase.from("invitations").delete().eq("id", inv.id);
-                              fetchData();
-                            }}>
+                            <Button variant="ghost" size="icon" onClick={() => setConfirmDeleteInvite(inv.id)}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </TableCell>

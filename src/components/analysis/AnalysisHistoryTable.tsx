@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -37,6 +38,7 @@ export function AnalysisHistoryTable({ history, onDeleted }: Props) {
   const { toast } = useToast();
   const [viewItem, setViewItem] = useState<AnalysisRecord | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -97,7 +99,7 @@ export function AnalysisHistoryTable({ history, onDeleted }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => setConfirmDeleteId(item.id)}
                         disabled={deletingId === item.id}
                         title="Excluir"
                       >
@@ -117,6 +119,16 @@ export function AnalysisHistoryTable({ history, onDeleted }: Props) {
         onOpenChange={(open) => !open && setViewItem(null)}
         content={viewItem?.content || null}
         title={viewItem ? `Análise de ${format(new Date(viewItem.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}` : ""}
+      />
+
+      <ConfirmActionDialog
+        open={!!confirmDeleteId}
+        onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+        onCancel={() => setConfirmDeleteId(null)}
+        title="Excluir análise"
+        description="Tem certeza que deseja excluir esta análise? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="destructive"
       />
     </>
   );

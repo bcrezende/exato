@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 
 interface Notification {
   id: string;
@@ -24,6 +25,7 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const [justArrived, setJustArrived] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -162,7 +164,7 @@ export function NotificationBell() {
                 variant="ghost"
                 size="sm"
                 className="h-auto gap-1 px-2 py-1 text-xs text-destructive hover:text-destructive"
-                onClick={clearAll}
+                onClick={() => setConfirmClear(true)}
               >
                 <Trash2 className="h-3 w-3" />
                 Limpar
@@ -213,5 +215,16 @@ export function NotificationBell() {
         </ScrollArea>
       </PopoverContent>
     </Popover>
+
+    <ConfirmActionDialog
+      open={confirmClear}
+      onConfirm={() => { setConfirmClear(false); clearAll(); }}
+      onCancel={() => setConfirmClear(false)}
+      title="Limpar notificações"
+      description="Tem certeza que deseja limpar todas as notificações? Esta ação não pode ser desfeita."
+      confirmLabel="Limpar tudo"
+      variant="destructive"
+    />
+    </>
   );
 }

@@ -30,6 +30,7 @@ import TaskForm from "@/components/tasks/TaskForm";
 import TaskImportDialog from "@/components/tasks/TaskImportDialog";
 import { TasksSkeleton } from "@/components/skeletons/TasksSkeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
@@ -149,6 +150,8 @@ export default function Tasks() {
   const openCreate = () => { setEditing(null); setFormOpen(true); };
   const openEdit = (task: Task) => { setEditing(task); setFormOpen(true); };
   const openDetail = (task: Task) => { setDetailTask(task); setDetailOpen(true); };
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("tasks").delete().eq("id", id);
@@ -525,7 +528,7 @@ export default function Tasks() {
                                           {canManage && (
                                             <>
                                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(task)}><Pencil className="h-3 w-3" /></Button>
-                                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDelete(task.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setConfirmDeleteId(task.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                                             </>
                                           )}
                                         </div>
@@ -663,7 +666,7 @@ export default function Tasks() {
                         {canManage && (
                           <>
                             <Button variant="ghost" size="icon" onClick={() => openEdit(task)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => setConfirmDeleteId(task.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                           </>
                         )}
                       </div>
@@ -714,6 +717,16 @@ export default function Tasks() {
           setShowRecurrenceConfirm(false);
           setPendingRecurrence(null);
         }}
+      />
+
+      <ConfirmActionDialog
+        open={!!confirmDeleteId}
+        onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+        onCancel={() => setConfirmDeleteId(null)}
+        title="Excluir tarefa"
+        description="Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="destructive"
       />
     </div>
   );
