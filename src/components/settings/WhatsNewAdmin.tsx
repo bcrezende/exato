@@ -45,27 +45,24 @@ export default function WhatsNewAdmin() {
   const [saving, setSaving] = useState(false);
 
   const fetchEntries = async () => {
-    if (!profile?.company_id) return;
     const { data } = await supabase
       .from("changelog_entries")
       .select("id, title, content, category, created_at")
-      .eq("company_id", profile.company_id)
       .order("created_at", { ascending: false });
     setEntries((data as any) || []);
   };
 
-  useEffect(() => { fetchEntries(); }, [profile?.company_id]);
+  useEffect(() => { fetchEntries(); }, []);
 
   const handleCreate = async () => {
-    if (!user || !profile?.company_id || !title.trim() || !content.trim()) return;
+    if (!user || !title.trim() || !content.trim()) return;
     setSaving(true);
     const { error } = await supabase.from("changelog_entries").insert({
-      company_id: profile.company_id,
       title: title.trim(),
       content: content.trim(),
       category: category as any,
       created_by: user.id,
-    });
+    } as any);
     if (error) {
       toast({ variant: "destructive", title: "Erro", description: error.message });
     } else {
