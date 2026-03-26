@@ -166,7 +166,9 @@ export default function ManagerDashboard() {
       const dueDay = t.due_date?.split("T")[0];
       const startDay = t.start_date?.split("T")[0];
       const isInProgress = t.status === "in_progress";
-      const isOverdue = !isInProgress && (t.status === "overdue" || (!isCompleted && t.due_date && t.due_date.split("T")[0] < referenceDateStr));
+      const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < nowFake;
+      const isDueOverdue = !isCompleted && t.due_date && t.due_date < nowFake;
+      const isOverdue = !isInProgress && (isStartOverdue || isDueOverdue);
 
       if (isOverdue && !isCompleted) { overdue.push(t); return; }
       if (isInProgress) { todayList.push(t); return; }
@@ -197,7 +199,12 @@ export default function ManagerDashboard() {
   const sectorProductivity = useMemo(() => {
     const total = periodTasks.length;
     if (total === 0) return 100;
-    const overdue = periodTasks.filter(t => t.status === "overdue" || (t.status !== "completed" && t.due_date && new Date(t.due_date) < new Date())).length;
+    const nf = nowAsFakeUTC();
+    const overdue = periodTasks.filter(t => {
+      const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < nf;
+      const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < nf;
+      return isStartOverdue || isDueOverdue;
+    }).length;
     return Math.round(((total - overdue) / total) * 100);
   }, [periodTasks]);
 
@@ -224,6 +231,14 @@ export default function ManagerDashboard() {
       case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
       case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
       case "notCompleted": { const cutoff = nowAsFakeUTC() < cutoffISO ? nowAsFakeUTC() : cutoffISO; return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff); }
+      case "overdue": {
+        const nf = nowAsFakeUTC();
+        return periodTasks.filter(t => {
+          const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < nf;
+          const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < nf;
+          return isStartOverdue || isDueOverdue;
+        });
+      }
       default: return [];
     }
   }, [overviewFilter, periodTasks, periodDelays, periodEndISO]);
