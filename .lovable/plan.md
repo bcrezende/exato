@@ -1,61 +1,92 @@
 
 
-## Alinhar regra de atraso em todos os dashboards
+## Sistema de Novidades Global com Super Admin (is_master)
 
-### Problema atual
+### Resumo
 
-O `AdminDashboard` usa a regra correta com dupla verificação por horário exato:
-- Tarefa `pending` com `start_date` já passado → atrasada
-- Tarefa não `completed` com `due_date` já passado → atrasada
+Adicionar flag `is_master` na tabela `profiles` para identificar o super administrador. Tornar o sistema de novidades global (sem vínculo com empresa). Somente usuários com `is_master = true` poderão criar/gerenciar entradas de changelog. A aba "Novidades" nas configurações só aparece para masters.
 
-Os outros 4 dashboards usam lógica antiga baseada apenas no **dia** do `due_date`, ignorando completamente atrasos por `start_date`.
+### Mudanças
 
-### Mudanças por arquivo
+**1. Migração SQL**
 
-**1. `src/pages/Dashboard/ManagerDashboard.tsx`**
+- Adicionar coluna `is_master boolean DEFAULT false` na tabela `profiles`
+- Tornar `company_id` nullable em `changelog_entries`
+- Atualizar RLS de `changelog_entries`:
+  - SELECT: qualquer `authenticated` pode ler (sem filtro de empresa)
+  - INSERT/UPDATE/DELETE: apenas `is_master = true` (via security definer function)
+- Criar function `is_master(_user_id uuid)` (security definer) que verifica `profiles.is_master`
+- Atualizar trigger `reset_dismiss_whats_new`: quando `company_id IS NULL`, resetar **todos** os perfis
+- Setar `is_master = true` no seu usuário (qual email?)
 
-- **`overdueTasks` (linha 158-182)**: Substituir a lógica `due_date.split("T")[0] < referenceDateStr` pela regra dual com `nowAsFakeUTC()` como cutoff:
-  ```typescript
-  const cutoff = nowAsFakeUTC();
-  const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < cutoff;
-  const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < cutoff;
-  ```
-- **`drillDownTasks` (linha 214-229)**: Adicionar case `"overdue"` com a mesma lógica dual
-- **`myOverdue` (linha 212)**: Alinhar com a mesma regra
-- **`teamProductivity` (linha 215-220)**: Usar regra dual no cálculo de produtividade
+**2. `src/contexts/AuthContext.tsx`**
 
-**2. `src/pages/Dashboard/CoordinatorDashboard.tsx`**
+- Incluir `is_master` no profile fetch para que fique disponível no contexto
 
-- **`overdueTasks` (linha 179-202)**: Mesma substituição pela regra dual
-- **`drillDownTasks` (linha 247-262)**: Adicionar case `"overdue"` com lógica dual
-- **`myOverdue` (linha 212)**: Alinhar
-- **`teamProductivity`**: Alinhar
+**3. `src/components/settings/WhatsNewAdmin.tsx`**
 
-**3. `src/pages/Dashboard/ManagerCoordinatorDashboard.tsx`**
+- Remover `company_id` do insert (criar sem empresa = global)
+- Remover filtro `.eq("company_id", ...)` da listagem
 
-- **`overdueTasks` (linha 136-175)**: Substituir pela regra dual com cutoff por horário
+**4. `src/components/WhatsNewBell.tsx`**
 
-**4. `src/pages/Dashboard/AnalystDashboard.tsx`**
+- Remover filtro `.eq("company_id", ...)` da contagem de não lidos
 
-- **`stats.overdue` (linha 277)**: Trocar de `status === "overdue"` para regra dual (pending + start_date passado OU não completed + due_date passado)
-- **Tab "Atrasadas" (linha 615)**: Usar mesma regra para listar tarefas
-- **`todayTasks` (linha 266-270)**: Não incluir `status === "overdue"` automaticamente; usar a regra dual
+**5. `src/components/WhatsNewDialog.tsx`**
 
-### Regra unificada (para todos)
+- Remover filtro `.eq("company_id", ...)` da listagem de entradas
 
-```typescript
-const cutoff = nowAsFakeUTC();
-const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < cutoff;
-const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < cutoff;
-const isOverdue = isStartOverdue || isDueOverdue;
+**6. `src/pages/Settings.tsx`**
+
+- Trocar condição da aba "Novidades" de `role === "admin"` para `profile?.is_master === true`
+
+### Detalhes técnicos
+
+```sql
+-- Nova coluna
+ALTER TABLE profiles ADD COLUMN is_master boolean NOT NULL DEFAULT false;
+
+-- Security definer
+CREATE OR REPLACE FUNCTION public.is_master(_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT COALESCE((SELECT is_master FROM profiles WHERE id = _user_id), false)
+$$;
+
+-- Atualizar RLS changelog_entries
+ALTER TABLE changelog_entries ALTER COLUMN company_id DROP NOT NULL;
+DROP POLICY IF EXISTS "Admins can insert changelog entries" ON changelog_entries;
+DROP POLICY IF EXISTS "Admins can update changelog entries" ON changelog_entries;
+DROP POLICY IF EXISTS "Admins can delete changelog entries" ON changelog_entries;
+DROP POLICY IF EXISTS "Users can view changelog entries in own company" ON changelog_entries;
+
+CREATE POLICY "Anyone authenticated can view changelog" ON changelog_entries FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Masters can insert changelog" ON changelog_entries FOR INSERT TO authenticated WITH CHECK (is_master(auth.uid()));
+CREATE POLICY "Masters can update changelog" ON changelog_entries FOR UPDATE TO authenticated USING (is_master(auth.uid()));
+CREATE POLICY "Masters can delete changelog" ON changelog_entries FOR DELETE TO authenticated USING (is_master(auth.uid()));
+
+-- Atualizar trigger para reset global
+CREATE OR REPLACE FUNCTION public.reset_dismiss_whats_new()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+BEGIN
+  IF NEW.company_id IS NULL THEN
+    UPDATE profiles SET dismiss_whats_new = false;
+  ELSE
+    UPDATE profiles SET dismiss_whats_new = false WHERE company_id = NEW.company_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
 ```
 
 ### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Dashboard/ManagerDashboard.tsx` | overdueTasks, drillDown, myOverdue, productivity |
-| `src/pages/Dashboard/CoordinatorDashboard.tsx` | overdueTasks, drillDown, myOverdue, productivity |
-| `src/pages/Dashboard/ManagerCoordinatorDashboard.tsx` | overdueTasks |
-| `src/pages/Dashboard/AnalystDashboard.tsx` | stats.overdue, tab atrasadas, todayTasks |
+| Migração SQL | `is_master` coluna, `is_master()` function, RLS global, trigger atualizado |
+| `src/contexts/AuthContext.tsx` | Expor `is_master` do profile |
+| `src/components/WhatsNewBell.tsx` | Remover filtro company_id |
+| `src/components/WhatsNewDialog.tsx` | Remover filtro company_id |
+| `src/components/settings/WhatsNewAdmin.tsx` | Remover company_id do insert e listagem |
+| `src/pages/Settings.tsx` | Aba "Novidades" visível só para `is_master` |
+| Insert SQL | Setar `is_master = true` no seu usuário |
 
