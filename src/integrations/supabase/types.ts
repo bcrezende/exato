@@ -661,6 +661,35 @@ export type Database = {
           },
         ]
       }
+      task_email_notifications: {
+        Row: {
+          id: string
+          notification_type: string
+          sent_at: string | null
+          task_id: string
+        }
+        Insert: {
+          id?: string
+          notification_type: string
+          sent_at?: string | null
+          task_id: string
+        }
+        Update: {
+          id?: string
+          notification_type?: string
+          sent_at?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_email_notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_not_done_logs: {
         Row: {
           auto_generated: boolean | null
@@ -818,6 +847,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_notification_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          in_progress_overdue: boolean | null
+          late_start: boolean | null
+          overdue: boolean | null
+          previous_day_unstarted: boolean | null
+          reminder_5min: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          in_progress_overdue?: boolean | null
+          late_start?: boolean | null
+          overdue?: boolean | null
+          previous_day_unstarted?: boolean | null
+          reminder_5min?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          in_progress_overdue?: boolean | null
+          late_start?: boolean | null
+          overdue?: boolean | null
+          previous_day_unstarted?: boolean | null
+          reminder_5min?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
