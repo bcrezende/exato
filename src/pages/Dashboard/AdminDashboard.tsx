@@ -115,8 +115,8 @@ export default function AdminDashboard() {
     }
   }, [period, customStart, customEnd]);
 
-  const periodStartISO = periodStart.toISOString();
-  const periodEndISO = periodEnd.toISOString();
+  const periodStartISO = toFakeUTC(periodStart);
+  const periodEndISO = toFakeUTC(periodEnd);
 
   // Filtered tasks by department/employee
   const filteredTasks = useMemo(() => {

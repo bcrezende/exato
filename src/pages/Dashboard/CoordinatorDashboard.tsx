@@ -145,8 +145,8 @@ export default function CoordinatorDashboard() {
     }
   }, [period]);
   const referenceDateStr = format(referenceDate, "yyyy-MM-dd");
-  const periodEndISO = endOfDay(referenceDate).toISOString();
-  const periodStartISO = periodStart.toISOString();
+  const periodEndISO = toFakeUTC(endOfDay(referenceDate));
+  const periodStartISO = toFakeUTC(periodStart);
 
   const teamTasks = useMemo(() => {
     return tasks.filter(t => t.assigned_to && relevantIds.has(t.assigned_to));

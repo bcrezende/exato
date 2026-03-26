@@ -128,8 +128,8 @@ export default function ManagerDashboard() {
   }, [period]);
 
   const referenceDateStr = format(referenceDate, "yyyy-MM-dd");
-  const periodEndISO = endOfDay(referenceDate).toISOString();
-  const periodStartISO = periodStart.toISOString();
+  const periodEndISO = toFakeUTC(endOfDay(referenceDate));
+  const periodStartISO = toFakeUTC(periodStart);
 
   const filteredTasks = useMemo(() => {
     if (!selectedEmployee) return tasks;
