@@ -281,5 +281,24 @@ export default function Settings() {
         </Tabs>
       </TooltipProvider>
     </div>
+
+    <ConfirmActionDialog
+      open={confirmSaveProfile}
+      onConfirm={() => { setConfirmSaveProfile(false); saveProfile(); }}
+      onCancel={() => setConfirmSaveProfile(false)}
+      title="Salvar perfil"
+      description="Tem certeza que deseja salvar as alterações do seu perfil?"
+      confirmLabel="Salvar"
+    />
+
+    <ConfirmActionDialog
+      open={confirmSaveCompany}
+      onConfirm={() => { setConfirmSaveCompany(false); saveCompany(); }}
+      onCancel={() => setConfirmSaveCompany(false)}
+      title="Salvar empresa"
+      description="Tem certeza que deseja salvar as alterações da empresa?"
+      confirmLabel="Salvar"
+    />
+    </>
   );
 }
