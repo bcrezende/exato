@@ -1,45 +1,60 @@
 
 
-## Corrigir 401 nas notificações de email de tarefas
+## Adicionar confirmações antes de ações destrutivas/importantes
 
-### Causa raiz
+### Resumo
 
-A função `check-task-notifications` cria um client Supabase com a service_role key e chama `supabase.functions.invoke('send-transactional-email', ...)`. Porém, no contexto de Edge Functions chamando outras Edge Functions, o gateway retorna 401 porque o JWT não é propagado corretamente pelo `functions.invoke()`.
+Criar um componente reutilizável `ConfirmActionDialog` usando `AlertDialog` e integrá-lo em todos os pontos onde o usuário executa exclusões, edições ou salvamentos sem confirmação prévia.
 
-### Solução
+### Locais identificados
 
-Substituir `supabase.functions.invoke()` por uma chamada HTTP direta (`fetch`) com o header `Authorization: Bearer <service_role_key>` explícito. Isso garante que o gateway receba o JWT correto.
+| Local | Ação sem confirmação | Tipo |
+|---|---|---|
+| `Tasks.tsx` | Excluir tarefa (Kanban + Lista) | Exclusão |
+| `TaskDetailModal.tsx` | Excluir tarefa | Exclusão |
+| `Team.tsx` | Excluir setor | Exclusão |
+| `Team.tsx` | Excluir convite | Exclusão |
+| `CoordinatorLinksTab.tsx` | Remover vínculo coordenador-analista | Exclusão |
+| `HolidaySettings.tsx` | Excluir feriado | Exclusão |
+| `WhatsNewAdmin.tsx` | Excluir novidade | Exclusão |
+| `RecurrenceSettings.tsx` | Excluir recorrência | Exclusão |
+| `AnalysisHistoryTable.tsx` | Excluir análise | Exclusão |
+| `NotificationBell.tsx` | Limpar todas notificações | Exclusão |
+| `EditMemberDialog.tsx` | Salvar edição de membro | Salvamento |
+| `EditDepartmentDialog.tsx` | Salvar edição de setor | Salvamento |
+| `TaskForm.tsx` | Salvar/criar tarefa | Salvamento |
+| `Settings.tsx` | Salvar perfil / empresa | Salvamento |
 
 ### Detalhes técnicos
 
-No `check-task-notifications/index.ts`, na seção que envia notificações (~linha 230), trocar:
+**1. Novo componente `src/components/ui/confirm-action-dialog.tsx`**
 
-```typescript
-// ANTES (quebrado)
-await supabase.functions.invoke('send-transactional-email', {
-  body: { templateName, recipientEmail, idempotencyKey, templateData }
-})
+- Componente reutilizável baseado em `AlertDialog`
+- Props: `open`, `onConfirm`, `onCancel`, `title`, `description`, `confirmLabel`, `variant` (destructive | default)
+- Variante `destructive` para exclusões (botão vermelho), `default` para salvamentos
 
-// DEPOIS (funcional)
-const res = await fetch(
-  `${supabaseUrl}/functions/v1/send-transactional-email`,
-  {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${supabaseServiceKey}`,
-    },
-    body: JSON.stringify({ templateName, recipientEmail, idempotencyKey, templateData }),
-  }
-)
-```
+**2. Integração nos arquivos**
 
-Além disso, limpar os registros da tabela `task_email_notifications` para a tarefa de teste, para que o sistema tente novamente na próxima execução do cron.
+Para **exclusões**: envolver cada `handleDelete` / `delete` em um state `confirmDelete` que abre o dialog antes de executar.
+
+Para **salvamentos importantes** (edição de membro, setor, perfil): adicionar confirmação antes do `handleSave`.
+
+> Nota: Criação de tarefas e convites **não** terão confirmação (o ato de preencher o formulário já é intencional o suficiente). Apenas edições/atualizações e exclusões.
 
 ### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `supabase/functions/check-task-notifications/index.ts` | Trocar `functions.invoke` por `fetch` direto com auth header |
-| Migração SQL | Limpar registros de notificação da tarefa de teste |
+| `src/components/ui/confirm-action-dialog.tsx` | Novo componente reutilizável |
+| `src/pages/Tasks.tsx` | Confirmação antes de excluir tarefa |
+| `src/components/tasks/TaskDetailModal.tsx` | Confirmação antes de excluir tarefa |
+| `src/pages/Team.tsx` | Confirmação antes de excluir setor e convite |
+| `src/components/team/CoordinatorLinksTab.tsx` | Confirmação antes de remover vínculo |
+| `src/components/settings/HolidaySettings.tsx` | Confirmação antes de excluir feriado |
+| `src/components/settings/WhatsNewAdmin.tsx` | Confirmação antes de excluir novidade |
+| `src/components/settings/RecurrenceSettings.tsx` | Confirmação antes de excluir recorrência |
+| `src/components/analysis/AnalysisHistoryTable.tsx` | Confirmação antes de excluir análise |
+| `src/components/NotificationBell.tsx` | Confirmação antes de limpar notificações |
+| `src/components/team/EditMemberDialog.tsx` | Confirmação antes de salvar edição |
+| `src/components/team/EditDepartmentDialog.tsx` | Confirmação antes de salvar edição |
 
