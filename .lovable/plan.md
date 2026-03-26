@@ -1,36 +1,62 @@
 
 
-## Corrigir escopo de empresa na policy de managers em user_roles
+## Painel de Monitoramento de Emails (Master Admin)
 
-### Problema
+### Resumo
 
-A policy "Managers can insert limited roles" permite que um gerente atribua roles a usuários de **qualquer empresa**, pois não valida se o `user_id` alvo pertence à mesma empresa do gerente.
+Criar uma nova página `/email-monitor` acessível apenas por usuários com `is_master = true`, com dashboard completo de monitoramento de emails: stats, filtros por período/template/status, e tabela de logs.
 
-### Solução
+### Problema de acesso aos dados
 
-Adicionar verificação de `company_id` na policy, garantindo que o usuário alvo pertença à mesma empresa do gerente.
+A tabela `email_send_log` tem RLS restrita ao `service_role`. Para que o master admin possa consultar via frontend, criaremos uma função `SECURITY DEFINER` que retorna os dados apenas para masters.
 
-### Migração SQL
+### Detalhes técnicos
+
+**1. Migração SQL — 2 funções RPC**
 
 ```sql
-DROP POLICY IF EXISTS "Managers can insert limited roles" ON user_roles;
+-- Stats agregadas (deduplicadas por message_id)
+CREATE FUNCTION get_email_stats(_start timestamptz, _end timestamptz, _template text, _status text)
+RETURNS TABLE(status text, count bigint)
+SECURITY DEFINER SET search_path TO 'public'
+-- Só executa se is_master(auth.uid())
 
-CREATE POLICY "Managers can insert limited roles"
-ON public.user_roles FOR INSERT TO authenticated
-WITH CHECK (
-  has_role(auth.uid(), 'manager'::app_role)
-  AND role = ANY (ARRAY['analyst'::app_role, 'coordinator'::app_role, 'employee'::app_role])
-  AND EXISTS (
-    SELECT 1 FROM profiles p
-    WHERE p.id = user_roles.user_id
-      AND p.company_id = get_user_company_id(auth.uid())
-  )
-);
+-- Log paginado (deduplicado por message_id, latest status)
+CREATE FUNCTION get_email_logs(_start timestamptz, _end timestamptz, _template text, _status text, _limit int, _offset int)
+RETURNS TABLE(message_id text, template_name text, recipient_email text, status text, error_message text, created_at timestamptz, metadata jsonb)
+SECURITY DEFINER SET search_path TO 'public'
+
+-- Templates distintos
+CREATE FUNCTION get_email_templates()
+RETURNS TABLE(template_name text)
+SECURITY DEFINER SET search_path TO 'public'
 ```
 
-### Arquivo afetado
+**2. Nova página `src/pages/EmailMonitor.tsx`**
+
+- 4 stat cards: Total, Enviados, Falhas (DLQ), Suprimidos
+- Filtro de período: 24h, 7d, 30d, custom
+- Filtro por template (dropdown multi)
+- Filtro por status (All, Sent, Failed, Suppressed)
+- Tabela paginada com: Template, Destinatário, Status (badge colorido), Data, Erro
+- Dados via `supabase.rpc()` nas funções criadas
+
+**3. Rota protegida em `App.tsx`**
+
+- Rota `/email-monitor` dentro do layout protegido
+- Verificação de `is_master` no componente (redireciona se não for master)
+
+**4. Menu na sidebar `AppSidebar.tsx`**
+
+- Item "Monitorar Emails" visível apenas quando `profile?.is_master === true`
+- Ícone: `Mail`
+
+### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| Migração SQL | Recriar policy com verificação de empresa |
+| Migração SQL | 3 funções RPC SECURITY DEFINER |
+| `src/pages/EmailMonitor.tsx` | Nova página com dashboard completo |
+| `src/App.tsx` | Rota `/email-monitor` |
+| `src/components/AppSidebar.tsx` | Item de menu condicional para master |
 
