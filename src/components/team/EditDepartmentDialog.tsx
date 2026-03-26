@@ -42,6 +42,7 @@ export default function EditDepartmentDialog({ open, onOpenChange, department, o
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Editar Setor</DialogTitle></DialogHeader>

@@ -89,6 +89,7 @@ export default function CoordinatorLinksTab({ members, links, companyId, onRefre
     name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "U";
 
   return (
+    <>
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button onClick={() => setModalOpen(true)}>

@@ -151,6 +151,7 @@ export default function RecurrenceSettings() {
   const showWeekdays = form.interval_unit === "day" || form.interval_unit === "week";
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">

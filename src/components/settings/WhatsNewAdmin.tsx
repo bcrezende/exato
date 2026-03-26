@@ -84,6 +84,7 @@ export default function WhatsNewAdmin() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <Card>
         <CardHeader>

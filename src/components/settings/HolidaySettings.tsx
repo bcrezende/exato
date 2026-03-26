@@ -113,6 +113,7 @@ export default function HolidaySettings() {
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">

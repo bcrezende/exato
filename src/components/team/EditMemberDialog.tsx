@@ -83,6 +83,7 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Editar Membro</DialogTitle></DialogHeader>
