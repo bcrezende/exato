@@ -329,7 +329,7 @@ export default function AdminDashboard() {
         onDepartmentClick={(deptName) => {
           const dept = departments.find(d => d.name === deptName);
           if (dept) setSelectedDepartment(dept.id);
-          setOverviewFilter("notCompleted");
+          setOverviewFilter("overdue");
           setActiveTab("geral");
         }}
       />
