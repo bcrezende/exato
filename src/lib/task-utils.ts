@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { nowAsFakeUTC } from "@/lib/date-utils";
 
 type Task = Tables<"tasks">;
 
