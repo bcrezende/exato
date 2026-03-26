@@ -55,6 +55,45 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       changelog_entries: {
         Row: {
           category: Database["public"]["Enums"]["changelog_category"]
@@ -915,6 +954,34 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_audit_logs: {
+        Args: {
+          _action?: string
+          _end: string
+          _limit?: number
+          _offset?: number
+          _start: string
+          _user_id?: string
+        }
+        Returns: {
+          action: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
+      get_audit_stats: {
+        Args: { _end: string; _start: string }
+        Returns: {
+          action: string
+          count: number
+        }[]
+      }
       get_coordinator_analyst_ids: {
         Args: { _coordinator_id: string }
         Returns: string[]
@@ -999,6 +1066,15 @@ export type Database = {
         Returns: boolean
       }
       is_master: { Args: { _user_id: string }; Returns: boolean }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _entity_id?: string
+          _entity_type?: string
+          _metadata?: Json
+        }
+        Returns: undefined
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string

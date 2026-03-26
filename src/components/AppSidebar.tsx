@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound, Sun, Moon, Mail } from "lucide-react";
+import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound, Sun, Moon, Mail, Shield } from "lucide-react";
 import logoWhite from "@/assets/logo-white.png";
 import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
@@ -116,6 +116,14 @@ export function AppSidebar() {
                     <NavLink to="/email-monitor" end activeClassName="bg-sidebar-accent text-sidebar-accent-foreground">
                       <Mail className="h-4 w-4" />
                       {!collapsed && <span>Monitorar Emails</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive("/audit-log")} tooltip="Auditoria" className="hover-scale-subtle">
+                    <NavLink to="/audit-log" end activeClassName="bg-sidebar-accent text-sidebar-accent-foreground">
+                      <Shield className="h-4 w-4" />
+                      {!collapsed && <span>Auditoria</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
