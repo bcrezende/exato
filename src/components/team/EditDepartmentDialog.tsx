@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -20,6 +21,7 @@ export default function EditDepartmentDialog({ open, onOpenChange, department, o
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmSave, setConfirmSave] = useState(false);
 
   useEffect(() => {
     if (department) setName(department.name);
@@ -51,9 +53,19 @@ export default function EditDepartmentDialog({ open, onOpenChange, department, o
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+          <Button onClick={() => setConfirmSave(true)} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <ConfirmActionDialog
+      open={confirmSave}
+      onConfirm={() => { setConfirmSave(false); handleSave(); }}
+      onCancel={() => setConfirmSave(false)}
+      title="Salvar alterações"
+      description="Tem certeza que deseja salvar as alterações deste setor?"
+      confirmLabel="Salvar"
+    />
+    </>
   );
 }

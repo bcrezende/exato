@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 
 const unitLabels: Record<string, string> = { day: "Dia(s)", week: "Semana(s)", month: "Mês(es)", year: "Ano(s)" };
 const weekdayLabels = [
@@ -41,6 +42,7 @@ export default function RecurrenceSettings() {
   const { definitions, fetchDefinitions } = useRecurrenceDefinitions();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<RecurrenceDefinition | null>(null);
+  const [confirmDeleteDef, setConfirmDeleteDef] = useState<RecurrenceDefinition | null>(null);
   const [form, setForm] = useState({
     name: "",
     interval_value: "1",
@@ -204,7 +206,7 @@ export default function RecurrenceSettings() {
                       <Pencil className="h-4 w-4" />
                     </Button>
                     {!def.is_system && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(def)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setConfirmDeleteDef(def)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
@@ -312,5 +314,16 @@ export default function RecurrenceSettings() {
         </DialogContent>
       </Dialog>
     </Card>
+
+    <ConfirmActionDialog
+      open={!!confirmDeleteDef}
+      onConfirm={() => { if (confirmDeleteDef) handleDelete(confirmDeleteDef); setConfirmDeleteDef(null); }}
+      onCancel={() => setConfirmDeleteDef(null)}
+      title="Excluir recorrência"
+      description={`Tem certeza que deseja excluir a recorrência "${confirmDeleteDef?.name}"?`}
+      confirmLabel="Excluir"
+      variant="destructive"
+    />
+    </>
   );
 }

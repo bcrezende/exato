@@ -437,6 +437,22 @@ export default function Team() {
         department={editDept}
         onSaved={fetchData}
       />
+
+      <ConfirmActionDialog
+        open={!!confirmDeleteInvite}
+        onConfirm={async () => {
+          if (confirmDeleteInvite) {
+            await supabase.from("invitations").delete().eq("id", confirmDeleteInvite);
+            fetchData();
+          }
+          setConfirmDeleteInvite(null);
+        }}
+        onCancel={() => setConfirmDeleteInvite(null)}
+        title="Excluir convite"
+        description="Tem certeza que deseja excluir este convite? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="destructive"
+      />
     </div>
   );
 }
