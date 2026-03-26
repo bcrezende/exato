@@ -212,6 +212,10 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="notifications">
+            <NotificationPreferences />
+          </TabsContent>
+
           {role === "admin" && (
             <TabsContent value="company">
               <Card>
