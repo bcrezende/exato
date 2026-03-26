@@ -168,8 +168,10 @@ export default function AnalystDashboard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [members, setMembers] = useState<Tables<"profiles">[]>([]);
   const [departments, setDepartments] = useState<Tables<"departments">[]>([]);
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
 
-  const dateRange = useMemo(() => getDateRange(period), [period]);
+  const dateRange = useMemo(() => getDateRange(period, customStart, customEnd), [period, customStart, customEnd]);
 
   /* fetch tasks for period */
   const fetchTasks = useCallback(async () => {
