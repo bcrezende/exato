@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Building2, BarChart3, Users, AlertCircle, LayoutDashboard, X, Search, CalendarIcon } from "lucide-react";
-import { formatStoredDate, nowAsFakeUTC } from "@/lib/date-utils";
+import { formatStoredDate, nowAsFakeUTC, toFakeUTC } from "@/lib/date-utils";
 
 const LazyPerformanceAnalytics = lazy(() => import("@/components/dashboard/PerformanceAnalytics"));
 

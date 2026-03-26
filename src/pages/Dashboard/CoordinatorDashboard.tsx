@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState, useMemo } from "react";
 import { devError } from "@/lib/logger";
-import { nowAsFakeUTC, formatStoredDate } from "@/lib/date-utils";
+import { nowAsFakeUTC, formatStoredDate, toFakeUTC } from "@/lib/date-utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
