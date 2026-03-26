@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Link2 } from "lucide-react";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
@@ -32,6 +33,7 @@ export default function CoordinatorLinksTab({ members, links, companyId, onRefre
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ coordinator_id: "", analyst_id: "" });
   const [saving, setSaving] = useState(false);
+  const [confirmRemoveLink, setConfirmRemoveLink] = useState<string | null>(null);
 
   const coordinators = members.filter((m) => m.user_roles?.some((r) => r.role === "coordinator"));
   const analysts = members.filter((m) => m.user_roles?.some((r) => r.role === "analyst"));
@@ -87,6 +89,7 @@ export default function CoordinatorLinksTab({ members, links, companyId, onRefre
     name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "U";
 
   return (
+    <>
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button onClick={() => setModalOpen(true)}>
@@ -126,7 +129,7 @@ export default function CoordinatorLinksTab({ members, links, companyId, onRefre
                     </Avatar>
                     <span className="text-sm">{profile?.full_name || "Sem nome"}</span>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeLink(linkId)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setConfirmRemoveLink(linkId)}>
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
                 </div>
@@ -176,5 +179,16 @@ export default function CoordinatorLinksTab({ members, links, companyId, onRefre
         </DialogContent>
       </Dialog>
     </div>
+
+    <ConfirmActionDialog
+      open={!!confirmRemoveLink}
+      onConfirm={() => { if (confirmRemoveLink) removeLink(confirmRemoveLink); setConfirmRemoveLink(null); }}
+      onCancel={() => setConfirmRemoveLink(null)}
+      title="Remover vínculo"
+      description="Tem certeza que deseja remover este vínculo entre coordenador e analista?"
+      confirmLabel="Remover"
+      variant="destructive"
+    />
+    </>
   );
 }

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -26,6 +27,7 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
   const { toast } = useToast();
   const [form, setForm] = useState({ full_name: "", position: "", phone: "", department_id: "", role: "" });
   const [saving, setSaving] = useState(false);
+  const [confirmSave, setConfirmSave] = useState(false);
 
   useEffect(() => {
     if (member) {
@@ -81,6 +83,7 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Editar Membro</DialogTitle></DialogHeader>
@@ -121,9 +124,19 @@ export default function EditMemberDialog({ open, onOpenChange, member, departmen
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+          <Button onClick={() => setConfirmSave(true)} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <ConfirmActionDialog
+      open={confirmSave}
+      onConfirm={() => { setConfirmSave(false); handleSave(); }}
+      onCancel={() => setConfirmSave(false)}
+      title="Salvar alterações"
+      description="Tem certeza que deseja salvar as alterações deste membro?"
+      confirmLabel="Salvar"
+    />
+    </>
   );
 }

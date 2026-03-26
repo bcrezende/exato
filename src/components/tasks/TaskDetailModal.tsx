@@ -15,6 +15,7 @@ import { Pencil, Trash2, Clock, CalendarDays, User, Flag, Building2, Timer, Hour
 import NotDoneActionModal from "@/components/tasks/NotDoneActionModal";
 import { markTaskAsNotDone, generateNextRecurrence as genNext } from "@/lib/task-utils";
 import TaskAttachments from "@/components/tasks/TaskAttachments";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { format } from "date-fns";
 import { formatStoredDate } from "@/lib/date-utils";
 import type { Tables } from "@/integrations/supabase/types";
@@ -95,6 +96,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
   const [showRecurrenceConfirm, setShowRecurrenceConfirm] = useState(false);
   const [pendingRecurrence, setPendingRecurrence] = useState<{ parentId: string; recurrenceType: string } | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const canManage = role === "admin" || role === "manager" || role === "coordinator";
   const isCreator = localTask?.created_by === user?.id;
   const isAssigned = localTask?.assigned_to === user?.id;
@@ -211,6 +213,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
     setShowDifficultyPopover(false);
     handleStatusChange("completed", rating);
   };
+
 
   const handleDelete = async () => {
     const { error } = await supabase.from("tasks").delete().eq("id", localTask.id);
@@ -381,7 +384,7 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
               <Pencil className="mr-2 h-4 w-4" /> Editar
             </Button>
             {(canManage || isCreator) && (
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
+              <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
                 <Trash2 className="mr-2 h-4 w-4" /> Excluir
               </Button>
             )}
@@ -440,6 +443,15 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
         setShowRecurrenceConfirm(false);
         setPendingRecurrence(null);
       }}
+    />
+    <ConfirmActionDialog
+      open={confirmDelete}
+      onConfirm={() => { setConfirmDelete(false); handleDelete(); }}
+      onCancel={() => setConfirmDelete(false)}
+      title="Excluir tarefa"
+      description="Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita."
+      confirmLabel="Excluir"
+      variant="destructive"
     />
     </>
   );

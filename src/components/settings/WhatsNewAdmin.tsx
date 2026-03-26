@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Sparkles } from "lucide-react";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -43,6 +44,7 @@ export default function WhatsNewAdmin() {
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("feature");
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchEntries = async () => {
     const { data } = await supabase
@@ -82,6 +84,7 @@ export default function WhatsNewAdmin() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -141,7 +144,7 @@ export default function WhatsNewAdmin() {
                     <h4 className="font-medium text-sm">{entry.title}</h4>
                     <p className="text-xs text-muted-foreground line-clamp-2">{entry.content}</p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(entry.id)} className="shrink-0 text-destructive hover:text-destructive">
+                  <Button variant="ghost" size="icon" onClick={() => setConfirmDeleteId(entry.id)} className="shrink-0 text-destructive hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -151,5 +154,16 @@ export default function WhatsNewAdmin() {
         </CardContent>
       </Card>
     </div>
+
+    <ConfirmActionDialog
+      open={!!confirmDeleteId}
+      onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+      onCancel={() => setConfirmDeleteId(null)}
+      title="Excluir novidade"
+      description="Tem certeza que deseja excluir esta entrada? Esta ação não pode ser desfeita."
+      confirmLabel="Excluir"
+      variant="destructive"
+    />
+    </>
   );
 }

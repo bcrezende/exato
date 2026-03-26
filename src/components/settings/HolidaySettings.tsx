@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, CalendarDays, Download } from "lucide-react";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import ImportBrazilHolidaysDialog from "./ImportBrazilHolidaysDialog";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -34,6 +35,7 @@ export default function HolidaySettings() {
   const [form, setForm] = useState({ name: "", holiday_date: "", is_recurring: true });
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [confirmDeleteHoliday, setConfirmDeleteHoliday] = useState<Holiday | null>(null);
   const fetchHolidays = async () => {
     if (!profile?.company_id) return;
     const { data } = await supabase
@@ -111,6 +113,7 @@ export default function HolidaySettings() {
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -158,7 +161,7 @@ export default function HolidaySettings() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(h)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(h)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setConfirmDeleteHoliday(h)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -214,5 +217,16 @@ export default function HolidaySettings() {
         onImported={fetchHolidays}
       />
     </Card>
+
+    <ConfirmActionDialog
+      open={!!confirmDeleteHoliday}
+      onConfirm={() => { if (confirmDeleteHoliday) handleDelete(confirmDeleteHoliday); setConfirmDeleteHoliday(null); }}
+      onCancel={() => setConfirmDeleteHoliday(null)}
+      title="Excluir feriado"
+      description={`Tem certeza que deseja excluir o feriado "${confirmDeleteHoliday?.name}"?`}
+      confirmLabel="Excluir"
+      variant="destructive"
+    />
+    </>
   );
 }

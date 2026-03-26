@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { User, Building, RefreshCw, CalendarDays, Save, Sun, Moon, Monitor, Sparkles, Bell } from "lucide-react";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import RecurrenceSettings from "@/components/settings/RecurrenceSettings";
 import HolidaySettings from "@/components/settings/HolidaySettings";
 import AvatarUpload from "@/components/settings/AvatarUpload";
@@ -33,6 +34,8 @@ export default function Settings() {
   const [initialCompanyTimezone, setInitialCompanyTimezone] = useState("America/Sao_Paulo");
   const [saving, setSaving] = useState(false);
   const [dismissWarnings, setDismissWarnings] = useState(false);
+  const [confirmSaveProfile, setConfirmSaveProfile] = useState(false);
+  const [confirmSaveCompany, setConfirmSaveCompany] = useState(false);
 
   const isProfileDirty =
     profileForm.full_name !== initialProfileForm.full_name ||
@@ -94,6 +97,7 @@ export default function Settings() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Configurações</h1>
 
@@ -204,7 +208,7 @@ export default function Settings() {
                   </ToggleGroup>
                 </div>
                 <Separator />
-                <Button onClick={saveProfile} disabled={saving || !isProfileDirty}>
+                <Button onClick={() => setConfirmSaveProfile(true)} disabled={saving || !isProfileDirty}>
                   <Save className="mr-2 h-4 w-4" />
                   {saving ? "Salvando..." : "Salvar Perfil"}
                 </Button>
@@ -249,7 +253,7 @@ export default function Settings() {
                     </div>
                   </div>
                   <Separator />
-                  <Button onClick={saveCompany} disabled={saving || !isCompanyDirty}>
+                  <Button onClick={() => setConfirmSaveCompany(true)} disabled={saving || !isCompanyDirty}>
                     <Save className="mr-2 h-4 w-4" />
                     {saving ? "Salvando..." : "Salvar"}
                   </Button>
@@ -278,5 +282,24 @@ export default function Settings() {
         </Tabs>
       </TooltipProvider>
     </div>
+
+    <ConfirmActionDialog
+      open={confirmSaveProfile}
+      onConfirm={() => { setConfirmSaveProfile(false); saveProfile(); }}
+      onCancel={() => setConfirmSaveProfile(false)}
+      title="Salvar perfil"
+      description="Tem certeza que deseja salvar as alterações do seu perfil?"
+      confirmLabel="Salvar"
+    />
+
+    <ConfirmActionDialog
+      open={confirmSaveCompany}
+      onConfirm={() => { setConfirmSaveCompany(false); saveCompany(); }}
+      onCancel={() => setConfirmSaveCompany(false)}
+      title="Salvar empresa"
+      description="Tem certeza que deseja salvar as alterações da empresa?"
+      confirmLabel="Salvar"
+    />
+    </>
   );
 }
