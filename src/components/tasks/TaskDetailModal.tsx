@@ -214,7 +214,6 @@ export default function TaskDetailModal({ task, open, onOpenChange, members, dep
     handleStatusChange("completed", rating);
   };
 
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleDelete = async () => {
     const { error } = await supabase.from("tasks").delete().eq("id", localTask.id);
