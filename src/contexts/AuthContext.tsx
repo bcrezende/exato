@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           fetchUserData(newSession.user.id).then((success) => {
             if (mounted) setLoading(false);
             if (success && _event === "SIGNED_IN") {
-              supabase.rpc("log_audit_event", { _action: "login" }).catch(() => {});
+              supabase.rpc("log_audit_event", { _action: "login" }).then(() => {}).catch(() => {});
             }
           });
         } else {
