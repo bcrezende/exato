@@ -158,6 +158,7 @@ Deno.serve(async (req) => {
       template_name: templateName,
       recipient_email: effectiveRecipient,
       status: 'suppressed',
+      metadata: templateData,
     })
 
     console.log('Email suppressed', { effectiveRecipient, templateName })
@@ -287,22 +288,43 @@ Deno.serve(async (req) => {
     )
   }
 
-  // 4. Render React Email template to HTML and plain text
+  // 4. Check for template overrides
+  const { data: overrideRow } = await supabase
+    .from('email_template_overrides')
+    .select('subject_override, heading_override, body_override')
+    .eq('template_name', templateName)
+    .maybeSingle()
+
+  // Apply overrides to templateData if present
+  const finalTemplateData = { ...templateData }
+  if (overrideRow?.heading_override) {
+    finalTemplateData._headingOverride = overrideRow.heading_override
+  }
+  if (overrideRow?.body_override) {
+    finalTemplateData._bodyOverride = overrideRow.body_override
+  }
+
+  // 5. Render React Email template to HTML and plain text
   const html = await renderAsync(
-    React.createElement(template.component, templateData)
+    React.createElement(template.component, finalTemplateData)
   )
   const plainText = await renderAsync(
-    React.createElement(template.component, templateData),
+    React.createElement(template.component, finalTemplateData),
     { plainText: true }
   )
 
-  // Resolve subject — supports static string or dynamic function
-  const resolvedSubject =
-    typeof template.subject === 'function'
+  // Resolve subject — supports static string or dynamic function, with override
+  const resolvedSubject = overrideRow?.subject_override
+    ? overrideRow.subject_override
+        .replace('{{taskTitle}}', templateData.taskTitle || '')
+        .replace('{{startTime}}', templateData.startTime || '')
+        .replace('{{dueTime}}', templateData.dueTime || '')
+        .replace('{{originalDate}}', templateData.originalDate || '')
+    : typeof template.subject === 'function'
       ? template.subject(templateData)
       : template.subject
 
-  // 5. Enqueue the pre-rendered email for async processing by the dispatcher.
+  // 6. Enqueue the pre-rendered email for async processing by the dispatcher.
   // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
 
   // Log pending BEFORE enqueue so we have a record even if enqueue crashes
@@ -311,6 +333,7 @@ Deno.serve(async (req) => {
     template_name: templateName,
     recipient_email: effectiveRecipient,
     status: 'pending',
+    metadata: templateData,
   })
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {

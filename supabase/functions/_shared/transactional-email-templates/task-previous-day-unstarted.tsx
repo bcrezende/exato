@@ -11,24 +11,25 @@ interface Props {
   taskTitle?: string
   originalDate?: string
   assigneeName?: string
+  _headingOverride?: string
+  _bodyOverride?: string
 }
 
-const TaskPreviousDayUnstartedEmail = ({ taskTitle, originalDate, assigneeName }: Props) => (
+const TaskPreviousDayUnstartedEmail = ({ taskTitle, originalDate, assigneeName, _headingOverride, _bodyOverride }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
     <Preview>Tarefa de ontem sem início: {taskTitle || 'Tarefa'}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Img src={LOGO_URL} alt={SITE_NAME} height="48" style={logo} />
-        <Heading style={h1}>📋 Tarefa de ontem sem início</Heading>
+        <Heading style={h1}>{_headingOverride || '📋 Tarefa de ontem sem início'}</Heading>
         {assigneeName && <Text style={text}>Olá, {assigneeName}!</Text>}
         <Section style={card}>
           <Text style={cardTitle}>{taskTitle || 'Tarefa sem título'}</Text>
           <Text style={cardDetail}>Data original: <strong>{originalDate || '—'}</strong></Text>
         </Section>
         <Text style={text}>
-          Esta tarefa do dia anterior não foi iniciada. 
-          Verifique na plataforma se precisa ser reagendada ou concluída.
+          {_bodyOverride || 'Esta tarefa do dia anterior não foi iniciada. Verifique na plataforma se precisa ser reagendada ou concluída.'}
         </Text>
         <Hr style={hr} />
         <Text style={footer}>{SITE_NAME} — Gestão de tarefas</Text>

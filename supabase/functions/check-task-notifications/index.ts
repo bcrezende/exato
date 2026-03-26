@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
           templateName: 'task-reminder-5min',
           templateData: {
             taskTitle: task.title,
+            taskId: task.id,
             startTime: formatTime(task.start_date),
           },
         })
@@ -149,6 +150,7 @@ Deno.serve(async (req) => {
           templateName: 'task-late-start',
           templateData: {
             taskTitle: task.title,
+            taskId: task.id,
             startTime: formatTime(task.start_date),
           },
         })
@@ -167,6 +169,7 @@ Deno.serve(async (req) => {
           templateName: 'task-overdue',
           templateData: {
             taskTitle: task.title,
+            taskId: task.id,
             dueTime: formatTime(task.due_date),
           },
         })
@@ -185,6 +188,7 @@ Deno.serve(async (req) => {
           templateName: 'task-in-progress-overdue',
           templateData: {
             taskTitle: task.title,
+            taskId: task.id,
             dueTime: formatTime(task.due_date),
           },
         })
@@ -206,6 +210,7 @@ Deno.serve(async (req) => {
           templateName: 'task-previous-day-unstarted',
           templateData: {
             taskTitle: task.title,
+            taskId: task.id,
             originalDate: formatDate(task.start_date),
           },
         })

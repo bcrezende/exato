@@ -11,23 +11,25 @@ interface Props {
   taskTitle?: string
   startTime?: string
   assigneeName?: string
+  _headingOverride?: string
+  _bodyOverride?: string
 }
 
-const TaskReminder5minEmail = ({ taskTitle, startTime, assigneeName }: Props) => (
+const TaskReminder5minEmail = ({ taskTitle, startTime, assigneeName, _headingOverride, _bodyOverride }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
     <Preview>Sua tarefa começa em 5 minutos: {taskTitle || 'Tarefa'}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Img src={LOGO_URL} alt={SITE_NAME} height="48" style={logo} />
-        <Heading style={h1}>⏰ Tarefa começa em 5 minutos</Heading>
+        <Heading style={h1}>{_headingOverride || '⏰ Tarefa começa em 5 minutos'}</Heading>
         {assigneeName && <Text style={text}>Olá, {assigneeName}!</Text>}
         <Section style={card}>
           <Text style={cardTitle}>{taskTitle || 'Tarefa sem título'}</Text>
           <Text style={cardDetail}>Início previsto: <strong>{startTime || '—'}</strong></Text>
         </Section>
         <Text style={text}>
-          Prepare-se para iniciar esta tarefa. Acesse a plataforma para dar início.
+          {_bodyOverride || 'Prepare-se para iniciar esta tarefa. Acesse a plataforma para dar início.'}
         </Text>
         <Hr style={hr} />
         <Text style={footer}>

@@ -11,24 +11,25 @@ interface Props {
   taskTitle?: string
   dueTime?: string
   assigneeName?: string
+  _headingOverride?: string
+  _bodyOverride?: string
 }
 
-const TaskInProgressOverdueEmail = ({ taskTitle, dueTime, assigneeName }: Props) => (
+const TaskInProgressOverdueEmail = ({ taskTitle, dueTime, assigneeName, _headingOverride, _bodyOverride }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
     <Preview>Tarefa em andamento passou do prazo: {taskTitle || 'Tarefa'}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Img src={LOGO_URL} alt={SITE_NAME} height="48" style={logo} />
-        <Heading style={h1}>🔴 Tarefa em andamento passou do prazo</Heading>
+        <Heading style={h1}>{_headingOverride || '🔴 Tarefa em andamento passou do prazo'}</Heading>
         {assigneeName && <Text style={text}>Olá, {assigneeName}!</Text>}
         <Section style={card}>
           <Text style={cardTitle}>{taskTitle || 'Tarefa sem título'}</Text>
           <Text style={cardDetail}>Prazo final: <strong>{dueTime || '—'}</strong></Text>
         </Section>
         <Text style={text}>
-          Esta tarefa está em andamento, mas já ultrapassou o prazo final. 
-          Finalize-a o mais rápido possível.
+          {_bodyOverride || 'Esta tarefa está em andamento, mas já ultrapassou o prazo final. Finalize-a o mais rápido possível.'}
         </Text>
         <Hr style={hr} />
         <Text style={footer}>{SITE_NAME} — Gestão de tarefas</Text>
