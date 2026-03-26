@@ -136,8 +136,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
-          fetchUserData(newSession.user.id).then(() => {
+          fetchUserData(newSession.user.id).then((success) => {
             if (mounted) setLoading(false);
+            if (success && _event === "SIGNED_IN") {
+              supabase.rpc("log_audit_event", { _action: "login" }).catch(() => {});
+            }
           });
         } else {
           setProfile(null);
