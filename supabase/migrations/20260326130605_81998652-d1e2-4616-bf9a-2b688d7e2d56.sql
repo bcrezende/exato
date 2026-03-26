@@ -1,0 +1,1 @@
+DELETE FROM task_email_notifications;

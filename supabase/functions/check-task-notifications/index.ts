@@ -265,7 +265,7 @@ Deno.serve(async (req) => {
       const data = { ...item.templateData, assigneeName }
 
       try {
-        await supabase.functions.invoke('send-transactional-email', {
+        const { data: invokeData, error: invokeError } = await supabase.functions.invoke('send-transactional-email', {
           body: {
             templateName: item.templateName,
             recipientEmail: email,
@@ -274,7 +274,27 @@ Deno.serve(async (req) => {
           },
         })
 
-        // Record sent notification
+        if (invokeError) {
+          console.error('Failed to invoke send-transactional-email', {
+            taskId: item.task.id,
+            type: item.type,
+            error: invokeError,
+          })
+          continue
+        }
+
+        // Check if the response indicates failure
+        const responseBody = typeof invokeData === 'string' ? JSON.parse(invokeData) : invokeData
+        if (responseBody?.error) {
+          console.error('send-transactional-email returned error', {
+            taskId: item.task.id,
+            type: item.type,
+            error: responseBody.error,
+          })
+          continue
+        }
+
+        // Only record as sent if invocation was successful
         await supabase
           .from('task_email_notifications')
           .upsert(
@@ -283,6 +303,7 @@ Deno.serve(async (req) => {
           )
 
         totalSent++
+        console.log('Notification sent', { taskId: item.task.id, type: item.type, email })
       } catch (err) {
         console.error('Failed to send notification', {
           taskId: item.task.id,
