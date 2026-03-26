@@ -13,7 +13,7 @@ interface DelayRecord {
   created_at: string;
 }
 
-export type OverviewFilter = "total" | "onTime" | "inProgress" | "lateStart" | "lateCompletion" | "notCompleted";
+export type OverviewFilter = "total" | "onTime" | "inProgress" | "lateStart" | "lateCompletion" | "notCompleted" | "overdue";
 
 interface AdminOverviewCardsProps {
   periodTasks: Task[];

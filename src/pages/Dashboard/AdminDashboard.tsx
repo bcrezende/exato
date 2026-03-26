@@ -208,6 +208,7 @@ export default function AdminDashboard() {
       case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
       case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
       case "notCompleted": { const cutoff = nowAsFakeUTC() < cutoffISO ? nowAsFakeUTC() : cutoffISO; return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff); }
+      case "overdue": return periodTasks.filter(t => t.status !== "completed" && t.due_date && t.due_date < cutoffISO && t.due_date >= periodStartISO);
       default: return [];
     }
   }, [overviewFilter, periodTasks, periodDelays]);
@@ -322,13 +323,13 @@ export default function AdminDashboard() {
         period={period}
         overdueByDepartment={overdueByDepartment}
         onOverdueClick={() => {
-          setOverviewFilter("notCompleted");
+          setOverviewFilter("overdue");
           setActiveTab("geral");
         }}
         onDepartmentClick={(deptName) => {
           const dept = departments.find(d => d.name === deptName);
           if (dept) setSelectedDepartment(dept.id);
-          setOverviewFilter("notCompleted");
+          setOverviewFilter("overdue");
           setActiveTab("geral");
         }}
       />
