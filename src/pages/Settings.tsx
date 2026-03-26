@@ -106,6 +106,12 @@ export default function Settings() {
               </TooltipTrigger>
               <TooltipContent>Perfil</TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="notifications"><Bell className="h-4 w-4" /></TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Notificações</TooltipContent>
+            </Tooltip>
             {role === "admin" && (
               <Tooltip>
                 <TooltipTrigger asChild>
