@@ -1,41 +1,50 @@
 
 
-## Corrigir timestamps dos time logs existentes (offset de 3h)
+## Corrigir "Atrasadas Hoje" contando tarefas cujo prazo ainda não passou
 
-### Situação atual
+### Causa raiz
 
-Existem **766 registros** na tabela `task_time_logs` (de 16/03 a 26/03) onde o `created_at` foi salvo com `now()` do servidor (UTC real). Como o fuso é `America/Sao_Paulo` (UTC-3), todos os timestamps estão **3 horas adiantados** em relação ao horário local real.
+Dois pontos no `AdminDashboard.tsx` classificam tarefas como "atrasadas" comparando `due_date < periodEndISO` (23:59:59), mas deveriam comparar com o **horário atual** (`nowAsFakeUTC()`). Resultado: uma tarefa com prazo às 09:00 aparece como atrasada às 08:43.
 
-Exemplo: um usuário iniciou uma tarefa às 08:30 local → foi salvo como `11:30:00+00` → exibido como 11:30 (errado).
+O card "Não Concluídas" no `AdminOverviewCards` já usa `nowISO` como cutoff corretamente (linha 49). Mas o cálculo de `overdueTasks` e o drill-down "overdue" não fazem o mesmo.
 
-### Como identificar
+### Correção
 
-Todos os 766 logs existentes foram afetados — nenhum foi salvo com o novo formato fake UTC ainda. A identificação é simples: **todos os registros com microssegundos no `created_at`** vieram do `now()` do servidor.
+**`src/pages/Dashboard/AdminDashboard.tsx`** — 2 ajustes:
 
-### Solução
-
-Uma única migração SQL que subtrai 3 horas de todos os registros existentes:
-
-```sql
-UPDATE task_time_logs
-SET created_at = created_at - INTERVAL '3 hours';
+**1. `overdueTasks` (linha 141-148)** — usar `nowAsFakeUTC()` como cutoff para o período atual:
+```typescript
+const overdueTasks = useMemo(() => {
+  const cutoff = nowAsFakeUTC() < periodEndISO ? nowAsFakeUTC() : periodEndISO;
+  return periodTasks.filter(t =>
+    t.status !== "completed" &&
+    t.due_date &&
+    t.due_date < cutoff &&
+    t.due_date >= periodStartISO
+  );
+}, [periodTasks, periodStartISO, periodEndISO]);
 ```
 
-Isso converte `11:30:00+00` → `08:30:00+00`, alinhando com o padrão fake UTC do projeto.
+Para períodos passados (ontem, semana passada), `nowAsFakeUTC()` > `periodEndISO`, então usa `periodEndISO` — comportamento correto. Para "hoje", usa o horário atual — tarefas com prazo futuro não são contadas.
 
-A mesma correção deve ser aplicada à tabela `task_delays`, que também usa `now()` nos campos `actual_time` e `created_at`:
-
-```sql
-UPDATE task_delays
-SET created_at = created_at - INTERVAL '3 hours',
-    actual_time = actual_time - INTERVAL '3 hours';
+**2. `drillDownTasks` case "overdue" (linha 211)** — mesma lógica:
+```typescript
+case "overdue": {
+  const cutoff = nowAsFakeUTC() < cutoffISO ? nowAsFakeUTC() : cutoffISO;
+  return periodTasks.filter(t =>
+    t.status !== "completed" &&
+    t.due_date &&
+    t.due_date < cutoff &&
+    t.due_date >= periodStartISO
+  );
+}
 ```
 
-### Arquivos afetados
+### Arquivo afetado
 
 | Arquivo | Mudança |
 |---|---|
-| Migração SQL | `UPDATE task_time_logs` e `UPDATE task_delays` subtraindo 3h |
+| `src/pages/Dashboard/AdminDashboard.tsx` | Usar `nowAsFakeUTC()` como cutoff em `overdueTasks` e drill-down "overdue" |
 
-Nenhuma alteração de código — apenas correção de dados históricos.
+Nenhuma migração necessária.
 
