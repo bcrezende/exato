@@ -25,6 +25,7 @@ const TeamMonitoring = lazy(() => import("./pages/TeamMonitoring"));
 const AnalystDetail = lazy(() => import("./pages/AnalystDetail"));
 const Presentation = lazy(() => import("./pages/Presentation"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const EmailMonitor = lazy(() => import("./pages/EmailMonitor"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="/team/monitoring/:userId" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><AnalystDetail /></Suspense></ProtectedRoute>} />
               <Route path="/analysis" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><Analysis /></Suspense></ProtectedRoute>} />
               <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+              <Route path="/email-monitor" element={<Suspense fallback={<PageLoader />}><EmailMonitor /></Suspense>} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
