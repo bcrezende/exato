@@ -140,12 +140,11 @@ export default function AdminDashboard() {
   // Overdue tasks WITHIN the period (fixed bug)
   const overdueTasks = useMemo(() => {
     const cutoff = nowAsFakeUTC() < periodEndISO ? nowAsFakeUTC() : periodEndISO;
-    return periodTasks.filter(t =>
-      t.status !== "completed" &&
-      t.due_date &&
-      t.due_date < cutoff &&
-      t.due_date >= periodStartISO
-    );
+    return periodTasks.filter(t => {
+      const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < cutoff && t.start_date >= periodStartISO;
+      const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < cutoff && t.due_date >= periodStartISO;
+      return isStartOverdue || isDueOverdue;
+    });
   }, [periodTasks, periodStartISO, periodEndISO]);
 
   // Period delays
@@ -209,7 +208,7 @@ export default function AdminDashboard() {
       case "lateStart": return periodTasks.filter(t => lateStartIds.has(t.id));
       case "lateCompletion": return periodTasks.filter(t => lateCompletionIds.has(t.id));
       case "notCompleted": { const cutoff = nowAsFakeUTC() < cutoffISO ? nowAsFakeUTC() : cutoffISO; return periodTasks.filter(t => t.status !== "completed" && t.status !== "in_progress" && t.due_date && t.due_date < cutoff); }
-      case "overdue": { const cutoff = nowAsFakeUTC() < cutoffISO ? nowAsFakeUTC() : cutoffISO; return periodTasks.filter(t => t.status !== "completed" && t.due_date && t.due_date < cutoff && t.due_date >= periodStartISO); }
+      case "overdue": { const cutoff = nowAsFakeUTC() < cutoffISO ? nowAsFakeUTC() : cutoffISO; return periodTasks.filter(t => { const isStartOverdue = t.status === "pending" && t.start_date && t.start_date < cutoff && t.start_date >= periodStartISO; const isDueOverdue = t.status !== "completed" && t.due_date && t.due_date < cutoff && t.due_date >= periodStartISO; return isStartOverdue || isDueOverdue; }); }
       default: return [];
     }
   }, [overviewFilter, periodTasks, periodDelays]);
