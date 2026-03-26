@@ -118,6 +118,23 @@ export function todayEndAsFakeUTC(): string {
 /**
  * Get today's date string (YYYY-MM-DD) based on local time.
  */
+/**
+ * Convert a local Date object to a "fake UTC" ISO string.
+ * Reads local components and appends +00:00.
+ */
+export function toFakeUTC(d: Date): string {
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  const s = String(d.getSeconds()).padStart(2, "0");
+  return `${y}-${mo}-${day}T${h}:${mi}:${s}+00:00`;
+}
+
+/**
+ * Get today's date string (YYYY-MM-DD) based on local time.
+ */
 export function todayDateStr(): string {
   const now = new Date();
   const y = now.getFullYear();

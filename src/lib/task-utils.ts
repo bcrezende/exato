@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { nowAsFakeUTC } from "@/lib/date-utils";
 
 type Task = Tables<"tasks">;
 
@@ -42,6 +43,7 @@ export async function updateTaskStatus(
         task_id: taskId,
         user_id: userId,
         action,
+        created_at: nowAsFakeUTC(),
       }).then(() => {});
     }
   }
