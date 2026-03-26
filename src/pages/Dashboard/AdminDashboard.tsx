@@ -323,7 +323,7 @@ export default function AdminDashboard() {
         period={period}
         overdueByDepartment={overdueByDepartment}
         onOverdueClick={() => {
-          setOverviewFilter("notCompleted");
+          setOverviewFilter("overdue");
           setActiveTab("geral");
         }}
         onDepartmentClick={(deptName) => {
