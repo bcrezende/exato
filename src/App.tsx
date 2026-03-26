@@ -24,6 +24,7 @@ const Analysis = lazy(() => import("./pages/Analysis"));
 const TeamMonitoring = lazy(() => import("./pages/TeamMonitoring"));
 const AnalystDetail = lazy(() => import("./pages/AnalystDetail"));
 const Presentation = lazy(() => import("./pages/Presentation"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />
+            <Route path="/unsubscribe" element={<Suspense fallback={<PageLoader />}><Unsubscribe /></Suspense>} />
             <Route path="/presentation" element={<Suspense fallback={<PageLoader />}><Presentation /></Suspense>} />
             
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
