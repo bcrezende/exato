@@ -106,6 +106,24 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
+        {profile?.is_master && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/50">Master</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive("/email-monitor")} tooltip="Monitorar Emails" className="hover-scale-subtle">
+                    <NavLink to="/email-monitor" end activeClassName="bg-sidebar-accent text-sidebar-accent-foreground">
+                      <Mail className="h-4 w-4" />
+                      {!collapsed && <span>Monitorar Emails</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>

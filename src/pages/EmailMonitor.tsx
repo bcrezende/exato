@@ -80,7 +80,7 @@ export default function EmailMonitor() {
   const [templates, setTemplates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  if (!profile?.is_master) return <Navigate to="/dashboard" replace />;
+  const isMaster = profile?.is_master === true;
 
   const getRange = useCallback(() => {
     if (period === "custom" && customStart && customEnd) {
@@ -107,7 +107,9 @@ export default function EmailMonitor() {
     setLoading(false);
   }, [getRange, templateFilter, statusFilter, page]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { if (isMaster) fetchData(); }, [fetchData, isMaster]);
+
+  if (!isMaster) return <Navigate to="/dashboard" replace />;
 
   const total = stats.reduce((s, r) => s + Number(r.count), 0);
   const sent = Number(stats.find(s => s.status === "sent")?.count ?? 0);
