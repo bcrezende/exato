@@ -11,9 +11,11 @@ interface AdminKpiCardsProps {
   avgDelayRate: number;
   period: string;
   overdueByDepartment?: { name: string; count: number }[];
+  onOverdueClick?: () => void;
+  onDepartmentClick?: (deptName: string) => void;
 }
 
-export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks, avgDelayRate, period, overdueByDepartment = [] }: AdminKpiCardsProps) {
+export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks, avgDelayRate, period, overdueByDepartment = [], onOverdueClick, onDepartmentClick }: AdminKpiCardsProps) {
   const overdueLabel = period === "today" ? "Atrasadas Hoje"
     : period === "yesterday" ? "Atrasadas Ontem"
     : "Atrasadas no Período";
@@ -79,7 +81,10 @@ export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks,
       ))}
 
       {/* Card especial de Atrasadas com breakdown por setor */}
-      <Card>
+      <Card
+        className="cursor-pointer transition-all hover:shadow-md hover:bg-accent/50"
+        onClick={onOverdueClick}
+      >
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-destructive/10">
@@ -96,7 +101,11 @@ export default function AdminKpiCards({ activeSectors, totalTasks, overdueTasks,
               <ScrollArea className="max-h-[80px]">
                 <div className="space-y-1">
                   {overdueByDepartment.map((dept) => (
-                    <div key={dept.name} className="flex items-center justify-between text-xs">
+                    <div
+                      key={dept.name}
+                      className="flex items-center justify-between text-xs cursor-pointer hover:bg-muted rounded px-1 py-0.5 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); onDepartmentClick?.(dept.name); }}
+                    >
                       <span className="text-muted-foreground truncate mr-2">{dept.name}</span>
                       <span className="font-semibold text-destructive shrink-0">{dept.count}</span>
                     </div>

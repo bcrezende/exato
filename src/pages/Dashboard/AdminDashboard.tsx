@@ -321,6 +321,16 @@ export default function AdminDashboard() {
         avgDelayRate={avgDelayRate}
         period={period}
         overdueByDepartment={overdueByDepartment}
+        onOverdueClick={() => {
+          setOverviewFilter("notCompleted");
+          setActiveTab("geral");
+        }}
+        onDepartmentClick={(deptName) => {
+          const dept = departments.find(d => d.name === deptName);
+          if (dept) setSelectedDepartment(dept.id);
+          setOverviewFilter("notCompleted");
+          setActiveTab("geral");
+        }}
       />
 
       {/* Overview Cards */}
