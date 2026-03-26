@@ -265,31 +265,31 @@ Deno.serve(async (req) => {
       const data = { ...item.templateData, assigneeName }
 
       try {
-        const { data: invokeData, error: invokeError } = await supabase.functions.invoke('send-transactional-email', {
-          body: {
-            templateName: item.templateName,
-            recipientEmail: email,
-            idempotencyKey: `task-notif-${item.task.id}-${item.type}`,
-            templateData: data,
-          },
-        })
+        const res = await fetch(
+          `${supabaseUrl}/functions/v1/send-transactional-email`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              templateName: item.templateName,
+              recipientEmail: email,
+              idempotencyKey: `task-notif-${item.task.id}-${item.type}`,
+              templateData: data,
+            }),
+          }
+        )
 
-        if (invokeError) {
-          console.error('Failed to invoke send-transactional-email', {
+        const responseBody = await res.json()
+
+        if (!res.ok || responseBody?.error) {
+          console.error('send-transactional-email failed', {
             taskId: item.task.id,
             type: item.type,
-            error: invokeError,
-          })
-          continue
-        }
-
-        // Check if the response indicates failure
-        const responseBody = typeof invokeData === 'string' ? JSON.parse(invokeData) : invokeData
-        if (responseBody?.error) {
-          console.error('send-transactional-email returned error', {
-            taskId: item.task.id,
-            type: item.type,
-            error: responseBody.error,
+            status: res.status,
+            error: responseBody?.error || res.statusText,
           })
           continue
         }
