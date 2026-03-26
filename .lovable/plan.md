@@ -1,101 +1,104 @@
 
-## Corrigir “Atrasadas Hoje” para considerar atraso por início ou por prazo
 
-### Diagnóstico
+## Sistema de Notificações por Email — Plano de Implementação
 
-A tarefa `a673e809-4687-4149-8ec7-a952d0d51d51` tem:
+### Importante: Infraestrutura existente
 
-- `start_date = 2026-03-26T07:30:00+00:00`
-- `due_date = 2026-03-26T09:00:00+00:00`
-- `status = pending`
+O projeto já possui infraestrutura de email configurada (auth-email-hook, process-email-queue, domínio notify.rezendetech.com.br). Vamos usar a infraestrutura nativa do Lovable Cloud para emails transacionais, sem necessidade de serviços terceiros como Resend ou SendGrid.
 
-Hoje o `AdminDashboard` considera “Atrasadas Hoje” apenas por **prazo vencido**:
+### Visão Geral
 
-- `overdueTasks` usa só `t.due_date < cutoff`
-- `drillDown` do filtro `"overdue"` usa só `t.due_date < cutoff`
+Uma única Edge Function (`check-task-notifications`) rodando via pg_cron a cada 1 minuto verifica todas as condições de notificação e enfileira emails para tarefas que atendem aos critérios. Tabelas de controle evitam envio duplicado e permitem ao usuário configurar preferências.
 
-Por isso essa tarefa fica fora: o prazo ainda não venceu, mas o **início já venceu**, então ela deveria entrar como atrasada.
+### Etapa 1 — Scaffolding de email transacional
 
-### O que ajustar
+Configurar a infraestrutura de emails transacionais usando as ferramentas nativas (setup_email_infra + scaffold_transactional_email). Isso cria o Edge Function `send-transactional-email` e toda a infraestrutura de fila.
 
-**Arquivo principal:** `src/pages/Dashboard/AdminDashboard.tsx`
+### Etapa 2 — Tabelas novas (migração)
 
-#### 1. Criar regra única de atraso “operacional”
-Considerar uma tarefa atrasada quando:
+```sql
+-- Controle de envio (evita duplicatas)
+CREATE TABLE task_email_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL,
+  notification_type TEXT NOT NULL, -- 'reminder_5min', 'late_start', 'overdue', 'in_progress_overdue', 'previous_day_unstarted'
+  sent_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (task_id, notification_type)
+);
 
-- não está `completed`
-- e já passou do horário de **início** sem começar (`status = pending` e `start_date < cutoff`)
-- ou já passou do **prazo final** sem concluir (`status !== completed` e `due_date < cutoff`)
-
-Em termos práticos:
-
-```ts
-const isStartOverdue =
-  t.status === "pending" &&
-  t.start_date &&
-  t.start_date < cutoff;
-
-const isDueOverdue =
-  t.status !== "completed" &&
-  t.due_date &&
-  t.due_date < cutoff;
-
-return isStartOverdue || isDueOverdue;
+-- Preferências do usuário
+CREATE TABLE user_notification_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  reminder_5min BOOLEAN DEFAULT TRUE,
+  late_start BOOLEAN DEFAULT TRUE,
+  overdue BOOLEAN DEFAULT TRUE,
+  in_progress_overdue BOOLEAN DEFAULT TRUE,
+  previous_day_unstarted BOOLEAN DEFAULT TRUE,
+  UNIQUE (user_id)
+);
 ```
 
-#### 2. Aplicar essa mesma regra no card e no drill-down
-Hoje o card e a tabela detalhada não usam exatamente a mesma definição. Vou alinhar os dois pontos:
+Com RLS apropriado + políticas para service_role inserir notificações.
 
-- `const overdueTasks = useMemo(...)`
-- `case "overdue"` dentro de `drillDownTasks`
+### Etapa 3 — Templates de email (5 templates React Email)
 
-Assim o número do card e a lista aberta ao clicar passam a bater.
+Criar em `_shared/transactional-email-templates/`:
 
-#### 3. Restringir ao período atual corretamente
-Manter a lógica já existente de período:
+| Template | Assunto | Quando |
+|----------|---------|--------|
+| `task-reminder-5min` | "Tarefa começa em 5 min: {título}" | 5 min antes do start_date |
+| `task-late-start` | "Tarefa não iniciada: {título}" | start_date passou, status=pending |
+| `task-overdue` | "Prazo excedido: {título}" | due_date passou, não completed |
+| `task-in-progress-overdue` | "Tarefa em andamento passou do prazo: {título}" | in_progress + due_date passou |
+| `task-previous-day-unstarted` | "Tarefa de ontem sem início: {título}" | Dia anterior, status=pending |
 
-- usar `cutoff = min(nowAsFakeUTC(), periodEndISO)`
-- manter a tarefa dentro do período se o `start_date` **ou** `due_date` estiver dentro do range selecionado
+Todos com visual da marca Exato (azul primário, fonte Inter).
 
-Isso evita:
-- marcar como atrasada tarefa futura
-- perder tarefa do dia cujo atraso veio do `start_date`
+### Etapa 4 — Edge Function `check-task-notifications`
 
-### Resultado esperado
+Uma única função que:
 
-Para o caso que você apontou:
+1. Busca todas as empresas e seus fusos
+2. Para cada empresa, calcula o "agora" no fuso local (fake UTC)
+3. Verifica cada condição:
+   - **5 min antes**: `start_date` entre agora e agora+5min, status=pending, sem registro em task_email_notifications
+   - **Início atrasado**: `start_date < agora`, status=pending, sem notificação enviada
+   - **Prazo excedido**: `due_date < agora`, status não completed, sem notificação enviada
+   - **Em andamento + prazo**: status=in_progress, `due_date < agora`, sem notificação
+   - **Ontem sem início**: roda só entre 7h-8h local, tarefas de ontem com status=pending
+4. Para cada tarefa encontrada, busca email do assigned_to e preferências
+5. Chama `send-transactional-email` via `supabase.functions.invoke()`
+6. Registra em `task_email_notifications`
 
-- tarefa com início às **07:30**
-- agora por volta de **08:43**
-- status **pending**
+### Etapa 5 — Cron job (pg_cron)
 
-Ela passará a aparecer em **Atrasadas Hoje**, mesmo com `due_date` às 09:00.
+```sql
+SELECT cron.schedule('check-task-notifications', '* * * * *', ...);
+```
 
-Ao mesmo tempo:
+Roda a cada 1 minuto para capturar o lembrete de 5 min com precisão.
 
-- tarefas com início às 09:00 e prazo às 09:30 às 08:43 **não** aparecerão atrasadas
-- tarefas cujo prazo final já passou continuam aparecendo normalmente
+### Etapa 6 — Tela de preferências
 
-### Arquivo afetado
+Adicionar uma nova tab "Notificações" (ícone Bell) em `/settings` com toggles para cada tipo de notificação por email.
+
+### Prevenção de spam
+
+- Constraint `UNIQUE (task_id, notification_type)` impede envio duplicado
+- Preferências do usuário respeitadas antes de cada envio
+- Tabela `suppressed_emails` do sistema já bloqueia endereços com bounce/complaint
+
+### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Dashboard/AdminDashboard.tsx` | Trocar a lógica de “overdue” para considerar `start_date` vencido e `due_date` vencido |
+| Migração SQL | 2 tabelas novas + RLS |
+| 5 templates `.tsx` | Em `_shared/transactional-email-templates/` |
+| `registry.ts` | Registrar os 5 templates |
+| `supabase/functions/check-task-notifications/index.ts` | Nova Edge Function |
+| `supabase/config.toml` | Configuração da nova função |
+| `src/pages/Settings.tsx` | Nova tab "Notificações" |
+| Novo componente `NotificationPreferences.tsx` | UI de preferências |
+| Cron job SQL (via insert tool) | Agendar execução a cada minuto |
 
-### Observação importante
-
-Encontrei uma inconsistência de conceito no projeto:
-
-- alguns dashboards tratam “atrasada” por **dia inteiro**
-- o `AdminDashboard` está tratando por **horário exato**
-
-Para corrigir seu caso sem quebrar o que já foi acertado antes, vou manter no `AdminDashboard` a lógica por **horário exato**, mas com dupla regra:
-- atraso de início
-- atraso de conclusão
-
-Isso resolve o problema real que você mostrou e deixa o card mais coerente com a operação.
-
-<lov-actions>
-<lov-suggestion message="Teste o card 'Atrasadas Hoje' no dashboard admin e confirme se tarefas com start_date já vencido aparecem corretamente">Verifique que funciona</lov-suggestion>
-<lov-suggestion message="Depois dessa correção, alinhe também os dashboards de gerente e coordenador para usar a mesma regra de atraso por início e por prazo">Alinhar outros dashboards</lov-suggestion>
-</lov-actions>
