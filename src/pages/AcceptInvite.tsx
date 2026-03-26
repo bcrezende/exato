@@ -23,13 +23,12 @@ export default function AcceptInvite() {
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     supabase
-      .from("invitations")
-      .select("*, companies(name)")
-      .eq("token", token)
-      .is("accepted_at", null)
-      .single()
+      .rpc("get_invitation_by_token", { _token: token })
       .then(({ data }) => {
-        setInvitation(data);
+        const row = Array.isArray(data) ? data[0] : data;
+        if (row) {
+          setInvitation({ ...row, companies: { name: row.company_name } });
+        }
         setLoading(false);
       });
   }, [token]);
