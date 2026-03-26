@@ -1,41 +1,28 @@
 
 
-## Corrigir 2 vulnerabilidades de segurança (RLS)
+## Corrigir INSERT irrestrito na tabela task_delays
 
-### Problema 1: Escalação de privilégios via `is_master`
-A policy "Users can update own profile" permite que qualquer usuário autenticado altere `is_master`, `company_id` e `department_id` no próprio perfil. Solução: substituir por uma policy que restrinja as colunas atualizáveis apenas a `full_name`, `phone`, `position`, `avatar_url`, `dismiss_whats_new`, `dismiss_pending_warnings`.
+### Análise
 
-### Problema 2: Spoofing de notificações
-A policy de INSERT em `notifications` usa `auth.uid() IS NOT NULL`, permitindo inserir notificações com `user_id` de outro usuário. Porém, o trigger `notify_task_changes` (SECURITY DEFINER) insere notificações direcionadas a outros usuários legitimamente. Solução: restringir INSERT ao `service_role` apenas, já que todas as inserções legítimas vêm do trigger (que roda como SECURITY DEFINER/service_role).
+A tabela `task_delays` recebe inserções exclusivamente do trigger `detect_task_delay()`, que é `SECURITY DEFINER` (executa como service_role). Não há inserção direta pelo frontend.
 
-### Detalhes técnicos
+Solução: restringir INSERT ao `service_role`, igual ao que fizemos com `notifications`.
 
-**Migração SQL:**
+### Migração SQL
+
 ```sql
--- Fix 1: Restrict profile self-update to safe columns only
-DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
-CREATE POLICY "Users can update own profile"
-ON public.profiles FOR UPDATE TO authenticated
-USING (id = auth.uid())
-WITH CHECK (
-  id = auth.uid()
-  AND is_master IS NOT DISTINCT FROM (SELECT p.is_master FROM public.profiles p WHERE p.id = auth.uid())
-  AND company_id IS NOT DISTINCT FROM (SELECT p.company_id FROM public.profiles p WHERE p.id = auth.uid())
-  AND department_id IS NOT DISTINCT FROM (SELECT p.department_id FROM public.profiles p WHERE p.id = auth.uid())
-);
+DROP POLICY IF EXISTS "Authenticated can insert delays" ON task_delays;
 
--- Fix 2: Restrict notification inserts to service_role (trigger uses SECURITY DEFINER)
-DROP POLICY IF EXISTS "Authenticated can insert notifications" ON notifications;
-CREATE POLICY "Service role can insert notifications"
-ON public.notifications FOR INSERT
+CREATE POLICY "Service role can insert delays"
+ON public.task_delays FOR INSERT
 WITH CHECK (auth.role() = 'service_role');
 ```
 
-### Arquivos afetados
+### Arquivo afetado
 
 | Arquivo | Mudança |
 |---|---|
-| Migração SQL | Recriar 2 policies com restrições adequadas |
+| Migração SQL | Substituir policy de INSERT por service_role only |
 
 Nenhuma alteração de código frontend necessária.
 
