@@ -51,6 +51,7 @@ export default function AuditDashboard() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
+  const [selectedUser, setSelectedUser] = useState<string>("all");
 
   useEffect(() => {
     async function fetchData() {
