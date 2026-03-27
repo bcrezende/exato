@@ -1,27 +1,30 @@
 
 
-## Incluir o próprio coordenador nos dashboards Audit e Monitoring
+## Corrigir escalação de privilégios em user_roles
 
-### Problema
+### Análise
 
-Na linha 117-119 de ambos os dashboards, o filtro para coordenadores só inclui os IDs dos analistas vinculados (`coordinatorAnalystIds`), excluindo o próprio coordenador.
+As policies atuais de INSERT em `user_roles` são ambas **permissivas** — um usuário só precisa satisfazer UMA delas. Embora ambas exijam `has_role('admin')` ou `has_role('manager')`, a abordagem mais segura é adicionar uma policy **restritiva** que garanta explicitamente que apenas admins e managers possam inserir roles.
 
 ### Solução
 
-Adicionar `profile.id` ao `Set` de IDs visíveis para coordenadores:
+Adicionar uma policy **RESTRICTIVE** que bloqueia INSERT para qualquer usuário que não seja admin ou manager. Policies restritivas são avaliadas com AND (todas devem passar), servindo como barreira adicional.
 
-```typescript
-} else if (role === "coordinator") {
-  const ids = new Set(coordinatorAnalystIds);
-  ids.add(profile?.id);
-  filtered = filtered.filter((t) => t.assigned_to && ids.has(t.assigned_to));
-}
+### Migração SQL
+
+```sql
+CREATE POLICY "Only admins and managers can insert roles"
+ON public.user_roles FOR INSERT TO authenticated
+AS RESTRICTIVE
+WITH CHECK (
+  has_role(auth.uid(), 'admin'::app_role)
+  OR has_role(auth.uid(), 'manager'::app_role)
+);
 ```
 
-### Arquivos afetados
+### Arquivo afetado
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Dashboard/AuditDashboard.tsx` | Adicionar `profile.id` ao Set de IDs do coordenador |
-| `src/pages/Dashboard/MonitoringDashboard.tsx` | Mesma correção |
+| Migração SQL | Adicionar policy RESTRICTIVE de INSERT em user_roles |
 
