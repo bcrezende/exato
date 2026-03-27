@@ -48,6 +48,15 @@ export async function updateTaskStatus(
     }
   }
 
+  // Se voltou de in_progress para pending, apagar logs de start
+  if (previousStatus === "in_progress" && newStatus === "pending") {
+    supabase.from("task_time_logs")
+      .delete()
+      .eq("task_id", taskId)
+      .in("action", ["started", "started_late"])
+      .then(() => {});
+  }
+
   // Check if recurring — return flag instead of auto-generating
   const isRecurring =
     newStatus === "completed" &&
