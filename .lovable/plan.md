@@ -1,55 +1,40 @@
 
 
-## Adicionar tooltips explicativos nos cards de KPI
+## Transformar totalizadores da linha expansível em mini-cards
 
-### Solução
+### Mudança
 
-Adicionar um campo `tooltip` a cada item do array `kpiCards` com a condição que classifica a tarefa naquele estágio. Envolver cada card com o componente `Tooltip` do shadcn (já existe em `src/components/ui/tooltip.tsx`).
-
-### Textos dos tooltips
-
-**Auditoria:**
-| Card | Tooltip |
-|---|---|
-| Total de Tarefas | Todas as tarefas do período selecionado |
-| Não Executadas | Tarefas com status "não feita" — marcadas automaticamente quando não iniciadas até o fim do dia |
-| Início Atrasado | Tarefas que foram iniciadas após o horário previsto de início |
-| Concluídas Atrasadas | Tarefas concluídas após o prazo final (due_date) |
-| Concluídas no Prazo | Tarefas concluídas dentro do prazo final |
-| Não Concluídas | Tarefas pendentes ou em andamento cujo prazo final já passou |
-
-**Monitoramento:**
-| Card | Tooltip |
-|---|---|
-| Total de Tarefas | Todas as tarefas do período selecionado |
-| Iniciou em Atraso | Tarefas que foram iniciadas após o horário previsto de início |
-| Atrasadas | Tarefas em andamento cujo prazo final já foi ultrapassado |
-| Concluídas | Tarefas finalizadas no período |
-| Pendentes | Tarefas que ainda não foram iniciadas |
+Substituir os `<span>` de texto simples na linha do `CollapsibleTrigger` por pequenos cards estilizados inline, com fundo colorido sutil, borda arredondada e ícone.
 
 ### Implementação
 
-Em cada dashboard, adicionar `tooltip: string` ao array `kpiCards` e no render envolver o `Card` com `<Tooltip>` + `<TooltipTrigger>` + `<TooltipContent>`:
+Nos dois dashboards (`AuditDashboard.tsx` e `MonitoringDashboard.tsx`), trocar o bloco de spans por mini-cards assim:
 
 ```tsx
-<TooltipProvider>
-  {kpiCards.map((kpi) => (
-    <Tooltip key={kpi.label}>
-      <TooltipTrigger asChild>
-        <Card className="cursor-default">
-          <CardContent>...</CardContent>
-        </Card>
-      </TooltipTrigger>
-      <TooltipContent><p>{kpi.tooltip}</p></TooltipContent>
-    </Tooltip>
-  ))}
-</TooltipProvider>
+// De:
+<span className="text-orange-600">{sector.notDone} não exec.</span>
+
+// Para:
+<div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
+  <XCircle className="h-3 w-3 text-orange-600" />
+  <span className="text-xs font-medium text-orange-600">{sector.notDone}</span>
+  <span className="text-[10px] text-orange-500">não exec.</span>
+</div>
 ```
+
+Cada métrica terá seu próprio mini-card com:
+- Fundo sutil na cor correspondente (`bg-{color}-50` / dark mode `bg-{color}-950/30`)
+- Borda na cor (`border-{color}-200`)
+- Ícone pequeno (3x3) + valor em negrito + label
+
+**Auditoria** (4 mini-cards): Não Exec. (laranja), Início Atras. (âmbar), Concl. Atras. (vermelho), No Prazo (verde)
+
+**Monitoramento** (4 mini-cards): Início Atras. (âmbar), Atrasadas (vermelho), Concluídas (verde), Pendentes (laranja)
 
 ### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Dashboard/AuditDashboard.tsx` | Adicionar tooltips aos 6 cards de KPI |
-| `src/pages/Dashboard/MonitoringDashboard.tsx` | Adicionar tooltips aos 5 cards de KPI |
+| `src/pages/Dashboard/AuditDashboard.tsx` | Spans → mini-cards na linha do setor |
+| `src/pages/Dashboard/MonitoringDashboard.tsx` | Spans → mini-cards na linha do setor |
 
