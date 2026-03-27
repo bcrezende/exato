@@ -307,11 +307,27 @@ export default function MonitoringDashboard() {
                       <span className="font-medium">{sector.deptName}</span>
                       <Badge variant="secondary">{sector.total} tarefas</Badge>
                     </div>
-                    <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="text-amber-500">{sector.startedLate} início atras.</span>
-                      <span className="text-destructive">{sector.delayed} atrasadas</span>
-                      <span className="text-emerald-500">{sector.completed} concluídas</span>
-                      <span className="text-orange-500">{sector.pending} pendentes</span>
+                    <div className="hidden md:flex items-center gap-2">
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                        <Clock className="h-3 w-3 text-amber-500" />
+                        <span className="text-xs font-medium text-amber-500">{sector.startedLate}</span>
+                        <span className="text-[10px] text-amber-400">início atras.</span>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
+                        <AlertTriangle className="h-3 w-3 text-destructive" />
+                        <span className="text-xs font-medium text-destructive">{sector.delayed}</span>
+                        <span className="text-[10px] text-red-400">atrasadas</span>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                        <span className="text-xs font-medium text-emerald-500">{sector.completed}</span>
+                        <span className="text-[10px] text-emerald-400">concluídas</span>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
+                        <Hourglass className="h-3 w-3 text-orange-500" />
+                        <span className="text-xs font-medium text-orange-500">{sector.pending}</span>
+                        <span className="text-[10px] text-orange-400">pendentes</span>
+                      </div>
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>

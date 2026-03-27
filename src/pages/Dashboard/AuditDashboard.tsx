@@ -336,11 +336,27 @@ export default function AuditDashboard() {
                       <span className="font-medium">{sector.deptName}</span>
                       <Badge variant="secondary">{sector.total} tarefas</Badge>
                     </div>
-                    <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="text-orange-600">{sector.notDone} não exec.</span>
-                      <span className="text-amber-500">{sector.lateStart} início atras.</span>
-                      <span className="text-destructive">{sector.lateCompletion} concl. atras.</span>
-                      <span className="text-emerald-500">{sector.completedOnTime} no prazo</span>
+                    <div className="hidden md:flex items-center gap-2">
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800">
+                        <XCircle className="h-3 w-3 text-orange-600" />
+                        <span className="text-xs font-medium text-orange-600">{sector.notDone}</span>
+                        <span className="text-[10px] text-orange-500">não exec.</span>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                        <Clock className="h-3 w-3 text-amber-500" />
+                        <span className="text-xs font-medium text-amber-500">{sector.lateStart}</span>
+                        <span className="text-[10px] text-amber-400">início atras.</span>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
+                        <AlertTriangle className="h-3 w-3 text-destructive" />
+                        <span className="text-xs font-medium text-destructive">{sector.lateCompletion}</span>
+                        <span className="text-[10px] text-red-400">concl. atras.</span>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-md border px-2 py-1 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                        <span className="text-xs font-medium text-emerald-500">{sector.completedOnTime}</span>
+                        <span className="text-[10px] text-emerald-400">no prazo</span>
+                      </div>
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
