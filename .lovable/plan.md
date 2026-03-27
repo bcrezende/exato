@@ -1,38 +1,30 @@
 
 
-## Classificar tarefas como "Atrasada" quando o horário de início passa
+## Exibir dias no tempo de execução quando > 24h
 
-### Problema
+### Mudança
 
-No Kanban do `/tasks`, uma tarefa só vai para "Atrasada" quando o `due_date` (prazo final) passa. Se o `start_date` já passou e a tarefa continua `pending`, ela permanece na coluna "Pendente" até o prazo final vencer.
+Atualizar a função `formatDuration` em `src/components/tasks/TaskDetailModal.tsx` (linhas 37-43) para incluir dias:
 
-### Solução
-
-Adicionar verificação do `start_date` na lógica de classificação: se a tarefa está `pending` e o `start_date` já passou, ela deve aparecer como "Atrasada" (consistente com a lógica dos dashboards).
-
-### Mudança em `src/pages/Tasks.tsx`
-
-Trocar a condição de overdue de:
 ```typescript
-t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending"
+function formatDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days} dia${days > 1 ? 's' : ''}`);
+  if (hours > 0) parts.push(`${hours}h`);
+  parts.push(`${minutes}min`);
+  return parts.join(' ');
+}
 ```
 
-Para:
-```typescript
-t.status === "pending" && (
-  (t.due_date && t.due_date < nowAsFakeUTC()) ||
-  (t.start_date && t.start_date < nowAsFakeUTC())
-)
-```
-
-Aplicar nos 3 pontos:
-- Linha 439: filtro coluna overdue
-- Linha 440: filtro coluna pending (exclusão inversa)
-- Linha 300: drag-and-drop `currentEffective`
+Exemplo: `91h 15min` → `3 dias 19h 15min`
 
 ### Arquivo afetado
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Tasks.tsx` | Incluir `start_date` na lógica de classificação de tarefas atrasadas |
+| `src/components/tasks/TaskDetailModal.tsx` | Atualizar `formatDuration` para incluir dias |
 
