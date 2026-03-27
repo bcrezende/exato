@@ -11,6 +11,7 @@ import PendingNotDoneModal from "@/components/tasks/PendingNotDoneModal";
 export function AppLayout() {
   const location = useLocation();
   const { notDoneTasks, showModal, resolveTask } = usePendingNotDone();
+  useDocumentTitle();
 
   return (
     <SidebarProvider>

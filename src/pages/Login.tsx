@@ -18,6 +18,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { identityReady, user, profileError } = useAuth();
+  useDocumentTitle();
 
   // Redirect when identity is fully ready (not just authenticated)
   useEffect(() => {
