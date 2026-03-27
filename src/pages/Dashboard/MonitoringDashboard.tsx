@@ -261,9 +261,9 @@ export default function MonitoringDashboard() {
         </div>
       )}
 
-      {visibleDepartments.length > 0 && (
-        <div className="flex items-center gap-3">
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+      <div className="flex items-center gap-3 flex-wrap">
+        {visibleDepartments.length > 0 && (
+          <Select value={selectedDepartment} onValueChange={(v) => { setSelectedDepartment(v); setSelectedUser("all"); }}>
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="Todos os setores" />
             </SelectTrigger>
@@ -274,8 +274,21 @@ export default function MonitoringDashboard() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-      )}
+        )}
+        {visibleUsers.length > 0 && (
+          <Select value={selectedUser} onValueChange={setSelectedUser}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Todos os usuários" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os usuários</SelectItem>
+              {visibleUsers.map((u) => (
+                <SelectItem key={u.id} value={u.id}>{u.full_name || "Sem nome"}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
       {/* KPI Cards */}
       <TooltipProvider>
