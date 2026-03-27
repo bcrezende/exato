@@ -133,10 +133,22 @@ export default function AuditDashboard() {
   }, [visibleTasks, periodStart, periodEnd]);
 
   // Filter by selected department
-  const filteredTasks = useMemo(() => {
+  const deptFilteredTasks = useMemo(() => {
     if (selectedDepartment === "all") return periodTasks;
     return periodTasks.filter((t) => t.department_id === selectedDepartment);
   }, [periodTasks, selectedDepartment]);
+
+  // Filter by selected user
+  const filteredTasks = useMemo(() => {
+    if (selectedUser === "all") return deptFilteredTasks;
+    return deptFilteredTasks.filter((t) => t.assigned_to === selectedUser);
+  }, [deptFilteredTasks, selectedUser]);
+
+  // Available users for filter
+  const visibleUsers = useMemo(() => {
+    const userIds = new Set(periodTasks.map((t) => t.assigned_to).filter(Boolean));
+    return profiles.filter((p) => userIds.has(p.id)).sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
+  }, [periodTasks, profiles]);
 
   const delaySet = useMemo(() => {
     const map = new Map<string, Set<string>>();
