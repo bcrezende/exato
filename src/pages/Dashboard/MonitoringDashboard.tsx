@@ -116,6 +116,7 @@ export default function MonitoringDashboard() {
       filtered = filtered.filter((t) => t.department_id === profile.department_id);
     } else if (role === "coordinator") {
       const ids = new Set(coordinatorAnalystIds);
+      if (profile?.id) ids.add(profile.id);
       filtered = filtered.filter((t) => t.assigned_to && ids.has(t.assigned_to));
     } else if (role === "analyst") {
       filtered = filtered.filter((t) => t.assigned_to === profile?.id);
