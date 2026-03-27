@@ -36,10 +36,14 @@ const statusColors: Record<string, string> = {
 
 function formatDuration(ms: number): string {
   const totalMinutes = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMinutes / 60);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
   const minutes = totalMinutes % 60;
-  if (hours === 0) return `${minutes}min`;
-  return `${hours}h ${minutes}min`;
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days} dia${days > 1 ? 's' : ''}`);
+  if (hours > 0) parts.push(`${hours}h`);
+  parts.push(`${minutes}min`);
+  return parts.join(' ');
 }
 
 function ManagementActions({ task }: { task: Task }) {
