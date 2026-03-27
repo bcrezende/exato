@@ -10,6 +10,7 @@ import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admi
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { nowAsFakeUTC } from "@/lib/date-utils";
 import { ClipboardList, AlertTriangle, Clock, CheckCircle2, Hourglass, ChevronDown, Users } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth } from "date-fns";
 
 type Task = {
@@ -224,11 +225,11 @@ export default function MonitoringDashboard() {
   if (loading) return <DashboardSkeleton />;
 
   const kpiCards = [
-    { label: "Total de Tarefas", value: kpis.total, icon: ClipboardList, color: "text-primary" },
-    { label: "Iniciou em Atraso", value: kpis.startedLate, icon: Clock, color: "text-amber-500" },
-    { label: "Atrasadas", value: kpis.delayed, icon: AlertTriangle, color: "text-destructive" },
-    { label: "Concluídas", value: kpis.completed, icon: CheckCircle2, color: "text-emerald-500" },
-    { label: "Pendentes", value: kpis.pending, icon: Hourglass, color: "text-orange-500" },
+    { label: "Total de Tarefas", value: kpis.total, icon: ClipboardList, color: "text-primary", tooltip: "Todas as tarefas do período selecionado" },
+    { label: "Iniciou em Atraso", value: kpis.startedLate, icon: Clock, color: "text-amber-500", tooltip: "Tarefas que foram iniciadas após o horário previsto de início (start_date)" },
+    { label: "Atrasadas", value: kpis.delayed, icon: AlertTriangle, color: "text-destructive", tooltip: "Tarefas em andamento cujo prazo final (due_date) já foi ultrapassado" },
+    { label: "Concluídas", value: kpis.completed, icon: CheckCircle2, color: "text-emerald-500", tooltip: "Tarefas finalizadas no período selecionado" },
+    { label: "Pendentes", value: kpis.pending, icon: Hourglass, color: "text-orange-500", tooltip: "Tarefas que ainda não foram iniciadas" },
   ];
 
   return (
@@ -264,17 +265,26 @@ export default function MonitoringDashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-        {kpiCards.map((kpi) => (
-          <Card key={kpi.label}>
-            <CardContent className="flex flex-col items-center justify-center p-4 text-center">
-              <kpi.icon className={`h-6 w-6 mb-2 ${kpi.color}`} />
-              <p className="text-2xl font-bold">{kpi.value}</p>
-              <p className="text-xs text-muted-foreground">{kpi.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <TooltipProvider>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+          {kpiCards.map((kpi) => (
+            <Tooltip key={kpi.label}>
+              <TooltipTrigger asChild>
+                <Card className="cursor-default">
+                  <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+                    <kpi.icon className={`h-6 w-6 mb-2 ${kpi.color}`} />
+                    <p className="text-2xl font-bold">{kpi.value}</p>
+                    <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                  </CardContent>
+                </Card>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[250px]">
+                <p>{kpi.tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </TooltipProvider>
 
       {/* Sector table */}
       <Card>
