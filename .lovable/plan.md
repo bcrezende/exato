@@ -1,30 +1,38 @@
 
 
-## Exibir dias no tempo de execução quando > 24h
+## Título dinâmico no navegador por rota
 
-### Mudança
+### Solução
 
-Atualizar a função `formatDuration` em `src/components/tasks/TaskDetailModal.tsx` (linhas 37-43) para incluir dias:
+Criar um componente `useDocumentTitle` (ou inline no `AppLayout`) que atualiza `document.title` baseado no `location.pathname`.
 
-```typescript
-function formatDuration(ms: number): string {
-  const totalMinutes = Math.floor(ms / 60000);
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const minutes = totalMinutes % 60;
-  const parts: string[] = [];
-  if (days > 0) parts.push(`${days} dia${days > 1 ? 's' : ''}`);
-  if (hours > 0) parts.push(`${hours}h`);
-  parts.push(`${minutes}min`);
-  return parts.join(' ');
-}
-```
+### Mapeamento de rotas
 
-Exemplo: `91h 15min` → `3 dias 19h 15min`
+| Rota | Título |
+|---|---|
+| `/dashboard` | Dashboard \| Exato |
+| `/tasks` | Tarefas \| Exato |
+| `/my-day` | Meu Dia \| Exato |
+| `/team` | Equipe \| Exato |
+| `/team/monitoring` | Minha Equipe \| Exato |
+| `/team/monitoring/:id` | Detalhe Analista \| Exato |
+| `/analysis` | Análise IA \| Exato |
+| `/settings` | Configurações \| Exato |
+| `/email-monitor` | Monitorar Emails \| Exato |
+| `/audit-log` | Auditoria \| Exato |
+| `/login` | Login \| Exato |
+| fallback | Exato |
 
-### Arquivo afetado
+### Implementação
+
+1. Criar `src/hooks/useDocumentTitle.ts` com um `useEffect` que observa `location.pathname` e define `document.title`
+2. Chamar o hook em `AppLayout.tsx` (rotas autenticadas) e nas páginas públicas (Login, Register, etc.) ou num wrapper global no `App.tsx`
+
+### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/tasks/TaskDetailModal.tsx` | Atualizar `formatDuration` para incluir dias |
+| `src/hooks/useDocumentTitle.ts` | Novo hook com mapeamento rota → título |
+| `src/components/AppLayout.tsx` | Chamar `useDocumentTitle()` |
+| `src/pages/Login.tsx` | Chamar `useDocumentTitle()` (ou resolver globalmente) |
 
