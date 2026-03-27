@@ -5,11 +5,13 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { WhatsNewBell } from "@/components/WhatsNewBell";
 import { ProfileCompletionBadge } from "@/components/ProfileCompletionBadge";
 import { usePendingNotDone } from "@/hooks/usePendingNotDone";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import PendingNotDoneModal from "@/components/tasks/PendingNotDoneModal";
 
 export function AppLayout() {
   const location = useLocation();
   const { notDoneTasks, showModal, resolveTask } = usePendingNotDone();
+  useDocumentTitle();
 
   return (
     <SidebarProvider>

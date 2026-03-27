@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { LogIn } from "lucide-react";
 import logoDark from "@/assets/logo-dark-optimized.webp";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -17,6 +18,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { identityReady, user, profileError } = useAuth();
+  useDocumentTitle();
 
   // Redirect when identity is fully ready (not just authenticated)
   useEffect(() => {
