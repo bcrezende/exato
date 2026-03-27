@@ -1,48 +1,38 @@
 
 
-## Tarefa não aparece como "Atrasada" no /tasks — Diagnóstico
+## Classificar tarefas como "Atrasada" quando o horário de início passa
 
-### Causa raiz
+### Problema
 
-A lógica do Kanban em `Tasks.tsx` (linha 439) usa **comparação apenas por data** para decidir se uma tarefa pendente é "atrasada":
-
-```typescript
-t.due_date.split("T")[0] < todayDateStr()
-```
-
-Isso significa: a tarefa só aparece na coluna "Atrasada" se o **dia** do `due_date` for **anterior a hoje**. Se a tarefa vence **hoje** às 14:30 e agora são 15:00, ela **não** aparece como atrasada porque `"2026-03-27" < "2026-03-27"` é `false`.
-
-O mesmo problema existe na visão de Lista (linha 300 do drag-and-drop) e no filtro de status.
+No Kanban do `/tasks`, uma tarefa só vai para "Atrasada" quando o `due_date` (prazo final) passa. Se o `start_date` já passou e a tarefa continua `pending`, ela permanece na coluna "Pendente" até o prazo final vencer.
 
 ### Solução
 
-Trocar a comparação de data-only para comparação completa com horário, usando `nowAsFakeUTC()` (que já é usado nos dashboards para essa mesma lógica):
+Adicionar verificação do `start_date` na lógica de classificação: se a tarefa está `pending` e o `start_date` já passou, ela deve aparecer como "Atrasada" (consistente com a lógica dos dashboards).
 
-**Antes:**
+### Mudança em `src/pages/Tasks.tsx`
+
+Trocar a condição de overdue de:
 ```typescript
-t.due_date.split("T")[0] < todayDateStr()
+t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending"
 ```
 
-**Depois:**
+Para:
 ```typescript
-t.due_date < nowAsFakeUTC()
+t.status === "pending" && (
+  (t.due_date && t.due_date < nowAsFakeUTC()) ||
+  (t.start_date && t.start_date < nowAsFakeUTC())
+)
 ```
 
-Isso faz a tarefa ir para "Atrasada" assim que o horário de vencimento passar, não apenas no dia seguinte.
-
-### Pontos de correção em `src/pages/Tasks.tsx`
-
-| Linha | Contexto | Mudança |
-|---|---|---|
-| 439 | Kanban: filtro coluna overdue | `due_date < nowAsFakeUTC()` |
-| 440 | Kanban: filtro coluna pending (exclusão) | mesma lógica invertida |
-| 300 | Drag-and-drop: `currentEffective` | mesma correção |
-
-Importar `nowAsFakeUTC` de `@/lib/date-utils` (já importa `todayDateStr` e `toDisplayDate`).
+Aplicar nos 3 pontos:
+- Linha 439: filtro coluna overdue
+- Linha 440: filtro coluna pending (exclusão inversa)
+- Linha 300: drag-and-drop `currentEffective`
 
 ### Arquivo afetado
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Tasks.tsx` | Usar `nowAsFakeUTC()` em vez de comparação por data para classificar tarefas como atrasadas |
+| `src/pages/Tasks.tsx` | Incluir `start_date` na lógica de classificação de tarefas atrasadas |
 
