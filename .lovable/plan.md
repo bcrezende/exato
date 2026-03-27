@@ -1,45 +1,27 @@
 
 
-## Corrigir policies de UPDATE e DELETE em user_roles — escopo por empresa
+## Incluir o próprio coordenador nos dashboards Audit e Monitoring
 
 ### Problema
-As policies "Admins can update roles" e "Admins can delete roles" só verificam `has_role(auth.uid(), 'admin')`, sem validar empresa. Um admin pode alterar/deletar roles de usuários de outras empresas.
+
+Na linha 117-119 de ambos os dashboards, o filtro para coordenadores só inclui os IDs dos analistas vinculados (`coordinatorAnalystIds`), excluindo o próprio coordenador.
 
 ### Solução
-Recriar ambas as policies adicionando verificação de que o `user_id` alvo pertence à mesma empresa.
 
-### Migração SQL
+Adicionar `profile.id` ao `Set` de IDs visíveis para coordenadores:
 
-```sql
-DROP POLICY IF EXISTS "Admins can update roles" ON public.user_roles;
-DROP POLICY IF EXISTS "Admins can delete roles" ON public.user_roles;
-
-CREATE POLICY "Admins can update roles"
-ON public.user_roles FOR UPDATE TO authenticated
-USING (
-  has_role(auth.uid(), 'admin'::app_role)
-  AND EXISTS (
-    SELECT 1 FROM profiles p
-    WHERE p.id = user_roles.user_id
-      AND p.company_id = get_user_company_id(auth.uid())
-  )
-);
-
-CREATE POLICY "Admins can delete roles"
-ON public.user_roles FOR DELETE TO authenticated
-USING (
-  has_role(auth.uid(), 'admin'::app_role)
-  AND EXISTS (
-    SELECT 1 FROM profiles p
-    WHERE p.id = user_roles.user_id
-      AND p.company_id = get_user_company_id(auth.uid())
-  )
-);
+```typescript
+} else if (role === "coordinator") {
+  const ids = new Set(coordinatorAnalystIds);
+  ids.add(profile?.id);
+  filtered = filtered.filter((t) => t.assigned_to && ids.has(t.assigned_to));
+}
 ```
 
-### Arquivo afetado
+### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| Migração SQL | Recriar policies de UPDATE e DELETE com verificação de empresa |
+| `src/pages/Dashboard/AuditDashboard.tsx` | Adicionar `profile.id` ao Set de IDs do coordenador |
+| `src/pages/Dashboard/MonitoringDashboard.tsx` | Mesma correção |
 
