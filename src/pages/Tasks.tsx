@@ -297,7 +297,7 @@ export default function Tasks() {
     const task = tasks.find((t) => t.id === draggableId);
     if (!task) return;
     if (role === "analyst" && task.assigned_to !== user?.id) return;
-    const currentEffective = task.status === "pending" && task.due_date && task.due_date < nowAsFakeUTC() ? "overdue" : task.status;
+    const currentEffective = task.status === "pending" && ((task.due_date && task.due_date < nowAsFakeUTC()) || (task.start_date && task.start_date < nowAsFakeUTC())) ? "overdue" : task.status;
     if (newStatus === currentEffective) return;
     await handleStatusChange(draggableId, newStatus);
   }, [tasks, role, user?.id, handleStatusChange]);
@@ -436,8 +436,8 @@ export default function Tasks() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5 stagger-fade-in">
             {kanbanColumns.map((status) => {
               const columnTasks = filtered.filter((t) => {
-                if (status === "overdue") return (t.status === "overdue") || (t.due_date && t.due_date < nowAsFakeUTC() && t.status === "pending");
-                if (status === "pending") return t.status === "pending" && !(t.due_date && t.due_date < nowAsFakeUTC());
+                if (status === "overdue") return (t.status === "overdue") || (t.status === "pending" && ((t.due_date && t.due_date < nowAsFakeUTC()) || (t.start_date && t.start_date < nowAsFakeUTC())));
+                if (status === "pending") return t.status === "pending" && !((t.due_date && t.due_date < nowAsFakeUTC()) || (t.start_date && t.start_date < nowAsFakeUTC()));
                 if (status === "in_progress") return t.status === "in_progress";
                 return t.status === status;
               }).sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
