@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 
 const titleMap: Record<string, string> = {
   "/dashboard": "Dashboard | Exato",
+  "/dashboard/audit": "Auditoria | Exato",
   "/tasks": "Tarefas | Exato",
   "/my-day": "Meu Dia | Exato",
   "/team": "Equipe | Exato",

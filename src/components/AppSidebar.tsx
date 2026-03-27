@@ -1,10 +1,11 @@
-import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound, Sun, Moon, Mail, Shield } from "lucide-react";
+import { LayoutDashboard, ListTodo, Users, Settings, LogOut, BrainCircuit, UsersRound, Sun, Moon, Mail, Shield, ClipboardCheck, MonitorDot, ChevronDown } from "lucide-react";
 import logoWhite from "@/assets/logo-white.png";
 import logoIcon from "@/assets/logo-icon.png";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +15,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarHeader,
   SidebarFooter,
   useSidebar,
@@ -22,8 +26,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 const mainItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Tarefas", url: "/tasks", icon: ListTodo },
+];
+
+const dashboardSubItems = [
+  { title: "Monitoramento", url: "/dashboard", icon: MonitorDot },
+  { title: "Auditoria", url: "/dashboard/audit", icon: ClipboardCheck, roles: ["admin", "manager", "coordinator"] as string[] },
 ];
 
 const managementItems = [
@@ -44,6 +52,7 @@ export function AppSidebar() {
   const { resolvedTheme, setTheme } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
+  const isDashboardActive = location.pathname.startsWith("/dashboard");
   const initials = profile?.full_name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "U";
 
   return (
@@ -72,6 +81,37 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-sidebar-foreground/50">Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {/* Dashboard collapsible group */}
+              <Collapsible defaultOpen={isDashboardActive} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip="Dashboard" className={`hover-scale-subtle ${isDashboardActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}`}>
+                      <LayoutDashboard className="h-4 w-4" />
+                      {!collapsed && <span>Dashboard</span>}
+                      {!collapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  {!collapsed && (
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {dashboardSubItems
+                          .filter((item) => !item.roles || (role && item.roles.includes(role)))
+                          .map((item) => (
+                            <SidebarMenuSubItem key={item.title}>
+                              <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
+                                <NavLink to={item.url} end activeClassName="bg-sidebar-accent text-sidebar-accent-foreground">
+                                  <item.icon className="h-3.5 w-3.5" />
+                                  <span>{item.title}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  )}
+                </SidebarMenuItem>
+              </Collapsible>
+
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title} className="hover-scale-subtle">

@@ -27,6 +27,7 @@ const Presentation = lazy(() => import("./pages/Presentation"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const EmailMonitor = lazy(() => import("./pages/EmailMonitor"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
+const AuditDashboard = lazy(() => import("./pages/Dashboard/AuditDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
