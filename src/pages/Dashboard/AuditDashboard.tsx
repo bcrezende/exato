@@ -10,6 +10,7 @@ import AdminPeriodToggle, { type AdminPeriod } from "@/components/dashboard/admi
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { nowAsFakeUTC } from "@/lib/date-utils";
 import { ClipboardList, AlertTriangle, Clock, CheckCircle2, XCircle, TimerOff, ChevronDown, Users } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { startOfDay, endOfDay, subDays, startOfWeek, startOfMonth } from "date-fns";
 
 type Task = {
@@ -252,12 +253,12 @@ export default function AuditDashboard() {
   if (loading) return <DashboardSkeleton />;
 
   const kpiCards = [
-    { label: "Total de Tarefas", value: kpis.total, icon: ClipboardList, color: "text-primary" },
-    { label: "Não Executadas", value: kpis.notDone, icon: XCircle, color: "text-orange-600" },
-    { label: "Início Atrasado", value: kpis.lateStart, icon: Clock, color: "text-amber-500" },
-    { label: "Concluídas Atrasadas", value: kpis.lateCompletion, icon: TimerOff, color: "text-destructive" },
-    { label: "Concluídas no Prazo", value: kpis.completedOnTime, icon: CheckCircle2, color: "text-emerald-500" },
-    { label: "Não Concluídas", value: kpis.notCompleted, icon: AlertTriangle, color: "text-destructive" },
+    { label: "Total de Tarefas", value: kpis.total, icon: ClipboardList, color: "text-primary", tooltip: "Todas as tarefas do período selecionado" },
+    { label: "Não Executadas", value: kpis.notDone, icon: XCircle, color: "text-orange-600", tooltip: "Tarefas com status \"não feita\" — marcadas automaticamente quando não iniciadas até o fim do dia" },
+    { label: "Início Atrasado", value: kpis.lateStart, icon: Clock, color: "text-amber-500", tooltip: "Tarefas que foram iniciadas após o horário previsto de início (start_date)" },
+    { label: "Concluídas Atrasadas", value: kpis.lateCompletion, icon: TimerOff, color: "text-destructive", tooltip: "Tarefas concluídas após o prazo final (due_date)" },
+    { label: "Concluídas no Prazo", value: kpis.completedOnTime, icon: CheckCircle2, color: "text-emerald-500", tooltip: "Tarefas concluídas dentro do prazo final" },
+    { label: "Não Concluídas", value: kpis.notCompleted, icon: AlertTriangle, color: "text-destructive", tooltip: "Tarefas pendentes ou em andamento cujo prazo final já passou" },
   ];
 
   return (
@@ -293,17 +294,26 @@ export default function AuditDashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {kpiCards.map((kpi) => (
-          <Card key={kpi.label}>
-            <CardContent className="flex flex-col items-center justify-center p-4 text-center">
-              <kpi.icon className={`h-6 w-6 mb-2 ${kpi.color}`} />
-              <p className="text-2xl font-bold">{kpi.value}</p>
-              <p className="text-xs text-muted-foreground">{kpi.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <TooltipProvider>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {kpiCards.map((kpi) => (
+            <Tooltip key={kpi.label}>
+              <TooltipTrigger asChild>
+                <Card className="cursor-default">
+                  <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+                    <kpi.icon className={`h-6 w-6 mb-2 ${kpi.color}`} />
+                    <p className="text-2xl font-bold">{kpi.value}</p>
+                    <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                  </CardContent>
+                </Card>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[250px]">
+                <p>{kpi.tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </TooltipProvider>
 
       {/* Sector table */}
       <Card>
