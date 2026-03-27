@@ -27,6 +27,7 @@ const Presentation = lazy(() => import("./pages/Presentation"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const EmailMonitor = lazy(() => import("./pages/EmailMonitor"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
+const AuditDashboard = lazy(() => import("./pages/Dashboard/AuditDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,7 @@ const App = () => (
             
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Suspense fallback={<PageLoader />}><Dashboard /></Suspense>} />
+              <Route path="/dashboard/audit" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><AuditDashboard /></Suspense></ProtectedRoute>} />
               <Route path="/tasks" element={<Suspense fallback={<PageLoader />}><Tasks /></Suspense>} />
               <Route path="/my-day" element={<Suspense fallback={<PageLoader />}><MyDayView /></Suspense>} />
               <Route path="/team" element={<ProtectedRoute allowedRoles={["admin", "manager", "coordinator"]}><Suspense fallback={<PageLoader />}><Team /></Suspense></ProtectedRoute>} />
