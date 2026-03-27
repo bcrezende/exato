@@ -1,69 +1,47 @@
 
 
-## Reestruturar Dashboard: Menu Expansivo + Tela de Auditoria
+## Criar Dashboard de Monitoramento em `/dashboard`
 
-### Visão geral
+### Contexto
 
-Transformar o item "Dashboard" no sidebar em um grupo expansivo com dois sub-itens: **Auditoria** e **Monitoramento**. Criar a tela de Auditoria com cards de KPI e tabela expansiva por setor/usuário.
+A rota `/dashboard` já existe e renderiza dashboards por role (Admin, Manager, Coordinator, Analyst). O pedido é criar uma nova página de **Monitoramento** com estrutura similar ao `AuditDashboard` mas com KPIs diferentes e tabela expansiva por setor.
 
-### 1. Sidebar expansivo
+### Problema de conflito
 
-No `AppSidebar.tsx`, substituir o item único "Dashboard" por um grupo colapsável:
+A rota `/dashboard` já serve o `Dashboard/index.tsx` (role-based). Preciso entender: o Monitoramento **substitui** o dashboard atual ou coexiste? Pelo menu atual, "Monitoramento" aponta para `/dashboard`. Vou criar o MonitoringDashboard como a nova página padrão de `/dashboard`, substituindo o roteador por role existente.
 
-```text
-Dashboard (expansível)
-  ├── Auditoria     → /dashboard/audit
-  └── Monitoramento → /dashboard
-```
+### Plano
 
-Usar `Collapsible` do shadcn para o sub-menu. O grupo fica aberto automaticamente quando a rota ativa começa com `/dashboard`. Visibilidade por role: Auditoria visível para admin, manager e coordinator.
+**1. Nova página `src/pages/Dashboard/MonitoringDashboard.tsx`**
 
-### 2. Rota `/dashboard/audit`
+Estrutura baseada no AuditDashboard com as seguintes diferenças nos KPIs:
+- **Total de Tarefas**: contagem total no período
+- **Iniciou em Atraso**: tarefas com delay `inicio_atrasado` em `task_delays`
+- **Atrasadas**: tarefas `in_progress` com `due_date` vencido
+- **Concluídas**: tarefas com status `completed`
+- **Pendentes**: tarefas com status `pending`
 
-No `App.tsx`, adicionar rota protegida:
-```
-/dashboard/audit → AuditDashboard (allowedRoles: admin, manager, coordinator)
-```
+Mesmos filtros: Período (hoje/ontem/semana/mês/custom) + Setor.
+Mesma tabela expansiva por setor → usuários, com essas 5 métricas.
+Mesma lógica de visibilidade por role (admin=tudo, manager=seu setor, coordinator=seus analistas).
 
-### 3. Nova página `AuditDashboard.tsx`
+**2. Atualizar `src/pages/Dashboard/index.tsx`**
 
-Criar `src/pages/Dashboard/AuditDashboard.tsx` com:
+Substituir o roteador por role pelo `MonitoringDashboard` — todos os usuários veem a mesma página de monitoramento.
 
-**Cards de KPI (topo):**
-- Total de Tarefas
-- Não Executadas (status `not_done`)
-- Início Atrasado (via `task_delays` com `log_type = inicio_atrasado`)
-- Concluídas Atrasadas (via `task_delays` com `log_type = conclusao_atrasada`)
-- Concluídas no Prazo (completed sem delays)
-- Não Concluídas (pending/in_progress com due_date vencido)
+**3. Sidebar já está correto**
 
-**Filtros:** Período (hoje/ontem/semana/mês/customizado) + filtro de setor.
+O menu expansivo já tem "Monitoramento" apontando para `/dashboard`. Não precisa alterar.
 
-**Tabela expansiva por setor:**
-- Cada setor é uma linha colapsável (usando `Collapsible`)
-- Mostra total de tarefas, contagem por status
-- Ao expandir, lista os usuários do setor com suas respectivas contagens
-- Dados filtrados por `company_id` (RLS) e role do usuário:
-  - Admin: todos os setores
-  - Manager: apenas seu setor
-  - Coordinator: apenas seus analistas vinculados
+**4. Título do navegador**
 
-**Dados:** Reutiliza as mesmas queries do AdminDashboard (tasks, profiles, departments, task_delays), filtradas por período.
-
-### 4. Título do navegador
-
-Adicionar no `useDocumentTitle.ts`:
-```
-"/dashboard/audit": "Auditoria | Exato"
-```
+Já existe `"/dashboard": "Dashboard | Exato"` — alterar para `"Monitoramento | Exato"`.
 
 ### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/AppSidebar.tsx` | Dashboard vira grupo expansivo com Auditoria e Monitoramento |
-| `src/pages/Dashboard/AuditDashboard.tsx` | Nova página de Auditoria |
-| `src/App.tsx` | Adicionar rota `/dashboard/audit` |
-| `src/hooks/useDocumentTitle.ts` | Adicionar título para `/dashboard/audit` |
-| `src/pages/Dashboard/index.tsx` | Sem alteração (continua servindo `/dashboard`) |
+| `src/pages/Dashboard/MonitoringDashboard.tsx` | Nova página com 5 KPIs + tabela expansiva |
+| `src/pages/Dashboard/index.tsx` | Importar e renderizar `MonitoringDashboard` para todos |
+| `src/hooks/useDocumentTitle.ts` | Alterar título de `/dashboard` para "Monitoramento \| Exato" |
 
