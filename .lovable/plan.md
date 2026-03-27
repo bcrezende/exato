@@ -1,47 +1,55 @@
 
 
-## Criar Dashboard de Monitoramento em `/dashboard`
+## Adicionar tooltips explicativos nos cards de KPI
 
-### Contexto
+### Solução
 
-A rota `/dashboard` já existe e renderiza dashboards por role (Admin, Manager, Coordinator, Analyst). O pedido é criar uma nova página de **Monitoramento** com estrutura similar ao `AuditDashboard` mas com KPIs diferentes e tabela expansiva por setor.
+Adicionar um campo `tooltip` a cada item do array `kpiCards` com a condição que classifica a tarefa naquele estágio. Envolver cada card com o componente `Tooltip` do shadcn (já existe em `src/components/ui/tooltip.tsx`).
 
-### Problema de conflito
+### Textos dos tooltips
 
-A rota `/dashboard` já serve o `Dashboard/index.tsx` (role-based). Preciso entender: o Monitoramento **substitui** o dashboard atual ou coexiste? Pelo menu atual, "Monitoramento" aponta para `/dashboard`. Vou criar o MonitoringDashboard como a nova página padrão de `/dashboard`, substituindo o roteador por role existente.
+**Auditoria:**
+| Card | Tooltip |
+|---|---|
+| Total de Tarefas | Todas as tarefas do período selecionado |
+| Não Executadas | Tarefas com status "não feita" — marcadas automaticamente quando não iniciadas até o fim do dia |
+| Início Atrasado | Tarefas que foram iniciadas após o horário previsto de início |
+| Concluídas Atrasadas | Tarefas concluídas após o prazo final (due_date) |
+| Concluídas no Prazo | Tarefas concluídas dentro do prazo final |
+| Não Concluídas | Tarefas pendentes ou em andamento cujo prazo final já passou |
 
-### Plano
+**Monitoramento:**
+| Card | Tooltip |
+|---|---|
+| Total de Tarefas | Todas as tarefas do período selecionado |
+| Iniciou em Atraso | Tarefas que foram iniciadas após o horário previsto de início |
+| Atrasadas | Tarefas em andamento cujo prazo final já foi ultrapassado |
+| Concluídas | Tarefas finalizadas no período |
+| Pendentes | Tarefas que ainda não foram iniciadas |
 
-**1. Nova página `src/pages/Dashboard/MonitoringDashboard.tsx`**
+### Implementação
 
-Estrutura baseada no AuditDashboard com as seguintes diferenças nos KPIs:
-- **Total de Tarefas**: contagem total no período
-- **Iniciou em Atraso**: tarefas com delay `inicio_atrasado` em `task_delays`
-- **Atrasadas**: tarefas `in_progress` com `due_date` vencido
-- **Concluídas**: tarefas com status `completed`
-- **Pendentes**: tarefas com status `pending`
+Em cada dashboard, adicionar `tooltip: string` ao array `kpiCards` e no render envolver o `Card` com `<Tooltip>` + `<TooltipTrigger>` + `<TooltipContent>`:
 
-Mesmos filtros: Período (hoje/ontem/semana/mês/custom) + Setor.
-Mesma tabela expansiva por setor → usuários, com essas 5 métricas.
-Mesma lógica de visibilidade por role (admin=tudo, manager=seu setor, coordinator=seus analistas).
-
-**2. Atualizar `src/pages/Dashboard/index.tsx`**
-
-Substituir o roteador por role pelo `MonitoringDashboard` — todos os usuários veem a mesma página de monitoramento.
-
-**3. Sidebar já está correto**
-
-O menu expansivo já tem "Monitoramento" apontando para `/dashboard`. Não precisa alterar.
-
-**4. Título do navegador**
-
-Já existe `"/dashboard": "Dashboard | Exato"` — alterar para `"Monitoramento | Exato"`.
+```tsx
+<TooltipProvider>
+  {kpiCards.map((kpi) => (
+    <Tooltip key={kpi.label}>
+      <TooltipTrigger asChild>
+        <Card className="cursor-default">
+          <CardContent>...</CardContent>
+        </Card>
+      </TooltipTrigger>
+      <TooltipContent><p>{kpi.tooltip}</p></TooltipContent>
+    </Tooltip>
+  ))}
+</TooltipProvider>
+```
 
 ### Arquivos afetados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Dashboard/MonitoringDashboard.tsx` | Nova página com 5 KPIs + tabela expansiva |
-| `src/pages/Dashboard/index.tsx` | Importar e renderizar `MonitoringDashboard` para todos |
-| `src/hooks/useDocumentTitle.ts` | Alterar título de `/dashboard` para "Monitoramento \| Exato" |
+| `src/pages/Dashboard/AuditDashboard.tsx` | Adicionar tooltips aos 6 cards de KPI |
+| `src/pages/Dashboard/MonitoringDashboard.tsx` | Adicionar tooltips aos 5 cards de KPI |
 
