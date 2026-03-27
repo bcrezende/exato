@@ -51,6 +51,7 @@ export default function MonitoringDashboard() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
+  const [selectedUser, setSelectedUser] = useState<string>("all");
 
   useEffect(() => {
     async function fetchData() {
@@ -134,10 +135,22 @@ export default function MonitoringDashboard() {
   }, [visibleTasks, periodStart, periodEnd]);
 
   // Filter by selected department
-  const filteredTasks = useMemo(() => {
+  const deptFilteredTasks = useMemo(() => {
     if (selectedDepartment === "all") return periodTasks;
     return periodTasks.filter((t) => t.department_id === selectedDepartment);
   }, [periodTasks, selectedDepartment]);
+
+  // Filter by selected user
+  const filteredTasks = useMemo(() => {
+    if (selectedUser === "all") return deptFilteredTasks;
+    return deptFilteredTasks.filter((t) => t.assigned_to === selectedUser);
+  }, [deptFilteredTasks, selectedUser]);
+
+  // Available users for filter
+  const visibleUsers = useMemo(() => {
+    const userIds = new Set(periodTasks.map((t) => t.assigned_to).filter(Boolean));
+    return profiles.filter((p) => userIds.has(p.id)).sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
+  }, [periodTasks, profiles]);
 
   const delaySet = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -248,9 +261,9 @@ export default function MonitoringDashboard() {
         </div>
       )}
 
-      {visibleDepartments.length > 0 && (
-        <div className="flex items-center gap-3">
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+      <div className="flex items-center gap-3 flex-wrap">
+        {visibleDepartments.length > 0 && (
+          <Select value={selectedDepartment} onValueChange={(v) => { setSelectedDepartment(v); setSelectedUser("all"); }}>
             <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="Todos os setores" />
             </SelectTrigger>
@@ -261,8 +274,21 @@ export default function MonitoringDashboard() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-      )}
+        )}
+        {visibleUsers.length > 0 && (
+          <Select value={selectedUser} onValueChange={setSelectedUser}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Todos os usuários" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os usuários</SelectItem>
+              {visibleUsers.map((u) => (
+                <SelectItem key={u.id} value={u.id}>{u.full_name || "Sem nome"}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
       {/* KPI Cards */}
       <TooltipProvider>
