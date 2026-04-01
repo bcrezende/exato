@@ -984,6 +984,19 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      export_users_csv: {
+        Args: never
+        Returns: {
+          company_id: string
+          departamento: string
+          department_id: string
+          email: string
+          encrypted_password: string
+          id: string
+          nome: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       get_audit_logs: {
         Args: {
           _action?: string
