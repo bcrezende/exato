@@ -1,28 +1,20 @@
 
 
-## Gerar arquivo users.csv com dados de todos os usuários
+## Regenerar usuarios_migracao_v2.csv sem a coluna encrypted_password
 
 ### O que será feito
 
-Executar uma query SQL via `psql` que junta `auth.users`, `profiles`, `user_roles` e `departments` para exportar um CSV completo para `/mnt/documents/users.csv`.
+Executar a function `export_users_csv()` novamente via `psql`, mas excluindo a coluna `encrypted_password` do SELECT, e salvar como novo arquivo em `/mnt/documents/usuarios_migracao_v2.csv`.
 
 ### Query
 
 ```sql
-SELECT
-  u.id AS uuid,
-  u.email,
-  p.full_name AS nome,
-  ur.role,
-  d.name AS departamento
-FROM auth.users u
-LEFT JOIN profiles p ON p.id = u.id
-LEFT JOIN user_roles ur ON ur.user_id = u.id
-LEFT JOIN departments d ON d.id = p.department_id
-ORDER BY ur.role, p.full_name;
+COPY (SELECT id, email, nome, role, departamento, department_id, company_id FROM export_users_csv()) TO STDOUT WITH CSV HEADER
 ```
 
-### Saída
+### Arquivo gerado
 
-Arquivo CSV em `/mnt/documents/users.csv` com colunas: `uuid, email, nome, role, departamento`.
+| Arquivo | Descrição |
+|---|---|
+| `/mnt/documents/usuarios_migracao_v2.csv` | CSV com id, email, nome, role, departamento, department_id, company_id (sem encrypted_password) |
 
